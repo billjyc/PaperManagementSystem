@@ -1,0 +1,107 @@
+package nju.software.util;
+import java.io.File;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+@Component
+public class EmailUtil {
+	private static Logger logger = LoggerFactory.getLogger(EmailUtil.class);
+
+	@Autowired
+	private JavaMailSender mailSender;
+
+	public EmailUtil(){
+
+	}
+
+	/*public void sendMail2(String to, String subject, String body) {
+		SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setFrom("jyc11@software.nju.edu.cn");
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+	}*/
+
+	/**
+	 * 发送不带附件的邮件
+	 * @param to 收件人地址
+	 * @param subject 主题
+	 * @param content 内容
+	 * @throws MessagingException
+	 */
+	@Async
+	public void sendMail(String to,
+			String subject, String content) throws MessagingException{
+		Validate.notEmpty(to);
+		String from = "mx11@software.nju.edu.cn";
+		to = Constants.TEST_EMAIL;
+
+		if(to != null){
+			MimeMessage mailMessage = mailSender.createMimeMessage();
+			MimeMessageHelper messageHelper = new MimeMessageHelper(mailMessage,
+					true, "utf-8");
+
+			messageHelper.setTo(Constants.TEST_EMAIL_ARRAY);
+			messageHelper.setFrom(from);
+			messageHelper.setSubject(subject);
+			messageHelper.setText(content, true);
+
+			mailSender.send(mailMessage);
+			logger.info("发送成功！");
+		}else{
+			logger.error("收件地址为空!");
+		}
+	}
+
+	/**
+	 * 发送带附件的邮件
+	 * @param to
+	 * @param subject
+	 * @param content
+	 * @param attachmentfiles
+	 * @throws MessagingException
+	 */
+	@Async
+	public void sendMailAttach(String to,
+			String subject, String content,List<File> attachmentfiles)throws MessagingException{
+		String from="mx11@software.nju.edu.cn";
+		to = Constants.TEST_EMAIL;
+		
+		if(to != null){
+			MimeMessage mailMessage = mailSender.createMimeMessage();
+			MimeMessageHelper messageHelper = new MimeMessageHelper(mailMessage,
+					true, "utf-8");
+
+			messageHelper.setTo(Constants.TEST_EMAIL_ARRAY);
+			messageHelper.setFrom(from);
+			messageHelper.setSubject(subject);
+			messageHelper.setText(content, true);
+			if (attachmentfiles != null) {
+				for (int i = 0; i < attachmentfiles.size(); i++) {
+					File tmpfsr = attachmentfiles.get(i);
+					messageHelper.addAttachment(tmpfsr.getName(), tmpfsr);
+				}
+			}
+			mailSender.send(mailMessage);
+			logger.info("发送成功！");
+		}else{
+			logger.error("收件地址为空");
+		}
+	}
+}

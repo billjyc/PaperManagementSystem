@@ -1,0 +1,46 @@
+package nju.software.service.impl;
+
+import java.util.List;
+import nju.software.dao.PaperDAO;
+import nju.software.entity.Paper;
+import nju.software.service.PaperService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service("paperServiceImpl")
+public class PaperServiceImpl implements PaperService {
+	@Autowired
+	private PaperDAO paperDao;
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void addPaper(Paper paper) {
+		paperDao.save(paper);
+	}
+
+	public void updatePaper(Paper paper) {
+		paperDao.merge(paper);
+	}
+
+	public List<Paper> getPapersByState(String paperState) {
+		return paperDao.findByPaperState(paperState);
+	}
+
+	public Paper getPaperByStudentId(int studentId) {
+		List<Paper> papers = paperDao.findByStudentId(studentId);
+		if (!papers.isEmpty()&&papers.size()>=1) {
+			return papers.get(papers.size()-1);
+		} else {
+			return null;
+		}
+	}
+
+	public Paper getPaperByPaperId(int paperId) {
+		return paperDao.findById(paperId);
+	}
+
+	@Override
+	public void saveOrUpdatePaper(Paper paper) {
+		paperDao.create(paper);
+	}
+}

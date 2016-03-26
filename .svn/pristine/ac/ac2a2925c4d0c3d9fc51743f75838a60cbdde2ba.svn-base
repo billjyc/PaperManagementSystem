@@ -1,0 +1,187 @@
+package nju.software.controller.teacher;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Proposal;
+import nju.software.entity.Student;
+import nju.software.jsonmodel.JsonProposal;
+import nju.software.jsonmodel.ProposalTask;
+import nju.software.manager.teacher.TeacherProposalManager;
+import nju.software.service.ProposalService;
+import nju.software.service.StudentService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.FileOperateUtil;
+import nju.software.util.JSONUtil;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教师开题报告控制类
+ * @author billjyc
+ * @date 2015-3-21
+ */
+@Controller
+public class TeacherProposalController {
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+
+	private static Logger logger = LoggerFactory.getLogger(TeacherProposalController.class);
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private ProposalService proposalService;
+	@Autowired
+	private TeacherProposalManager teacherProposalManager;
+
+
+	/**
+	 * 获得待审开题报告
+	 */
+	@RequestMapping(value = "/tutor/getuncheckedproposal.do")
+	@ResponseBody
+	public void getUncheckedProposal(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String actorNo = (String) request.getSession().getAttribute("actorNo");
+		List<ProposalTask> proposalList = new ArrayList<ProposalTask>();
+		logger.debug("actor Id: {}", actorNo);
+
+		String result_json = "";
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Proposal Finalize");
+			for(Task task : taskList) {
+				ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+				logger.debug("process instance id: {}", instance.getId());
+				if(instance != null) {
+					int studentId = (Integer) (activitiAPIUtils.getVariable(instance.getId(), "studentId"));
+					Student student = studentService.getStudentById(studentId);
+					Proposal proposal = proposalService.getProposalByStudentId(studentId);
+
+					if(proposal.getStatus() == Constants.PROPOSAL_UNCHECKED) {
+						proposalList.add(new ProposalTask(proposal, student, Long.parseLong(task.getId())));
+					}
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("get first check list failed", e);
+			result_json = FAIL;
+		}
+
+		JSONArray jsonlist = JSONArray.fromObject(proposalList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 * 获得已通过开题报告
+	 */
+	@RequestMapping(value = "/tutor/getpassedproposal.do")
+	@ResponseBody
+	public void getPassedProposal(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		int teacherId = (Integer) request.getSession().getAttribute("teacherId");
+		List<JsonProposal> jsonList = new ArrayList<JsonProposal>();
+		String result_json = "";
+		try{
+			List<Proposal> proposalList = proposalService.getProposalByStatus(Constants.PROPOSAL_PASSED, teacherId);
+			for(Proposal proposal : proposalList){
+				Student s = studentService.getStudentById(proposal.getStudentId());
+				jsonList.add(new JsonProposal(proposal, s));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("get first check list failed: ",e);
+			result_json = FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 判定开题报告是否通过
+	 */
+	@RequestMapping(value="/tutor/judgeproposal.do")
+	@ResponseBody
+	public void judgeProposal(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("jsonstr") String judgestr) {
+		JSONObject judge_json = JSONObject.fromObject(judgestr);
+		Integer proposalId = judge_json.getInt("proposalId");
+		long taskId = judge_json.getLong("taskId");
+		boolean result = judge_json.getInt("result") == Constants.PROPOSAL_PASSED ? true : false ; 
+
+		String result_json = "";
+		try{
+			Proposal proposal = proposalService.getProposalById(proposalId);
+			Validate.notNull(proposal);
+
+			if(result)
+				proposal.setStatus(Constants.PROPOSAL_PASSED);
+			else {
+				proposal.setStatus(Constants.PROPOSAL_FAILED);
+			}
+
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put("isPassed", result);
+			//更新开题报告状态
+			proposalService.updateProposal(proposal);
+			//教师完成任务
+			activitiAPIUtils.completeTask(String.valueOf(taskId), data);
+			//发送会话给学生
+			teacherProposalManager.sendSuggestion(proposal);
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj =  new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 下载开题报告
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param path
+	 */
+	@RequestMapping(value = "/tutor/downloadproposal.do", method = RequestMethod.POST)
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void downloadproposal(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, @RequestParam("path") String path) {
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(path);
+		FileOperateUtil.Download(response, absolutepath);
+	}	
+}

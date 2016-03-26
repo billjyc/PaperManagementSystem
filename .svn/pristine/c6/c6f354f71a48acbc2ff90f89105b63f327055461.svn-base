@@ -1,0 +1,651 @@
+2015-03-03 21:01:12,838 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findByTeacherJobTitle' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,838 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeacherDAOImpl.findByTeacherJobTitle(java.lang.Object)
+2015-03-03 21:01:12,838 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findByTeacherQualification' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,838 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeacherDAOImpl.findByTeacherQualification(java.lang.Object)
+2015-03-03 21:01:12,839 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findByTeacherPhone' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,839 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeacherDAOImpl.findByTeacherPhone(java.lang.Object)
+2015-03-03 21:01:12,839 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findByTeacherEducation' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,839 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeacherDAOImpl.findByTeacherEducation(java.lang.Object)
+2015-03-03 21:01:12,839 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findByTeacherEmail' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,840 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeacherDAOImpl.findByTeacherEmail(java.lang.Object)
+2015-03-03 21:01:12,840 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findAllLimit' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,840 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeacherDAOImpl.findAllLimit(java.util.HashMap)
+2015-03-03 21:01:12,840 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.merge' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,840 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.merge(java.lang.Object)
+2015-03-03 21:01:12,841 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.update' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,841 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.update(java.lang.Object)
+2015-03-03 21:01:12,842 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.clear' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,842 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.clear()
+2015-03-03 21:01:12,842 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.find(org.hibernate.Criteria)
+2015-03-03 21:01:12,842 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.find(java.lang.String,java.lang.Object[])
+2015-03-03 21:01:12,842 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.find(java.lang.String)
+2015-03-03 21:01:12,843 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.load' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,843 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.lang.Object nju.software.dao.common.impl.BaseDaoImpl.load(java.io.Serializable)
+2015-03-03 21:01:12,843 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.flush' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,843 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.flush()
+2015-03-03 21:01:12,843 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.save' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,844 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.io.Serializable nju.software.dao.common.impl.BaseDaoImpl.save(java.lang.Object)
+2015-03-03 21:01:12,844 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.delete' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,844 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.delete(java.lang.Object)
+2015-03-03 21:01:12,844 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.delete' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,844 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.delete(java.io.Serializable)
+2015-03-03 21:01:12,845 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.create' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,845 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.create(java.lang.Object)
+2015-03-03 21:01:12,845 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findCount' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,845 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public long nju.software.dao.common.impl.BaseDaoImpl.findCount()
+2015-03-03 21:01:12,845 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findAll' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,845 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.common.impl.BaseDaoImpl.findAll()
+2015-03-03 21:01:12,846 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.findById' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,846 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.lang.Object nju.software.dao.common.impl.BaseDaoImpl.findById(java.io.Serializable)
+2015-03-03 21:01:12,846 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected long nju.software.dao.common.impl.BaseDaoImpl.findCountByProperty(java.lang.String,java.lang.Object)
+2015-03-03 21:01:12,846 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.createCriteria' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,846 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public org.hibernate.Criteria nju.software.dao.common.impl.BaseDaoImpl.createCriteria(org.hibernate.criterion.Criterion[])
+2015-03-03 21:01:12,846 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeacherDAOImpl.createCriteria' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public org.hibernate.Criteria nju.software.dao.common.impl.BaseDaoImpl.createCriteria()
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.findByPage(java.lang.String,int,int)
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.findByPage(org.hibernate.Criteria,int,int)
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.findByPage(java.lang.String,int,int,java.lang.Object[])
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Found finalize() method - using NO_OVERRIDE
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Found 'equals' method: public boolean java.lang.Object.equals(java.lang.Object)
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.lang.String java.lang.Object.toString()
+2015-03-03 21:01:12,847 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Found 'hashCode' method: public native int java.lang.Object.hashCode()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected native java.lang.Object java.lang.Object.clone() throws java.lang.CloneNotSupportedException
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract int org.springframework.aop.framework.Advised.indexOf(org.springframework.aop.Advisor)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract int org.springframework.aop.framework.Advised.indexOf(org.aopalliance.aop.Advice)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isFrozen()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.setTargetSource(org.springframework.aop.TargetSource)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvisor(org.springframework.aop.Advisor) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvisor(int,org.springframework.aop.Advisor) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isExposeProxy()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.replaceAdvisor(org.springframework.aop.Advisor,org.springframework.aop.Advisor) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isInterfaceProxied(java.lang.Class)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract java.lang.Class[] org.springframework.aop.framework.Advised.getProxiedInterfaces()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract java.lang.String org.springframework.aop.framework.Advised.toProxyConfigString()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract org.springframework.aop.TargetSource org.springframework.aop.framework.Advised.getTargetSource()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.setPreFiltered(boolean)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isProxyTargetClass()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.setExposeProxy(boolean)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.removeAdvisor(int) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.removeAdvisor(org.springframework.aop.Advisor)
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isPreFiltered()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract org.springframework.aop.Advisor[] org.springframework.aop.framework.Advised.getAdvisors()
+2015-03-03 21:01:12,848 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvice(int,org.aopalliance.aop.Advice) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,849 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvice(org.aopalliance.aop.Advice) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,849 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.removeAdvice(org.aopalliance.aop.Advice)
+2015-03-03 21:01:12,849 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract java.lang.Class org.springframework.aop.TargetClassAware.getTargetClass()
+2015-03-03 21:01:12,899 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'nju.software.dao.impl.TeacherDAOImpl'
+2015-03-03 21:01:12,899 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'nju.software.dao.impl.TeachingPointDAOImpl'
+2015-03-03 21:01:12,899 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'nju.software.dao.impl.TeachingPointDAOImpl'
+2015-03-03 21:01:12,901 DEBUG [org.springframework.beans.factory.annotation.InjectionMetadata] - Registered injected element on class [nju.software.dao.impl.TeachingPointDAOImpl]: AutowiredFieldElement for private org.hibernate.SessionFactory nju.software.dao.common.impl.BaseDaoImpl.sessionFactory
+2015-03-03 21:01:12,901 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'nju.software.dao.impl.TeachingPointDAOImpl' to allow for resolving potential circular references
+2015-03-03 21:01:12,908 DEBUG [org.springframework.beans.factory.annotation.InjectionMetadata] - Processing injected method of bean 'nju.software.dao.impl.TeachingPointDAOImpl': AutowiredFieldElement for private org.hibernate.SessionFactory nju.software.dao.common.impl.BaseDaoImpl.sessionFactory
+2015-03-03 21:01:12,910 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'sessionFactory'
+2015-03-03 21:01:12,910 DEBUG [org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor] - Autowiring by type from bean name 'nju.software.dao.impl.TeachingPointDAOImpl' to bean named 'sessionFactory'
+2015-03-03 21:01:12,910 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:12,911 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findById' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,911 DEBUG [org.springframework.aop.framework.autoproxy.InfrastructureAdvisorAutoProxyCreator] - Creating implicit proxy for bean 'nju.software.dao.impl.TeachingPointDAOImpl' with 0 common interceptors and 1 specific interceptors
+2015-03-03 21:01:12,911 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Creating CGLIB proxy: target source is SingletonTargetSource for target object [nju.software.dao.impl.TeachingPointDAOImpl@7a912232]
+2015-03-03 21:01:12,913 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findById' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,913 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public nju.software.entity.TeachingPoint nju.software.dao.impl.TeachingPointDAOImpl.findById(java.lang.Integer)
+2015-03-03 21:01:12,913 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findByProperty' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,913 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeachingPointDAOImpl.findByProperty(java.lang.String,java.lang.Object)
+2015-03-03 21:01:12,914 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findByLocation' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,914 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeachingPointDAOImpl.findByLocation(java.lang.String)
+2015-03-03 21:01:12,914 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findByDirectorNo' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,915 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeachingPointDAOImpl.findByDirectorNo(java.lang.String)
+2015-03-03 21:01:12,915 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findByDirectorName' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,915 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeachingPointDAOImpl.findByDirectorName(java.lang.String)
+2015-03-03 21:01:12,915 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findByNo' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,915 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeachingPointDAOImpl.findByNo(java.lang.String)
+2015-03-03 21:01:12,916 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findByName' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,916 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.impl.TeachingPointDAOImpl.findByName(java.lang.String)
+2015-03-03 21:01:12,916 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.merge' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,916 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.merge(java.lang.Object)
+2015-03-03 21:01:12,916 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.update' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,916 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.update(java.lang.Object)
+2015-03-03 21:01:12,917 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.clear' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,917 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.clear()
+2015-03-03 21:01:12,917 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.find(org.hibernate.Criteria)
+2015-03-03 21:01:12,917 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.find(java.lang.String,java.lang.Object[])
+2015-03-03 21:01:12,917 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.find(java.lang.String)
+2015-03-03 21:01:12,917 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.load' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,918 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.lang.Object nju.software.dao.common.impl.BaseDaoImpl.load(java.io.Serializable)
+2015-03-03 21:01:12,920 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.flush' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,920 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.flush()
+2015-03-03 21:01:12,921 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.save' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,921 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.io.Serializable nju.software.dao.common.impl.BaseDaoImpl.save(java.lang.Object)
+2015-03-03 21:01:12,921 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.delete' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,921 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.delete(java.lang.Object)
+2015-03-03 21:01:12,922 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.delete' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,922 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.delete(java.io.Serializable)
+2015-03-03 21:01:12,922 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.create' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,922 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public void nju.software.dao.common.impl.BaseDaoImpl.create(java.lang.Object)
+2015-03-03 21:01:12,922 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findCount' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,922 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public long nju.software.dao.common.impl.BaseDaoImpl.findCount()
+2015-03-03 21:01:12,922 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findAll' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,922 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.util.List nju.software.dao.common.impl.BaseDaoImpl.findAll()
+2015-03-03 21:01:12,923 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.findById' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,923 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.lang.Object nju.software.dao.common.impl.BaseDaoImpl.findById(java.io.Serializable)
+2015-03-03 21:01:12,923 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected long nju.software.dao.common.impl.BaseDaoImpl.findCountByProperty(java.lang.String,java.lang.Object)
+2015-03-03 21:01:12,923 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.createCriteria' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,923 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public org.hibernate.Criteria nju.software.dao.common.impl.BaseDaoImpl.createCriteria(org.hibernate.criterion.Criterion[])
+2015-03-03 21:01:12,924 DEBUG [org.springframework.transaction.annotation.AnnotationTransactionAttributeSource] - Adding transactional method 'TeachingPointDAOImpl.createCriteria' with attribute: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public org.hibernate.Criteria nju.software.dao.common.impl.BaseDaoImpl.createCriteria()
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.findByPage(java.lang.String,int,int)
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.findByPage(org.hibernate.Criteria,int,int)
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected java.util.List nju.software.dao.common.impl.BaseDaoImpl.findByPage(java.lang.String,int,int,java.lang.Object[])
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Found finalize() method - using NO_OVERRIDE
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Found 'equals' method: public boolean java.lang.Object.equals(java.lang.Object)
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: public java.lang.String java.lang.Object.toString()
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Found 'hashCode' method: public native int java.lang.Object.hashCode()
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Unable to apply any optimisations to advised method: protected native java.lang.Object java.lang.Object.clone() throws java.lang.CloneNotSupportedException
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract int org.springframework.aop.framework.Advised.indexOf(org.springframework.aop.Advisor)
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract int org.springframework.aop.framework.Advised.indexOf(org.aopalliance.aop.Advice)
+2015-03-03 21:01:12,924 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isFrozen()
+2015-03-03 21:01:12,926 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.setTargetSource(org.springframework.aop.TargetSource)
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvisor(org.springframework.aop.Advisor) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvisor(int,org.springframework.aop.Advisor) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isExposeProxy()
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.replaceAdvisor(org.springframework.aop.Advisor,org.springframework.aop.Advisor) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isInterfaceProxied(java.lang.Class)
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract java.lang.Class[] org.springframework.aop.framework.Advised.getProxiedInterfaces()
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract java.lang.String org.springframework.aop.framework.Advised.toProxyConfigString()
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract org.springframework.aop.TargetSource org.springframework.aop.framework.Advised.getTargetSource()
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.setPreFiltered(boolean)
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isProxyTargetClass()
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.setExposeProxy(boolean)
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.removeAdvisor(int) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.removeAdvisor(org.springframework.aop.Advisor)
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.isPreFiltered()
+2015-03-03 21:01:12,927 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract org.springframework.aop.Advisor[] org.springframework.aop.framework.Advised.getAdvisors()
+2015-03-03 21:01:12,928 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvice(int,org.aopalliance.aop.Advice) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,928 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract void org.springframework.aop.framework.Advised.addAdvice(org.aopalliance.aop.Advice) throws org.springframework.aop.framework.AopConfigException
+2015-03-03 21:01:12,928 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract boolean org.springframework.aop.framework.Advised.removeAdvice(org.aopalliance.aop.Advice)
+2015-03-03 21:01:12,928 DEBUG [org.springframework.aop.framework.CglibAopProxy] - Method is declared on Advised interface: public abstract java.lang.Class org.springframework.aop.TargetClassAware.getTargetClass()
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'nju.software.dao.impl.TeachingPointDAOImpl'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.internalConfigurationAnnotationProcessor'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.internalAutowiredAnnotationProcessor'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.internalRequiredAnnotationProcessor'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.internalCommonAnnotationProcessor'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.internalPersistenceAnnotationProcessor'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'sessionFactory'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'dataSource'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'transactionManager'
+2015-03-03 21:01:12,950 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'transactionManager'
+2015-03-03 21:01:12,957 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'transactionManager' to allow for resolving potential circular references
+2015-03-03 21:01:12,963 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'sessionFactory'
+2015-03-03 21:01:12,963 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Invoking afterPropertiesSet() on bean with name 'transactionManager'
+2015-03-03 21:01:12,971 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@4a745a4c] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:01:12,972 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:12,973 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'transactionManager'
+2015-03-03 21:01:12,973 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.aop.config.internalAutoProxyCreator'
+2015-03-03 21:01:12,973 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.annotation.AnnotationTransactionAttributeSource#0'
+2015-03-03 21:01:12,973 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.interceptor.TransactionInterceptor#0'
+2015-03-03 21:01:12,973 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:12,973 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'persistenceExceptionTranslationPostProcessor'
+2015-03-03 21:01:12,974 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'jdbcTemplate'
+2015-03-03 21:01:12,974 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'jdbcTemplate'
+2015-03-03 21:01:12,984 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'jdbcTemplate' to allow for resolving potential circular references
+2015-03-03 21:01:12,991 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'dataSource'
+2015-03-03 21:01:12,991 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Invoking afterPropertiesSet() on bean with name 'jdbcTemplate'
+2015-03-03 21:01:12,991 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:12,997 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'jdbcTemplate'
+2015-03-03 21:01:12,997 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'processEngineConfiguration'
+2015-03-03 21:01:12,997 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'processEngineConfiguration'
+2015-03-03 21:01:13,071 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'processEngineConfiguration' to allow for resolving potential circular references
+2015-03-03 21:01:13,134 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'dataSource'
+2015-03-03 21:01:13,134 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'transactionManager'
+2015-03-03 21:01:13,136 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:13,163 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'processEngineConfiguration'
+2015-03-03 21:01:13,163 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:13,163 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'processEngineFactory'
+2015-03-03 21:01:13,164 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'processEngineFactory' to allow for resolving potential circular references
+2015-03-03 21:01:13,168 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineConfiguration'
+2015-03-03 21:01:13,168 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:13,169 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'processEngineFactory'
+2015-03-03 21:01:13,169 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'repositoryService'
+2015-03-03 21:01:13,169 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'repositoryService'
+2015-03-03 21:01:13,172 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:13,349 DEBUG [org.springframework.jdbc.datasource.DataSourceUtils] - Fetching JDBC Connection from DataSource
+2015-03-03 21:01:13,349 DEBUG [org.springframework.jdbc.datasource.DriverManagerDataSource] - Creating new JDBC DriverManager Connection to [jdbc:mysql://localhost:3306/activiti?createDatabaseIfNotExist=true]
+2015-03-03 21:01:13,364 DEBUG [org.springframework.jdbc.datasource.DataSourceUtils] - Returning JDBC Connection to DataSource
+2015-03-03 21:01:15,129 DEBUG [org.springframework.jdbc.datasource.DataSourceUtils] - Fetching JDBC Connection from DataSource
+2015-03-03 21:01:15,129 DEBUG [org.springframework.jdbc.datasource.DriverManagerDataSource] - Creating new JDBC DriverManager Connection to [jdbc:mysql://localhost:3306/activiti?createDatabaseIfNotExist=true]
+2015-03-03 21:01:15,143 DEBUG [org.springframework.jdbc.datasource.DataSourceUtils] - Registering transaction synchronization for JDBC Connection
+2015-03-03 21:01:15,182 DEBUG [org.springframework.jdbc.datasource.DataSourceUtils] - Returning JDBC Connection to DataSource
+2015-03-03 21:01:15,184 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:01:15,199 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Creating new transaction with name [null]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT
+2015-03-03 21:01:15,253 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Opened new Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@4b6d632f updates=org.hibernate.engine.spi.ExecutableList@7a8ac958 deletions=org.hibernate.engine.spi.ExecutableList@2da8ef42 orphanRemovals=org.hibernate.engine.spi.ExecutableList@2df3ed79 collectionCreations=org.hibernate.engine.spi.ExecutableList@696bba80 collectionRemovals=org.hibernate.engine.spi.ExecutableList@1fa15f92 collectionUpdates=org.hibernate.engine.spi.ExecutableList@1b897a77 collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@5ec728c0 unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])] for Hibernate transaction
+2015-03-03 21:01:15,253 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Preparing JDBC Connection of Hibernate Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@4b6d632f updates=org.hibernate.engine.spi.ExecutableList@7a8ac958 deletions=org.hibernate.engine.spi.ExecutableList@2da8ef42 orphanRemovals=org.hibernate.engine.spi.ExecutableList@2df3ed79 collectionCreations=org.hibernate.engine.spi.ExecutableList@696bba80 collectionRemovals=org.hibernate.engine.spi.ExecutableList@1fa15f92 collectionUpdates=org.hibernate.engine.spi.ExecutableList@1b897a77 collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@5ec728c0 unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])]
+2015-03-03 21:01:15,254 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Obtaining JDBC connection
+2015-03-03 21:01:15,254 DEBUG [org.springframework.jdbc.datasource.DriverManagerDataSource] - Creating new JDBC DriverManager Connection to [jdbc:mysql://localhost:3306/activiti?createDatabaseIfNotExist=true]
+2015-03-03 21:01:15,269 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Obtained JDBC connection
+2015-03-03 21:01:15,270 DEBUG [org.hibernate.engine.transaction.spi.AbstractTransactionImpl] - begin
+2015-03-03 21:01:15,270 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - initial autocommit status: true
+2015-03-03 21:01:15,270 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - disabling autocommit
+2015-03-03 21:01:15,270 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Exposing Hibernate transaction as JDBC transaction [com.mysql.jdbc.JDBC4Connection@6b748295]
+2015-03-03 21:01:15,281 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Initiating transaction commit
+2015-03-03 21:01:15,281 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Committing Hibernate transaction on Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@4b6d632f updates=org.hibernate.engine.spi.ExecutableList@7a8ac958 deletions=org.hibernate.engine.spi.ExecutableList@2da8ef42 orphanRemovals=org.hibernate.engine.spi.ExecutableList@2df3ed79 collectionCreations=org.hibernate.engine.spi.ExecutableList@696bba80 collectionRemovals=org.hibernate.engine.spi.ExecutableList@1fa15f92 collectionUpdates=org.hibernate.engine.spi.ExecutableList@1b897a77 collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@5ec728c0 unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])]
+2015-03-03 21:01:15,281 DEBUG [org.hibernate.engine.transaction.spi.AbstractTransactionImpl] - committing
+2015-03-03 21:01:15,331 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - committed JDBC Connection
+2015-03-03 21:01:15,331 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - re-enabling autocommit
+2015-03-03 21:01:15,332 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Closing Hibernate Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@4b6d632f updates=org.hibernate.engine.spi.ExecutableList@7a8ac958 deletions=org.hibernate.engine.spi.ExecutableList@2da8ef42 orphanRemovals=org.hibernate.engine.spi.ExecutableList@2df3ed79 collectionCreations=org.hibernate.engine.spi.ExecutableList@696bba80 collectionRemovals=org.hibernate.engine.spi.ExecutableList@1fa15f92 collectionUpdates=org.hibernate.engine.spi.ExecutableList@1b897a77 collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@5ec728c0 unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])] after transaction
+2015-03-03 21:01:15,332 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Releasing JDBC connection
+2015-03-03 21:01:15,333 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Released JDBC connection
+2015-03-03 21:01:15,336 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,345 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'repositoryService' to allow for resolving potential circular references
+2015-03-03 21:01:15,351 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,353 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'repositoryService'
+2015-03-03 21:01:15,353 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'runtimeService'
+2015-03-03 21:01:15,353 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'runtimeService'
+2015-03-03 21:01:15,354 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:15,356 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'runtimeService' to allow for resolving potential circular references
+2015-03-03 21:01:15,364 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,368 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'runtimeService'
+2015-03-03 21:01:15,368 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'formService'
+2015-03-03 21:01:15,368 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'formService'
+2015-03-03 21:01:15,368 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:15,370 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'formService' to allow for resolving potential circular references
+2015-03-03 21:01:15,375 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,376 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'formService'
+2015-03-03 21:01:15,376 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'identityService'
+2015-03-03 21:01:15,376 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'identityService'
+2015-03-03 21:01:15,376 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:15,377 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'identityService' to allow for resolving potential circular references
+2015-03-03 21:01:15,381 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,382 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'identityService'
+2015-03-03 21:01:15,382 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'taskService'
+2015-03-03 21:01:15,382 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'taskService'
+2015-03-03 21:01:15,382 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:15,384 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'taskService' to allow for resolving potential circular references
+2015-03-03 21:01:15,389 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,393 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'taskService'
+2015-03-03 21:01:15,393 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'historyService'
+2015-03-03 21:01:15,393 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'historyService'
+2015-03-03 21:01:15,393 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:15,394 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'historyService' to allow for resolving potential circular references
+2015-03-03 21:01:15,400 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,401 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'historyService'
+2015-03-03 21:01:15,401 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating shared instance of singleton bean 'managementService'
+2015-03-03 21:01:15,401 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Creating instance of bean 'managementService'
+2015-03-03 21:01:15,401 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'processEngineFactory'
+2015-03-03 21:01:15,402 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Eagerly caching bean 'managementService' to allow for resolving potential circular references
+2015-03-03 21:01:15,408 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,409 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Finished creating instance of bean 'managementService'
+2015-03-03 21:01:15,409 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.ConfigurationClassPostProcessor.importAwareProcessor'
+2015-03-03 21:01:15,409 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.context.annotation.ConfigurationClassPostProcessor.enhancedConfigurationProcessor'
+2015-03-03 21:01:15,412 DEBUG [org.springframework.context.support.GenericApplicationContext] - Unable to locate LifecycleProcessor with name 'lifecycleProcessor': using default [org.springframework.context.support.DefaultLifecycleProcessor@2caf7908]
+2015-03-03 21:01:15,415 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'lifecycleProcessor'
+2015-03-03 21:01:15,421 DEBUG [org.springframework.core.env.PropertySourcesPropertyResolver] - Searching for key 'spring.liveBeansView.mbeanDomain' in [systemProperties]
+2015-03-03 21:01:15,421 DEBUG [org.springframework.core.env.PropertySourcesPropertyResolver] - Searching for key 'spring.liveBeansView.mbeanDomain' in [systemEnvironment]
+2015-03-03 21:01:15,421 DEBUG [org.springframework.core.env.PropertySourcesPropertyResolver] - Could not find key 'spring.liveBeansView.mbeanDomain' in any property source. Returning [null]
+2015-03-03 21:01:15,421 DEBUG [org.springframework.test.context.CacheAwareContextLoaderDelegate] - Storing ApplicationContext in cache under key [[MergedContextConfiguration@173940bb testClass = AccountDAOTest, locations = '{classpath*:/spring-hibernate.xml, classpath*:/spring-activiti.xml}', classes = '{}', contextInitializerClasses = '[]', activeProfiles = '{}', contextLoader = 'org.springframework.test.context.support.DelegatingSmartContextLoader', parent = [null]]].
+2015-03-03 21:01:15,430 DEBUG [org.springframework.beans.factory.annotation.InjectionMetadata] - Processing injected method of bean 'test.dao.AccountDAOTest': AutowiredFieldElement for private nju.software.dao.AccessoryDAO test.dao.AccountDAOTest.accessoryDAO
+2015-03-03 21:01:15,431 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'nju.software.dao.impl.AccessoryDAOImpl'
+2015-03-03 21:01:15,432 DEBUG [org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor] - Autowiring by type from bean name 'test.dao.AccountDAOTest' to bean named 'nju.software.dao.impl.AccessoryDAOImpl'
+2015-03-03 21:01:15,432 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'org.springframework.transaction.config.internalTransactionAdvisor'
+2015-03-03 21:01:15,440 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'transactionManager'
+2015-03-03 21:01:15,442 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Creating new transaction with name [nju.software.dao.impl.AccessoryDAOImpl.findByPath]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT; ''
+2015-03-03 21:01:15,442 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Opened new Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@5b67dd36 updates=org.hibernate.engine.spi.ExecutableList@7fec331b deletions=org.hibernate.engine.spi.ExecutableList@6c0f7339 orphanRemovals=org.hibernate.engine.spi.ExecutableList@6a55da9b collectionCreations=org.hibernate.engine.spi.ExecutableList@2a832ca7 collectionRemovals=org.hibernate.engine.spi.ExecutableList@9e89dbf collectionUpdates=org.hibernate.engine.spi.ExecutableList@6cc6bae collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@56b16ffe unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])] for Hibernate transaction
+2015-03-03 21:01:15,442 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Preparing JDBC Connection of Hibernate Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@5b67dd36 updates=org.hibernate.engine.spi.ExecutableList@7fec331b deletions=org.hibernate.engine.spi.ExecutableList@6c0f7339 orphanRemovals=org.hibernate.engine.spi.ExecutableList@6a55da9b collectionCreations=org.hibernate.engine.spi.ExecutableList@2a832ca7 collectionRemovals=org.hibernate.engine.spi.ExecutableList@9e89dbf collectionUpdates=org.hibernate.engine.spi.ExecutableList@6cc6bae collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@56b16ffe unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])]
+2015-03-03 21:01:15,442 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Obtaining JDBC connection
+2015-03-03 21:01:15,442 DEBUG [org.springframework.jdbc.datasource.DriverManagerDataSource] - Creating new JDBC DriverManager Connection to [jdbc:mysql://localhost:3306/activiti?createDatabaseIfNotExist=true]
+2015-03-03 21:01:15,477 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Obtained JDBC connection
+2015-03-03 21:01:15,477 DEBUG [org.hibernate.engine.transaction.spi.AbstractTransactionImpl] - begin
+2015-03-03 21:01:15,478 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - initial autocommit status: true
+2015-03-03 21:01:15,478 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - disabling autocommit
+2015-03-03 21:01:15,479 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Exposing Hibernate transaction as JDBC transaction [com.mysql.jdbc.JDBC4Connection@39df773d]
+2015-03-03 21:01:15,624 DEBUG [org.hibernate.hql.internal.ast.QueryTranslatorImpl] - parse() - HQL: from nju.software.entity.Accessory as a where a.path = ?
+2015-03-03 21:01:15,645 DEBUG [org.hibernate.hql.internal.ast.QueryTranslatorImpl] - --- HQL AST ---
+ \-[QUERY] Node: 'query'
+    +-[SELECT_FROM] Node: 'SELECT_FROM'
+    |  \-[FROM] Node: 'from'
+    |     \-[RANGE] Node: 'RANGE'
+    |        +-[DOT] Node: '.'
+    |        |  +-[DOT] Node: '.'
+    |        |  |  +-[DOT] Node: '.'
+    |        |  |  |  +-[IDENT] Node: 'nju'
+    |        |  |  |  \-[IDENT] Node: 'software'
+    |        |  |  \-[IDENT] Node: 'entity'
+    |        |  \-[IDENT] Node: 'Accessory'
+    |        \-[ALIAS] Node: 'a'
+    \-[WHERE] Node: 'where'
+       \-[EQ] Node: '='
+          +-[DOT] Node: '.'
+          |  +-[IDENT] Node: 'a'
+          |  \-[IDENT] Node: 'path'
+          \-[PARAM] Node: '?'
+
+2015-03-03 21:01:15,645 DEBUG [org.hibernate.hql.internal.ast.ErrorCounter] - throwQueryException() : no errors
+2015-03-03 21:01:15,686 DEBUG [org.hibernate.hql.internal.antlr.HqlSqlBaseWalker] - select << begin [level=1, statement=select]
+2015-03-03 21:01:15,715 DEBUG [org.hibernate.hql.internal.ast.tree.FromElement] - FromClause{level=1} : nju.software.entity.Accessory (a) -> accessory0_
+2015-03-03 21:01:15,718 DEBUG [org.hibernate.hql.internal.ast.tree.FromReferenceNode] - Resolved : a -> accessory0_.accessory_id
+2015-03-03 21:01:15,719 DEBUG [org.hibernate.hql.internal.ast.tree.DotNode] - getDataType() : path -> org.hibernate.type.StringType@6a776719
+2015-03-03 21:01:15,720 DEBUG [org.hibernate.hql.internal.ast.tree.FromReferenceNode] - Resolved : a.path -> accessory0_.path
+2015-03-03 21:01:15,721 WARN [org.hibernate.hql.internal.ast.HqlSqlWalker] - [DEPRECATION] Encountered positional parameter near line 1, column 56.  Positional parameter are considered deprecated; use named parameters or JPA-style positional parameters instead.
+2015-03-03 21:01:15,723 DEBUG [org.hibernate.hql.internal.antlr.HqlSqlBaseWalker] - select : finishing up [level=1, statement=select]
+2015-03-03 21:01:15,723 DEBUG [org.hibernate.hql.internal.ast.HqlSqlWalker] - processQuery() :  ( SELECT ( FromClause{level=1} accessory accessory0_ ) ( where ( = ( accessory0_.path accessory0_.accessory_id path ) ? ) ) )
+2015-03-03 21:01:15,728 DEBUG [org.hibernate.hql.internal.ast.HqlSqlWalker] - Derived SELECT clause created.
+2015-03-03 21:01:15,735 DEBUG [org.hibernate.hql.internal.ast.util.JoinProcessor] - Using FROM fragment [accessory accessory0_]
+2015-03-03 21:01:15,735 DEBUG [org.hibernate.hql.internal.antlr.HqlSqlBaseWalker] - select >> end [level=1, statement=select]
+2015-03-03 21:01:15,736 DEBUG [org.hibernate.hql.internal.ast.QueryTranslatorImpl] - --- SQL AST ---
+ \-[SELECT] QueryNode: 'SELECT'  querySpaces (accessory)
+    +-[SELECT_CLAUSE] SelectClause: '{derived select clause}'
+    |  +-[SELECT_EXPR] SelectExpressionImpl: 'accessory0_.accessory_id as accessor1_0_' {FromElement{explicit,not a collection join,not a fetch join,fetch non-lazy properties,classAlias=a,role=null,tableName=accessory,tableAlias=accessory0_,origin=null,columns={,className=nju.software.entity.Accessory}}}
+    |  \-[SQL_TOKEN] SqlFragment: 'accessory0_.path as path2_0_, accessory0_.suggestion_id as suggesti3_0_'
+    +-[FROM] FromClause: 'from' FromClause{level=1, fromElementCounter=1, fromElements=1, fromElementByClassAlias=[a], fromElementByTableAlias=[accessory0_], fromElementsByPath=[], collectionJoinFromElementsByPath=[], impliedElements=[]}
+    |  \-[FROM_FRAGMENT] FromElement: 'accessory accessory0_' FromElement{explicit,not a collection join,not a fetch join,fetch non-lazy properties,classAlias=a,role=null,tableName=accessory,tableAlias=accessory0_,origin=null,columns={,className=nju.software.entity.Accessory}}
+    \-[WHERE] SqlNode: 'where'
+       \-[EQ] BinaryLogicOperatorNode: '='
+          +-[DOT] DotNode: 'accessory0_.path' {propertyName=path,dereferenceType=PRIMITIVE,getPropertyPath=path,path=a.path,tableAlias=accessory0_,className=nju.software.entity.Accessory,classAlias=a}
+          |  +-[ALIAS_REF] IdentNode: 'accessory0_.accessory_id' {alias=a, className=nju.software.entity.Accessory, tableAlias=accessory0_}
+          |  \-[IDENT] IdentNode: 'path' {originalText=path}
+          \-[PARAM] ParameterNode: '?' {ordinal=0, expectedType=org.hibernate.type.StringType@6a776719}
+
+2015-03-03 21:01:15,736 DEBUG [org.hibernate.hql.internal.ast.ErrorCounter] - throwQueryException() : no errors
+2015-03-03 21:01:15,743 DEBUG [org.hibernate.hql.internal.ast.QueryTranslatorImpl] - HQL: from nju.software.entity.Accessory as a where a.path = ?
+2015-03-03 21:01:15,743 DEBUG [org.hibernate.hql.internal.ast.QueryTranslatorImpl] - SQL: select accessory0_.accessory_id as accessor1_0_, accessory0_.path as path2_0_, accessory0_.suggestion_id as suggesti3_0_ from accessory accessory0_ where accessory0_.path=?
+2015-03-03 21:01:15,743 DEBUG [org.hibernate.hql.internal.ast.ErrorCounter] - throwQueryException() : no errors
+2015-03-03 21:01:15,753 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'sessionFactory'
+2015-03-03 21:01:15,756 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Initiating transaction rollback
+2015-03-03 21:01:15,756 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Rolling back Hibernate transaction on Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@5b67dd36 updates=org.hibernate.engine.spi.ExecutableList@7fec331b deletions=org.hibernate.engine.spi.ExecutableList@6c0f7339 orphanRemovals=org.hibernate.engine.spi.ExecutableList@6a55da9b collectionCreations=org.hibernate.engine.spi.ExecutableList@2a832ca7 collectionRemovals=org.hibernate.engine.spi.ExecutableList@9e89dbf collectionUpdates=org.hibernate.engine.spi.ExecutableList@6cc6bae collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@56b16ffe unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])]
+2015-03-03 21:01:15,756 DEBUG [org.hibernate.engine.transaction.spi.AbstractTransactionImpl] - rolling back
+2015-03-03 21:01:15,756 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - rolled JDBC Connection
+2015-03-03 21:01:15,756 DEBUG [org.hibernate.engine.transaction.internal.jdbc.JdbcTransaction] - re-enabling autocommit
+2015-03-03 21:01:15,756 DEBUG [org.springframework.orm.hibernate4.HibernateTransactionManager] - Closing Hibernate Session [SessionImpl(PersistenceContext[entityKeys=[],collectionKeys=[]];ActionQueue[insertions=org.hibernate.engine.spi.ExecutableList@5b67dd36 updates=org.hibernate.engine.spi.ExecutableList@7fec331b deletions=org.hibernate.engine.spi.ExecutableList@6c0f7339 orphanRemovals=org.hibernate.engine.spi.ExecutableList@6a55da9b collectionCreations=org.hibernate.engine.spi.ExecutableList@2a832ca7 collectionRemovals=org.hibernate.engine.spi.ExecutableList@9e89dbf collectionUpdates=org.hibernate.engine.spi.ExecutableList@6cc6bae collectionQueuedOps=org.hibernate.engine.spi.ExecutableList@56b16ffe unresolvedInsertDependencies=UnresolvedEntityInsertActions[]])] after transaction
+2015-03-03 21:01:15,756 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Releasing JDBC connection
+2015-03-03 21:01:15,757 DEBUG [org.hibernate.engine.jdbc.internal.LogicalConnectionImpl] - Released JDBC connection
+2015-03-03 21:01:15,758 DEBUG [org.springframework.test.context.support.DirtiesContextTestExecutionListener] - After test method: context [DefaultTestContext@7f416b2d testClass = AccountDAOTest, testInstance = test.dao.AccountDAOTest@1fe398a0, testMethod = test@AccountDAOTest, testException = org.springframework.orm.hibernate4.HibernateQueryException: could not locate named parameter [0]; nested exception is org.hibernate.QueryParameterException: could not locate named parameter [0], mergedContextConfiguration = [MergedContextConfiguration@173940bb testClass = AccountDAOTest, locations = '{classpath*:/spring-hibernate.xml, classpath*:/spring-activiti.xml}', classes = '{}', contextInitializerClasses = '[]', activeProfiles = '{}', contextLoader = 'org.springframework.test.context.support.DelegatingSmartContextLoader', parent = [null]]], class dirties context [false], class mode [null], method dirties context [false].
+2015-03-03 21:01:15,764 DEBUG [org.springframework.test.context.support.DirtiesContextTestExecutionListener] - After test class: context [DefaultTestContext@7f416b2d testClass = AccountDAOTest, testInstance = [null], testMethod = [null], testException = [null], mergedContextConfiguration = [MergedContextConfiguration@173940bb testClass = AccountDAOTest, locations = '{classpath*:/spring-hibernate.xml, classpath*:/spring-activiti.xml}', classes = '{}', contextInitializerClasses = '[]', activeProfiles = '{}', contextLoader = 'org.springframework.test.context.support.DelegatingSmartContextLoader', parent = [null]]], dirtiesContext [false].
+2015-03-03 21:01:15,766 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@5c78bca: startup date [Tue Mar 03 21:01:08 CST 2015]; root of context hierarchy
+2015-03-03 21:01:15,768 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Returning cached instance of singleton bean 'lifecycleProcessor'
+2015-03-03 21:01:15,768 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Destroying singletons in org.springframework.beans.factory.support.DefaultListableBeanFactory@4663a9e0: defining beans [org.springframework.context.support.PropertySourcesPlaceholderConfigurer#0,nju.software.dao.common.impl.BaseDaoImpl,nju.software.dao.impl.AccessoryDAOImpl,nju.software.dao.impl.AccountDAOImpl,nju.software.dao.impl.ClassesDAOImpl,nju.software.dao.impl.CourseDAOImpl,nju.software.dao.impl.DefenceDAOImpl,nju.software.dao.impl.DirectorDAOImpl,nju.software.dao.impl.FeeDAOImpl,nju.software.dao.impl.HeadTeacherDAOImpl,nju.software.dao.impl.InterimReportDAOImpl,nju.software.dao.impl.JudgeDAOImpl,nju.software.dao.impl.NoticeDAOImpl,nju.software.dao.impl.PaperDAOImpl,nju.software.dao.impl.ProposalDAOImpl,nju.software.dao.impl.StudentCourseInfoDAOImpl,nju.software.dao.impl.StudentDAOImpl,nju.software.dao.impl.StudentScoreDAOImpl,nju.software.dao.SuggestionDAOImpl,nju.software.dao.impl.SuggestionReplyDAOImpl,nju.software.dao.impl.TeacherDAOImpl,nju.software.dao.impl.TeachingPointDAOImpl,org.springframework.context.annotation.internalConfigurationAnnotationProcessor,org.springframework.context.annotation.internalAutowiredAnnotationProcessor,org.springframework.context.annotation.internalRequiredAnnotationProcessor,org.springframework.context.annotation.internalCommonAnnotationProcessor,org.springframework.context.annotation.internalPersistenceAnnotationProcessor,sessionFactory,dataSource,transactionManager,org.springframework.aop.config.internalAutoProxyCreator,org.springframework.transaction.annotation.AnnotationTransactionAttributeSource#0,org.springframework.transaction.interceptor.TransactionInterceptor#0,org.springframework.transaction.config.internalTransactionAdvisor,persistenceExceptionTranslationPostProcessor,jdbcTemplate,processEngineConfiguration,processEngineFactory,repositoryService,runtimeService,formService,identityService,taskService,historyService,managementService,org.springframework.context.annotation.ConfigurationClassPostProcessor.importAwareProcessor,org.springframework.context.annotation.ConfigurationClassPostProcessor.enhancedConfigurationProcessor]; root of factory hierarchy
+2015-03-03 21:01:15,779 DEBUG [org.springframework.beans.factory.support.DisposableBeanAdapter] - Invoking destroy() on bean with name 'processEngineFactory'
+2015-03-03 21:01:15,782 DEBUG [org.springframework.beans.factory.support.DefaultListableBeanFactory] - Retrieved dependent beans for bean 'nju.software.dao.impl.AccessoryDAOImpl': [test.dao.AccountDAOTest]
+2015-03-03 21:01:15,783 DEBUG [org.springframework.beans.factory.support.DisposableBeanAdapter] - Invoking destroy() on bean with name 'sessionFactory'
+2015-03-03 21:01:15,783 DEBUG [org.hibernate.internal.SessionFactoryImpl] - HHH000031: Closing
+2015-03-03 21:01:15,783 DEBUG [org.hibernate.boot.registry.internal.BootstrapServiceRegistryImpl] - Implicitly destroying Boot-strap registry on de-registration of all child ServiceRegistries
+2015-03-03 21:01:15,783 DEBUG [org.hibernate.service.internal.AbstractServiceRegistryImpl] - Implicitly destroying ServiceRegistry on de-registration of all child ServiceRegistries
+2015-03-03 21:04:12,581 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:04:13,097 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:04:13,174 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@18515783: startup date [Tue Mar 03 21:04:13 CST 2015]; root of context hierarchy
+2015-03-03 21:04:13,398 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:04:13,580 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:04:13,673 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:04:16,530 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@3970604f] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:04:18,746 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:04:19,050 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@18515783: startup date [Tue Mar 03 21:04:13 CST 2015]; root of context hierarchy
+2015-03-03 21:05:42,559 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:05:43,062 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:05:43,153 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@3a333bdb: startup date [Tue Mar 03 21:05:43 CST 2015]; root of context hierarchy
+2015-03-03 21:05:43,376 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:05:43,551 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:05:43,628 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:05:46,630 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@461956ee] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:05:48,872 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:05:49,195 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@3a333bdb: startup date [Tue Mar 03 21:05:43 CST 2015]; root of context hierarchy
+2015-03-03 21:08:33,630 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:08:34,129 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:08:34,188 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@2457256f: startup date [Tue Mar 03 21:08:34 CST 2015]; root of context hierarchy
+2015-03-03 21:08:34,414 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:08:34,587 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:08:34,661 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:08:37,530 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@3970604f] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:08:39,660 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:08:39,875 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@2457256f: startup date [Tue Mar 03 21:08:34 CST 2015]; root of context hierarchy
+2015-03-03 21:10:28,826 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:10:29,324 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:10:29,374 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@555aad0c: startup date [Tue Mar 03 21:10:29 CST 2015]; root of context hierarchy
+2015-03-03 21:10:29,597 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:10:29,771 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:10:29,839 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:10:32,654 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@488b9d9f] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:10:34,768 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:10:34,985 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@555aad0c: startup date [Tue Mar 03 21:10:29 CST 2015]; root of context hierarchy
+2015-03-03 21:11:05,088 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:11:05,582 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:11:05,636 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@34171a9b: startup date [Tue Mar 03 21:11:05 CST 2015]; root of context hierarchy
+2015-03-03 21:11:05,851 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:11:06,019 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:11:06,094 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:11:08,853 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@79cf30f4] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:11:10,940 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:11:11,167 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@34171a9b: startup date [Tue Mar 03 21:11:05 CST 2015]; root of context hierarchy
+2015-03-03 21:11:56,664 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:11:57,175 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:11:57,243 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@58d3d0d4: startup date [Tue Mar 03 21:11:57 CST 2015]; root of context hierarchy
+2015-03-03 21:11:57,455 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:11:57,625 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:11:57,696 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:12:00,409 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@1bd86555] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:12:02,597 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:12:03,055 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@58d3d0d4: startup date [Tue Mar 03 21:11:57 CST 2015]; root of context hierarchy
+2015-03-03 21:17:38,899 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:17:39,514 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:17:39,580 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@34171a9b: startup date [Tue Mar 03 21:17:39 CST 2015]; root of context hierarchy
+2015-03-03 21:17:39,839 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:17:40,046 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:17:40,132 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:17:43,162 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@548f2dd2] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:17:45,276 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:17:45,568 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.path = ?
+2015-03-03 21:17:45,789 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@34171a9b: startup date [Tue Mar 03 21:17:39 CST 2015]; root of context hierarchy
+2015-03-03 21:20:22,943 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:20:23,462 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:20:23,518 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@3a333bdb: startup date [Tue Mar 03 21:20:23 CST 2015]; root of context hierarchy
+2015-03-03 21:20:23,752 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:20:23,937 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:20:24,009 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:20:26,929 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@1292a6de] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:20:29,204 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:20:29,484 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.path = ?
+2015-03-03 21:20:29,702 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [VARCHAR] - [abcde]
+2015-03-03 21:20:29,729 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@3a333bdb: startup date [Tue Mar 03 21:20:23 CST 2015]; root of context hierarchy
+2015-03-03 21:21:43,377 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:21:43,959 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:21:44,037 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@799ec4b6: startup date [Tue Mar 03 21:21:44 CST 2015]; root of context hierarchy
+2015-03-03 21:21:44,322 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:21:44,549 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:21:44,657 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:21:47,676 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@132edd0d] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:21:49,813 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:21:50,132 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.path = ?
+2015-03-03 21:21:50,367 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [VARCHAR] - [abcde]
+2015-03-03 21:21:50,393 DEBUG [test.dao.AccountDAOTest] - list.size() = 1
+2015-03-03 21:21:50,397 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@799ec4b6: startup date [Tue Mar 03 21:21:44 CST 2015]; root of context hierarchy
+2015-03-03 21:24:09,274 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:24:09,796 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:24:09,850 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@58d3d0d4: startup date [Tue Mar 03 21:24:09 CST 2015]; root of context hierarchy
+2015-03-03 21:24:10,079 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:24:10,266 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:24:10,361 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:24:13,211 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@635bc5cc] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:24:15,441 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:24:15,713 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.accessoryId = ?
+2015-03-03 21:24:15,911 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [INTEGER] - [1]
+2015-03-03 21:24:15,942 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@58d3d0d4: startup date [Tue Mar 03 21:24:09 CST 2015]; root of context hierarchy
+2015-03-03 21:25:43,201 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:25:43,699 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:25:43,751 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@3a333bdb: startup date [Tue Mar 03 21:25:43 CST 2015]; root of context hierarchy
+2015-03-03 21:25:43,980 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:25:44,181 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:25:44,340 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:25:47,126 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@5eb98063] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:25:49,277 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:25:49,582 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.accessoryId = ?
+2015-03-03 21:25:49,774 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [INTEGER] - [1]
+2015-03-03 21:25:49,835 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@3a333bdb: startup date [Tue Mar 03 21:25:43 CST 2015]; root of context hierarchy
+2015-03-03 21:27:56,878 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 21:27:57,427 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 21:27:57,491 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@2457256f: startup date [Tue Mar 03 21:27:57 CST 2015]; root of context hierarchy
+2015-03-03 21:27:57,731 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 21:27:57,929 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 21:27:58,012 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 21:28:01,012 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@a7bd7a9] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 21:28:03,453 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 21:28:03,767 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@2457256f: startup date [Tue Mar 03 21:27:57 CST 2015]; root of context hierarchy
+2015-03-03 22:41:52,358 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 22:41:52,913 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 22:41:52,969 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@2684c71b: startup date [Tue Mar 03 22:41:52 CST 2015]; root of context hierarchy
+2015-03-03 22:41:53,202 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 22:41:53,393 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 22:41:53,475 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 22:41:56,815 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@7ab1a1a4] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 22:41:59,135 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 22:41:59,499 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@2684c71b: startup date [Tue Mar 03 22:41:52 CST 2015]; root of context hierarchy
+2015-03-03 22:43:53,079 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 22:43:53,636 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 22:43:53,695 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@58d3d0d4: startup date [Tue Mar 03 22:43:53 CST 2015]; root of context hierarchy
+2015-03-03 22:43:53,920 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 22:43:54,112 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 22:43:54,187 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 22:43:57,285 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@5bc5960f] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 22:43:59,752 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 22:44:00,111 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@58d3d0d4: startup date [Tue Mar 03 22:43:53 CST 2015]; root of context hierarchy
+2015-03-03 22:46:43,901 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 22:46:44,478 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 22:46:44,545 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@799ec4b6: startup date [Tue Mar 03 22:46:44 CST 2015]; root of context hierarchy
+2015-03-03 22:46:44,775 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 22:46:44,966 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 22:46:45,047 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 22:46:48,042 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@57a9a727] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 22:46:50,400 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 22:46:50,643 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@799ec4b6: startup date [Tue Mar 03 22:46:44 CST 2015]; root of context hierarchy
+2015-03-03 22:48:52,886 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 22:48:53,416 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 22:48:53,472 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@2684c71b: startup date [Tue Mar 03 22:48:53 CST 2015]; root of context hierarchy
+2015-03-03 22:48:53,704 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 22:48:53,881 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 22:48:53,984 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 22:48:56,934 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@42f00500] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 22:48:59,272 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 22:48:59,598 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@2684c71b: startup date [Tue Mar 03 22:48:53 CST 2015]; root of context hierarchy
+2015-03-03 22:54:47,088 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 22:54:47,546 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 22:54:47,593 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@799ec4b6: startup date [Tue Mar 03 22:54:47 CST 2015]; root of context hierarchy
+2015-03-03 22:54:47,804 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 22:54:47,967 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 22:54:48,038 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 22:54:50,701 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@2a1f0c81] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 22:54:52,787 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 22:54:53,008 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@799ec4b6: startup date [Tue Mar 03 22:54:47 CST 2015]; root of context hierarchy
+2015-03-03 22:58:10,755 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 22:58:11,315 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 22:58:11,369 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@5059a6b5: startup date [Tue Mar 03 22:58:11 CST 2015]; root of context hierarchy
+2015-03-03 22:58:11,628 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 22:58:11,821 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 22:58:11,907 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 22:58:15,148 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@6a6877c1] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 22:58:17,399 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 22:58:17,696 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@5059a6b5: startup date [Tue Mar 03 22:58:11 CST 2015]; root of context hierarchy
+2015-03-03 23:07:04,455 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 23:07:04,910 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 23:07:04,971 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@2a0aa21e: startup date [Tue Mar 03 23:07:04 CST 2015]; root of context hierarchy
+2015-03-03 23:07:05,195 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 23:07:05,310 ERROR [org.springframework.test.context.TestContextManager] - Caught exception while allowing TestExecutionListener [org.springframework.test.context.support.DependencyInjectionTestExecutionListener@448b495a] to prepare test instance [test.dao.AccountDAOTest@147cd6de]
+java.lang.IllegalStateException: Failed to load ApplicationContext
+	at org.springframework.test.context.CacheAwareContextLoaderDelegate.loadContext(CacheAwareContextLoaderDelegate.java:99)
+	at org.springframework.test.context.DefaultTestContext.getApplicationContext(DefaultTestContext.java:101)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.injectDependencies(DependencyInjectionTestExecutionListener.java:109)
+	at org.springframework.test.context.support.DependencyInjectionTestExecutionListener.prepareTestInstance(DependencyInjectionTestExecutionListener.java:75)
+	at org.springframework.test.context.TestContextManager.prepareTestInstance(TestContextManager.java:331)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.createTest(SpringJUnit4ClassRunner.java:213)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner$1.runReflectiveCall(SpringJUnit4ClassRunner.java:290)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.methodBlock(SpringJUnit4ClassRunner.java:292)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:233)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.runChild(SpringJUnit4ClassRunner.java:87)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.springframework.test.context.junit4.statements.RunBeforeTestClassCallbacks.evaluate(RunBeforeTestClassCallbacks.java:61)
+	at org.springframework.test.context.junit4.statements.RunAfterTestClassCallbacks.evaluate(RunAfterTestClassCallbacks.java:71)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.springframework.test.context.junit4.SpringJUnit4ClassRunner.run(SpringJUnit4ClassRunner.java:176)
+	at org.eclipse.jdt.internal.junit4.runner.JUnit4TestReference.run(JUnit4TestReference.java:50)
+	at org.eclipse.jdt.internal.junit.runner.TestExecution.run(TestExecution.java:38)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(RemoteTestRunner.java:459)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.runTests(RemoteTestRunner.java:675)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.run(RemoteTestRunner.java:382)
+	at org.eclipse.jdt.internal.junit.runner.RemoteTestRunner.main(RemoteTestRunner.java:192)
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'nju.software.dao.common.impl.BaseDaoImpl' defined in file [G:\360data\workspace\activitilab\target\classes\nju\software\dao\common\impl\BaseDaoImpl.class]: Instantiation of bean failed; nested exception is org.springframework.beans.BeanInstantiationException: Could not instantiate bean class [nju.software.dao.common.impl.BaseDaoImpl]: Constructor threw exception; nested exception is java.lang.ClassCastException: java.lang.Class cannot be cast to java.lang.reflect.ParameterizedType
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateBean(AbstractAutowireCapableBeanFactory.java:1076)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1021)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:504)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:475)
+	at org.springframework.beans.factory.support.AbstractBeanFactory$1.getObject(AbstractBeanFactory.java:302)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:228)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:298)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:193)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:703)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:760)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:482)
+	at org.springframework.test.context.support.AbstractGenericContextLoader.loadContext(AbstractGenericContextLoader.java:125)
+	at org.springframework.test.context.support.AbstractGenericContextLoader.loadContext(AbstractGenericContextLoader.java:60)
+	at org.springframework.test.context.support.AbstractDelegatingSmartContextLoader.delegateLoading(AbstractDelegatingSmartContextLoader.java:100)
+	at org.springframework.test.context.support.AbstractDelegatingSmartContextLoader.loadContext(AbstractDelegatingSmartContextLoader.java:250)
+	at org.springframework.test.context.CacheAwareContextLoaderDelegate.loadContextInternal(CacheAwareContextLoaderDelegate.java:64)
+	at org.springframework.test.context.CacheAwareContextLoaderDelegate.loadContext(CacheAwareContextLoaderDelegate.java:91)
+	... 25 more
+Caused by: org.springframework.beans.BeanInstantiationException: Could not instantiate bean class [nju.software.dao.common.impl.BaseDaoImpl]: Constructor threw exception; nested exception is java.lang.ClassCastException: java.lang.Class cannot be cast to java.lang.reflect.ParameterizedType
+	at org.springframework.beans.BeanUtils.instantiateClass(BeanUtils.java:164)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:89)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateBean(AbstractAutowireCapableBeanFactory.java:1069)
+	... 41 more
+Caused by: java.lang.ClassCastException: java.lang.Class cannot be cast to java.lang.reflect.ParameterizedType
+	at nju.software.dao.common.impl.BaseDaoImpl.<init>(BaseDaoImpl.java:45)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(Unknown Source)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(Unknown Source)
+	at java.lang.reflect.Constructor.newInstance(Unknown Source)
+	at org.springframework.beans.BeanUtils.instantiateClass(BeanUtils.java:148)
+	... 43 more
+2015-03-03 23:11:09,247 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-03 23:11:09,706 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-03 23:11:09,758 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@2dcfde49: startup date [Tue Mar 03 23:11:09 CST 2015]; root of context hierarchy
+2015-03-03 23:11:09,976 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-03 23:11:10,153 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-03 23:11:10,220 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-03 23:11:12,848 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@4bff0083] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-03 23:11:14,899 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-03 23:11:15,363 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@2dcfde49: startup date [Tue Mar 03 23:11:09 CST 2015]; root of context hierarchy
+2015-03-04 09:30:35,636 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-04 09:30:36,173 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-04 09:30:36,235 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@6638c07a: startup date [Wed Mar 04 09:30:36 CST 2015]; root of context hierarchy
+2015-03-04 09:30:36,472 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-04 09:30:36,641 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-04 09:30:36,715 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-04 09:30:39,463 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@46644e4b] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-04 09:30:41,651 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-04 09:30:41,929 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - select en from Accessory en
+2015-03-04 09:30:42,172 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@6638c07a: startup date [Wed Mar 04 09:30:36 CST 2015]; root of context hierarchy
+2015-03-04 09:33:52,785 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-04 09:33:53,313 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-04 09:33:53,370 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@7038ce7b: startup date [Wed Mar 04 09:33:53 CST 2015]; root of context hierarchy
+2015-03-04 09:33:53,589 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-04 09:33:53,759 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-04 09:33:53,849 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-04 09:33:56,618 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@527abf6f] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-04 09:33:58,813 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-04 09:33:59,132 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [VARCHAR] - [bill]
+2015-03-04 09:33:59,133 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [2] as [INTEGER] - [2]
+2015-03-04 09:33:59,266 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.suggesstionId = ?
+2015-03-04 09:33:59,394 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@7038ce7b: startup date [Wed Mar 04 09:33:53 CST 2015]; root of context hierarchy
+2015-03-04 09:38:05,366 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-hibernate.xml]
+2015-03-04 09:38:05,903 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from URL [file:/G:/360data/workspace/activitilab/target/classes/spring-activiti.xml]
+2015-03-04 09:38:05,948 INFO [org.springframework.context.support.GenericApplicationContext] - Refreshing org.springframework.context.support.GenericApplicationContext@57799932: startup date [Wed Mar 04 09:38:05 CST 2015]; root of context hierarchy
+2015-03-04 09:38:06,173 INFO [org.springframework.context.support.PropertySourcesPlaceholderConfigurer] - Loading properties file from URL [file:/G:/360data/workspace/activitilab/target/classes/persistence-mysql.properties]
+2015-03-04 09:38:06,340 INFO [org.springframework.jdbc.datasource.DriverManagerDataSource] - Loaded JDBC driver: com.mysql.jdbc.Driver
+2015-03-04 09:38:06,448 DEBUG [org.jboss.logging] - Logging Provider: org.jboss.logging.Log4jLoggerProvider
+2015-03-04 09:38:09,163 INFO [org.springframework.orm.hibernate4.HibernateTransactionManager] - Using DataSource [org.springframework.jdbc.datasource.DriverManagerDataSource@3970604f] of Hibernate SessionFactory for HibernateTransactionManager
+2015-03-04 09:38:11,227 INFO [org.activiti.engine.impl.ProcessEngineImpl] - ProcessEngine default created
+2015-03-04 09:38:11,536 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [VARCHAR] - [bill]
+2015-03-04 09:38:11,537 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [2] as [INTEGER] - [2]
+2015-03-04 09:38:12,132 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.suggestionId = ?
+2015-03-04 09:38:12,267 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [INTEGER] - [2]
+2015-03-04 09:38:12,288 DEBUG [nju.software.dao.common.impl.BaseDaoImpl] - from Accessory as a where a.path = ?
+2015-03-04 09:38:12,291 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [VARCHAR] - [bill]
+2015-03-04 09:38:12,399 TRACE [org.hibernate.type.descriptor.sql.BasicBinder] - binding parameter [1] as [INTEGER] - [3]
+2015-03-04 09:38:12,552 INFO [org.springframework.context.support.GenericApplicationContext] - Closing org.springframework.context.support.GenericApplicationContext@57799932: startup date [Wed Mar 04 09:38:05 CST 2015]; root of context hierarchy

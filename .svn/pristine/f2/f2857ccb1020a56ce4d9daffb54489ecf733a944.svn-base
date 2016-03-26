@@ -1,0 +1,107 @@
+package nju.software.controller;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.atmosphere.util.AtmosphereUtils;
+import nju.software.service.MessageService;
+import nju.software.web.vo.Msg;
+
+import org.atmosphere.cpr.AtmosphereResource;
+import org.atmosphere.cpr.Broadcaster;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 消息推送控制类
+ * @author Cancy
+ *
+ */
+@Controller
+public class MessageController {
+	@Autowired
+	private MessageService messageService;
+	
+	private static Logger logger = LoggerFactory.getLogger(MessageController.class);
+	
+	private SimpMessagingTemplate template;
+	
+	@Autowired
+	public MessageController(SimpMessagingTemplate t) {
+		this.template = t;
+	}
+	
+	@SubscribeMapping("/initMessage/{accountId}/{teacherId}")
+	public Msg getMsg(@DestinationVariable("accountId") int accountId, 
+			@DestinationVariable("teacherId") int teacherId) {
+		
+		//int teacherId = 28;
+		logger.debug("teacher id is {}", teacherId);
+		//int accountId= 1006;
+		Msg msg = new Msg();
+		
+		if(teacherId != 0) {
+			msg = messageService.getMsg(teacherId, accountId);
+		}
+		return msg;
+	}
+	
+	@MessageMapping("/getMsg/{accountId}/{teacherId}")
+	@SendTo("/getMessage")
+	public Msg getMsg2(@DestinationVariable("accountId") int accountId, 
+			@DestinationVariable("teacherId") int teacherId) {
+		logger.debug("send message");
+		
+		//int teacherId = 28;
+		//logger.debug("teacher id is {}", teacherId);
+		//int accountId= 1006;
+		Msg msg = new Msg();
+		
+		if(teacherId != 0) {
+			msg = messageService.getMsg(teacherId, accountId);
+		}
+		logger.debug("message: {}", msg);
+		return msg;
+		//this.template.convertAndSend("/getMsg", msg);
+	}
+
+
+	/*@RequestMapping(value="getMsg", method=RequestMethod.POST)
+	@ResponseBody
+	public void getMsgAsync(AtmosphereResource resource, final HttpServletRequest request, final HttpServletResponse response){
+		AtmosphereUtils.suspend(resource);
+		final Broadcaster bc = resource.getBroadcaster();  
+		//logger.info("Atmo Resource Size: " + bc.getAtmosphereResources().size());
+		bc.scheduleFixedBroadcast(new Callable<String>() {
+			public String call() throws Exception {
+				if(request.getSession() == null) {
+					return null;
+				}
+				int teacherId = (Integer) ((request.getSession().getAttribute("teacherId") != null) ? (request.getSession().getAttribute("teacherId")) : 0);
+				//logger.debug("teacher id is {}", teacherId);
+				int accountId=(Integer) ((request.getSession().getAttribute("accountId")!=null)?(request.getSession().getAttribute("accountId")):0);
+				Msg msg = new Msg();
+				
+				if(teacherId != 0) {
+					msg = messageService.getMsg(teacherId,accountId);
+				}
+				return JSONObject.fromObject(msg).toString();
+			}
+		}, 30, TimeUnit.SECONDS);
+	}*/
+}

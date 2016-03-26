@@ -1,0 +1,318 @@
+package nju.software.manager;
+
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Accessory;
+import nju.software.entity.Account;
+import nju.software.entity.Suggestion;
+import nju.software.entity.SuggestionReply;
+import nju.software.jsonmodel.JsonSuggestion;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+import nju.software.util.FileOperateUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+public class SuggestionManager {
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(SuggestionManager.class);
+
+	/**
+	 * 添加一条会话
+	 * @param suggestionJSONString
+	 * @param senderName 发送者姓名
+	 * @return
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public JSONObject addSuggestion(String suggestionJSONString, String senderName) {
+		JSONObject stu_json = JSONObject.fromObject(suggestionJSONString);
+		JSONArray receiver_list = (JSONArray) stu_json.get("receiver_list");//收件人列表
+		String result_json = "";//返回执行结果
+		// 每个收件人对应一条记录
+		for (int i = 0; i < receiver_list.size(); i++) {
+			//将从页面上获得的数据放到对象中
+			Suggestion sugg = new Suggestion();
+			sugg.setLevel(0);
+			sugg.setPaperId(0);
+			sugg.setReceiverId(receiver_list.getInt(i));
+			sugg.setSuggestContent((String) stu_json.get("suggestion_content"));
+			Timestamp time = new Timestamp(new Date().getTime());
+			sugg.setSuggestTime(time);
+			sugg.setUserId(stu_json.getInt("user_id"));
+			sugg.setSenderName(senderName);
+			sugg.setSuggestTitle((String) stu_json.get("suggest_title"));
+			try {
+				int new_sugg_id = suggestionService.addSuggestion(sugg);// 调用service添加会话
+				JSONArray affix_list = (JSONArray) stu_json.get("affix_list");
+				if(affix_list != null){
+					for(int j = 0; j < affix_list.size(); j++){
+						String affix = (String) affix_list.get(i);
+						LOGGER.debug(affix);
+						Accessory a = new Accessory();
+						a.setPath(affix);
+						a.setSuggestionId(new_sugg_id);
+						suggestionService.addAccessory(a);
+					}
+				}//插入附件
+
+				Account a=accountService.getAccountByAccountId(receiver_list.getInt(i));
+				String title=sugg.getSuggestTitle();
+				String to="";
+				String c="";
+				int cor_id = stu_json.getInt("cor_suggestion_id");
+				if (cor_id > 0) {//判断是否是回复某个会话
+					SuggestionReply reply = new SuggestionReply();
+					reply.setSuggestionId(cor_id);
+					reply.setReplySuggestionId(new_sugg_id);
+					suggestionService.addSuggestionReply(reply);//调用新会话插入回复
+					Suggestion cor_sugg = suggestionService.getSuggestionBySuggestionId(cor_id);
+					cor_sugg.setLevel(1);//设置会话已经被回复过了
+					suggestionService.updateSuggestion(cor_sugg);//更新被回复的会话
+					a=accountService.getAccountByAccountId(suggestionService.getSuggestionBySuggestionId(cor_id).getReceiverId());
+					title=cor_sugg.getSuggestTitle();
+					c=cor_sugg.getSuggestContent();
+
+				}
+				//发送邮件；
+				/*
+				EmailService emailService=new EmailService();
+
+				System.out.println("<<<<<<<<<<<<<<<<<"+a.getAccountLevel());
+				if(a.getAccountLevel()==3){
+					to=studentService.getStudentById(a.getStudentId()).getStudentEmail();
+				}else{
+					to=teacherService.getTeacherById(a.getTeacherId()).getTeacherEmail();
+				}
+				System.out.println("<<<<<<<<<<<<<<<<"+to);
+				String subject=studentService.getStudentById(a.getStudentId()).getStudentName()+"."+studentService.getStudentById(a.getStudentId()).getStudentGrade()+"年级"+title;
+				String content=c+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				try{
+				emailService.sendMail(to, subject, content);
+				}catch(MessagingException e){
+					e.printStackTrace();
+				}
+
+				 */
+			} catch (Exception e) {
+				LOGGER.error("添加会话失败：", e);
+				result_json = Constants.FAIL;
+			}
+		}
+		result_json = Constants.SUCCESS;
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+
+	/**
+	 * 上传附件
+	 * @param request
+	 * @param userNumber
+	 * @return
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public JSONObject submitAffix(HttpServletRequest request, String userNumber) {
+		String result_json = "";
+		String path = "";
+		File save = FileOperateUtil.Upload(request,
+				FileOperateUtil.getAbsoluteFileDir(userNumber), "", "affix");
+		if (save == null) {
+			result_json = Constants.FAIL;
+		}else{
+			result_json = Constants.SUCCESS;
+			path = FileOperateUtil.getRelativeFilePath(save.getAbsolutePath());
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("ret_path", path);
+		return jsonobj;
+	}
+	
+	/**
+	 * 下载附件
+	 * @param response
+	 * @param path
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public void downloadAffix(HttpServletResponse response, String path) {
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(path);
+		FileOperateUtil.Download(response, absolutepath);
+	}
+
+	/**
+	 * 获取未读列表
+	 * @param receiverId
+	 * @return
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public JSONObject getNeedReplyList(int receiverId) {
+		ArrayList<JsonSuggestion> list = new ArrayList<JsonSuggestion>();
+		String result_json = "";
+		try {
+			List<Suggestion> sugg_list = suggestionService.getSuggestionByReceiverIdAndLevel(receiverId, 0);
+			for (Suggestion sugg : sugg_list) {
+				JsonSuggestion json_sugg = JsonSuggestion.suggestion2JsonSuggestion(sugg);
+				list.add(json_sugg);
+			}
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			LOGGER.error("get need reply list failed: ", e);
+			result_json = Constants.FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(list);
+		LOGGER.debug("list: {}", jsonlist);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 获取会话内容
+	 * @param suggestionId
+	 * @return
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public JSONObject getSuggestionDetail(Integer suggestionId) {
+		JsonSuggestion json_sugg = new JsonSuggestion();
+		String result_json = "";
+		
+		try{
+			Suggestion sugg = suggestionService.getSuggestionBySuggestionId(suggestionId);
+			json_sugg = JsonSuggestion.suggestion2JsonSuggestion(sugg);
+			List<Accessory> affix_list = suggestionService.getAccessoryBySuggestionId(suggestionId);
+			ArrayList<String> path_list = new ArrayList<String>();
+			for(Accessory a:affix_list){
+				path_list.add(a.getPath());
+			}
+			json_sugg.setAffixList(path_list);
+		}catch(Exception e){
+			LOGGER.error("get suggestion detail failed: ", e);
+			result_json = Constants.FAIL;
+		}
+		result_json = Constants.SUCCESS;
+		JSONObject jsonobj = new JSONObject();
+		//response.setContentType("text/json; charset=utf-8");//显示中文所需
+		jsonobj.put("sugg", json_sugg);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 获取已发列表
+	 * @param userId
+	 * @return
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public JSONObject getSendList(Integer userId) {
+		LOGGER.debug("accountId: {}", userId);
+		ArrayList<JsonSuggestion> list = new ArrayList<JsonSuggestion>();
+		String result_json = "";
+		try {
+			List<Suggestion> sugg_list = suggestionService
+					.getSuggestionByUserId(userId);
+			
+			for (Suggestion sugg : sugg_list) {
+				JsonSuggestion json_sugg = JsonSuggestion
+						.suggestion2JsonSuggestion(sugg);
+				list.add(json_sugg);
+			}
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			LOGGER.error("get first check list failed: ", e);
+			result_json = Constants.FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(list);
+		JSONObject jsonobj = new JSONObject();
+		LOGGER.debug("jsonlist: {}", jsonlist);
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	@Transactional(rollbackFor = Exception.class)
+	public JSONObject allSuggestionMapByUserIdByType(Integer userId) {
+		LOGGER.debug("account id: {}", userId);
+		LinkedHashMap<String, LinkedHashMap<String, List<Suggestion>>> lst = 
+				suggestionService.getAllSuggestionMapByUserIdByType(userId, "contact");
+		LinkedHashMap<String,LinkedHashMap<String, List<JsonSuggestion>>> result = 
+				new LinkedHashMap<String, LinkedHashMap<String, List<JsonSuggestion>>>();
+		Iterator<String> iter=lst.keySet().iterator();
+		String result_json = "";
+		while(iter.hasNext()){
+			String index = iter.next();
+			LinkedHashMap<String, List<Suggestion>> temp = lst.get(index);
+			LinkedHashMap<String, List<JsonSuggestion>> t = 
+					new LinkedHashMap<String, List<JsonSuggestion>>();
+			Iterator<String> subiter = temp.keySet().iterator();
+			while(subiter.hasNext()){
+				String subindex = subiter.next();
+				List<Suggestion> sugg_list = temp.get(subindex);
+				ArrayList<JsonSuggestion> list = new ArrayList<JsonSuggestion>();
+				try {
+					for (Suggestion sugg : sugg_list) {
+						JsonSuggestion json_sugg = JsonSuggestion
+								.suggestion2JsonSuggestion(sugg);
+						list.add(json_sugg);
+					}
+				} catch (Exception e) {
+					result_json = Constants.FAIL;
+				}
+				t.put(subindex, list);	
+			}
+			result.put(index, t);
+			result_json = Constants.SUCCESS;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list",result);
+		jsonobj.put("result_json", result_json);
+		LOGGER.debug("jsonobj: {}", jsonobj);
+		return jsonobj;
+	}
+	
+	/**
+	 * 将未读会话设置为已读
+	 * @param suggestionId
+	 * @return
+	 */
+	@Transactional(rollbackFor = Throwable.class)
+	public JSONObject setSuggestionHasRead(Integer suggestionId) {
+		String result_json = Constants.FAIL;
+		try {
+			suggestionService.setSuggestionHasRead(suggestionId);
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			LOGGER.error("exception", e);
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result_json);
+		return jsonobj;
+	}
+}

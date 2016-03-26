@@ -1,0 +1,61 @@
+package test.controller;
+
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;  
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;  
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;  
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*; 
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration({"classpath*:/spring-hibernate.xml"
+	, "classpath*:/spring-activiti.xml"
+	, "classpath*:/lei-dispather-servlet.xml"
+})
+public class DeanControllerTest {
+	
+	@Autowired
+    private WebApplicationContext wac;
+    
+    private MockMvc mockMvc;
+
+	@Before
+	public void setUp() throws Exception {
+		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+	}
+
+
+	@Test
+	public void testGetStudentList() throws Exception {
+		mockMvc.perform(post("/login.do").param("username", "jwy").param("passwordFake", "jwy"))
+		.andExpect(status().is3xxRedirection());
+		MvcResult result = mockMvc.perform(post("/dean/getallstudents.do").param("type", "1")
+				.param("page", "1").param("rows", "10").param("sidx", "studentId")
+				.param("sord", "desc").param("_search", ""))
+				.andExpect(status().isOk())
+				.andDo(print())
+				.andReturn();
+		
+	}
+	
+	@Test
+	public void testAddStudentSingle() throws Exception {
+		mockMvc.perform(post("/login.do").param("username", "jwy").param("passwordFake", "jwy"))
+		.andExpect(status().is3xxRedirection());
+		//MvcResult result = mockMvc.perform(post("/dean/importstudent.do")).
+	}
+
+}

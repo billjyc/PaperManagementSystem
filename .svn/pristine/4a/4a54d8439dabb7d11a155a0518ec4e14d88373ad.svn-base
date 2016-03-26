@@ -1,0 +1,50 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.stereotype.Repository;
+
+import nju.software.dao.HeadTeacherDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.HeadTeacher;
+
+@Repository("nju.software.dao.impl.HeadTeacherDAOImpl")
+public class HeadTeacherDAOImpl extends BaseDaoImpl<HeadTeacher> implements HeadTeacherDAO {
+	private static final Logger log = LoggerFactory.getLogger(HeadTeacherDAOImpl.class);
+
+	public static final String ID= "id";
+	public static final String NO= "no";
+	public static final String NAME= "name";
+	public static final String TEL="tel";	
+	public static final String EMAIL="email";
+
+	public HeadTeacherDAOImpl(){
+		super();
+		this.setClazz(HeadTeacher.class);
+	}
+	
+	public List<HeadTeacher> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public HeadTeacher findById(Integer id) {
+		return super.findById(id);
+	}
+
+	public List<HeadTeacher> findByNo(String no) {
+		return findByProperty(NO, no);
+	}
+
+	public List<HeadTeacher> findByName(String name) {
+		return findByProperty(NAME, name);
+	}
+
+	@Override
+	public List<HeadTeacher> findSearchHeadTeacher(String searchCondition) {
+		String hql = "from HeadTeacher " + searchCondition;
+		return find(hql);
+	}
+}

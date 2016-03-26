@@ -1,0 +1,91 @@
+package nju.software.manager;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Account;
+import nju.software.entity.Director;
+import nju.software.entity.HeadTeacher;
+import nju.software.entity.Notice;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.jsonmodel.JsonNotice;
+import nju.software.service.AccountService;
+import nju.software.service.DirectorService;
+import nju.software.service.HeadTeacherService;
+import nju.software.service.NoticeService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.FileOperateUtil;
+
+import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LoginManager {
+	@Autowired
+	private NoticeService noticeService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private DirectorService directorService;
+	@Autowired
+	private HeadTeacherService headTeacherService;
+	
+	/**
+	 * 登录时验证账户
+	 * @param accountName
+	 * @param accountPassword
+	 * @return
+	 */
+	public Account verifyAccount(String accountName, String accountPassword) {
+		Account account = accountService.vertifyAccount(accountName, accountPassword);
+		return account;
+	}
+	
+	public Student getStudentById(Integer id) {
+		return studentService.getStudentById(id);
+	}
+	
+	public Teacher getTeacherById(Integer teacherId) {
+		return teacherService.getTeacherById(teacherId);
+	}
+	
+	public HeadTeacher getHeadTeacherById(Integer headTeacherId) {
+		return headTeacherService.getHeadTeacherById(headTeacherId);
+	}
+	
+	public Director getDirectorById(Integer id) {
+		return directorService.getDirectorById(id);
+	}
+	
+	/**
+	 * 获取所有通知
+	 * @return
+	 */
+	public JSONObject getNotice() {
+		List<Notice> data = noticeService.getAllNotice();
+		List<JsonNotice> noticeList = new ArrayList<JsonNotice>();
+		for(int i = data.size()- 1; i >= 0;i--){
+			noticeList.add(new JsonNotice(data.get(i)));
+		}
+		JSONArray listObj = JSONArray.fromObject(noticeList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", listObj);
+		return jsonobj;
+	}
+	
+	public void downloadAttachment(HttpServletResponse response, String path) {
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(path);
+		FileOperateUtil.Download(response, absolutepath);
+	}
+}

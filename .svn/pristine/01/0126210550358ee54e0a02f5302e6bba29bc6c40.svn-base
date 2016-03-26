@@ -1,0 +1,106 @@
+package nju.software.controller.teacher;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.manager.teacher.TeacherInfoManager;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.JSONUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教师信息控制类
+ * @author billjyc
+ *
+ */
+@Controller
+public class TeacherInfoController {
+	private static Logger logger = LoggerFactory.getLogger(TeacherInfoController.class);
+	
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private TeacherInfoManager teacherInfoManager;
+	
+	/**
+	 * 获得教师负责的学生列表
+	 * @author wsd
+	 */
+	@RequestMapping(value = "/tutor/studentlist.do")
+	public void studentList(HttpServletRequest request, HttpServletResponse response, 
+			ModelMap model, @RequestParam("page") String pageS, 
+			@RequestParam("rows") String rowsS, @RequestParam("sidx") String sidx, 
+			@RequestParam("sord") String sord) {
+		int teacherId = (Integer) request.getSession().getAttribute("teacherId");
+		
+		JSONObject jsonobj = teacherInfoManager.studentList(teacherId, pageS, rowsS, sidx, sord);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 查看老师信息
+	 */
+	@RequestMapping(value = "/tutor/teacherinfo.do")
+	public void teacherInfo(HttpServletRequest request, HttpServletResponse response,ModelMap model) {
+		int teacherId = (Integer) request.getSession().getAttribute("teacherId");
+		
+		JSONObject jsonobj = teacherInfoManager.teacherInfo(teacherId);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 更新教师信息
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param email
+	 * @param phone
+	 */
+	@RequestMapping(value = "/tutor/updateTeacherInfo.do")
+	@ResponseBody
+	public void updateTeacherInfo(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, 
+			@RequestParam("email") String email, @RequestParam("phone") String phone) {
+		int teacherId = (Integer) request.getSession()
+				.getAttribute("teacherId");
+		JSONObject jsonobj = teacherInfoManager.updateTeacherInfo(teacherId, email, phone);
+		jsonUtil.sendJson(response, jsonobj);
+	}	
+
+	/**
+	 * 修改密码
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param oPassword 旧密码
+	 * @param nPassword 新密码
+	 */
+	@RequestMapping(value = "/tutor/changePassword.do")
+	@ResponseBody
+	public void changePassword(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, @RequestParam("oPassword") String oPassword, 
+			@RequestParam("nPassword") String nPassword){
+		int accountId = (Integer) request.getSession()
+				.getAttribute("accountId");
+
+		JSONObject jsonobj = teacherInfoManager.changePassword(accountId, oPassword, nPassword);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+}

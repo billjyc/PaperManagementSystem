@@ -1,0 +1,77 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.ClassesDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Classes;
+
+import org.hibernate.LockMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for
+ * Classes entities. Transaction control of the save(), update() and delete()
+ * operations can directly support Spring container-managed transactions or they
+ * can be augmented to handle user-managed Spring transactions. Each of these
+ * methods provides additional information for how to configure it for the
+ * desired type of transaction control.
+ * 
+ * @see nju.software.dataobject.Classes
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.ClassesDAOImpl")
+public class ClassesDAOImpl extends BaseDaoImpl<Classes> implements ClassesDAO{
+	private static final Logger log = LoggerFactory.getLogger(ClassesDAOImpl.class);
+	// property constants
+	public static final String NAME = "name";
+	public static final String SIZE = "size";
+	public static final String GRADUATE_NUM = "graduateNum";
+	public static final String HEAD_TEACHER = "headTeacher";
+	public static final String MONITOR = "monitor";
+	public static final String ID = "id";
+	public static final String TEACHING_POINT_NO = "teachingPointNo";
+
+	public ClassesDAOImpl(){
+		super();
+		this.setClazz(Classes.class);
+	}
+
+	public List<Classes> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Classes> findByName(String name) {
+		return findByProperty(NAME, name);
+	}
+
+	public List<Classes> findBySize(Integer size) {
+		return findByProperty(SIZE, size);
+	}
+
+	public List<Classes> findByGraduateNum(Integer graduateNum) {
+		return findByProperty(GRADUATE_NUM, graduateNum);
+	}
+
+	public List<Classes> findByHeadTeacher(String headTeacher) {
+		return findByProperty(HEAD_TEACHER, headTeacher);
+	}
+
+	public List<Classes> findByMonitor(String monitor) {
+		return findByProperty(MONITOR, monitor);
+	}
+
+	public List<Classes> findByTeachingPointNo(String tpno) {
+		return findByProperty(TEACHING_POINT_NO, tpno);
+	}
+
+	@Override
+	public Classes findById(Integer id) {
+		return super.findById(id);
+	}
+}

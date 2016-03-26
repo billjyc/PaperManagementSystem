@@ -1,0 +1,87 @@
+/*
+body {
+	overflow-y: auto;
+	display: block;
+	min-width: 850px;
+}
+
+.body_container {
+	overflow: hidden;
+	width: 100%;
+}
+
+.main_container {
+	margin-left: 250px;
+	margin-right: 40px;
+	min-width: 540px;
+	color: #3c5f84;
+	padding-right: 50px;
+	font-size: 15px;
+}
+*/
+
+/*学生信息、教师信息、论文信息、论文状态*/
+.student_info,.tutor_info,.paper_info,.paper_state {
+	width: 100%;
+	font-size: 14px;
+}
+
+.info_table {
+	margin-left: 15%;
+	margin-top: 40px;
+	margin-bottom: 20px;
+	width: 70%;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #c8d7e3;
+	border-spacing: 0;
+	width: 70%;
+	border-collapse: collapse;
+}
+
+.info_table td {
+	padding: 0px;
+}
+
+.info_table th {
+	FONT-WEIGHT: bold;
+	FONT-FAMILY: arial;
+	BACKGROUND-COLOR: #c8d7e3;
+	font-size: 130%;
+	padding-top: 6px;
+	padding-bottom: 4px;
+}
+
+.detailinfo_table {
+	width: 100%;
+	border-width: 0px;
+	border-collapse: collapse;
+	border: 1px;
+}
+
+.detailinfo_table tr {
+	height: 50px;
+}
+
+.detailinfo_table_odd {
+	background-color: rgb(234, 239, 242);
+}
+
+.detailinfo_table_even {
+	background-color: rgb(243, 248, 241);
+}
+
+.detailinfo_table .info_mark {
+	font-weight: bold;
+	padding-right: 20px;
+	text-align: right;
+	width: 30%;
+}
+
+.detailinfo_table .info_content {
+	padding-left: 50px;
+}
+
+.detailinfo_table a{
+	font-style: italic;
+}

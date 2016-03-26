@@ -1,0 +1,95 @@
+package nju.software.email;
+import java.io.File;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+
+public class EmailService {
+	public EmailService(){
+		
+	}
+	
+	public void sendMail( String to,
+			String subject, String content)throws MessagingException{
+		String from="nonreply@sysmail.nju.edu.cn";
+		String fpassword="123456";
+		System.out.println(">>>>>>>>>>" + from);
+		System.out.println(">>>>>>>>>>" + "localHost");
+		System.out.println(">>>>>>>>>>" + fpassword);
+		System.out.println(">>>>>>>>>>" + to);
+		System.out.println(">>>>>>>>>>" + subject);
+		System.out.println(">>>>>>>>>>" + content);
+		if(to!=null){
+		JavaMailSenderImpl senderImpl = new JavaMailSenderImpl();
+		senderImpl.setHost("localhost");
+		senderImpl.setUsername(from);
+		senderImpl.setPassword(fpassword);
+		
+		Properties javaMailProp = new Properties();
+		javaMailProp.setProperty("mail.smtp.auth", "true");
+		senderImpl.setJavaMailProperties(javaMailProp);
+	
+		MimeMessage mailMessage = senderImpl.createMimeMessage();
+		MimeMessageHelper messageHelper = new MimeMessageHelper(mailMessage,
+				true, "utf-8");
+
+		messageHelper.setTo(to);
+		messageHelper.setFrom(from);
+		messageHelper.setSubject(subject);
+		messageHelper.setText(content, true);
+
+		senderImpl.send(mailMessage);
+		System.out.println("发送成功！");
+		
+	}else{
+		System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<收件地址为空");
+	}
+	}
+	
+	public void sendMailAttach( String to,
+			String subject, String content,List<File> attachmentfiles)throws MessagingException{
+		String from="nonreply@sysmail.nju.edu.cn";
+		String fpassword="123456";
+		System.out.println(">>>>>>>>>>" + from);
+		System.out.println(">>>>>>>>>>" + "localHost");
+		System.out.println(">>>>>>>>>>" + fpassword);
+		System.out.println(">>>>>>>>>>" + to);
+		System.out.println(">>>>>>>>>>" + subject);
+		System.out.println(">>>>>>>>>>" + content);
+		if(to!=null){
+			JavaMailSenderImpl senderImpl = new JavaMailSenderImpl();
+			senderImpl.setHost("localhost");
+			senderImpl.setUsername(from);
+			senderImpl.setPassword(fpassword);
+			
+			Properties javaMailProp = new Properties();
+			javaMailProp.setProperty("mail.smtp.auth", "true");
+			senderImpl.setJavaMailProperties(javaMailProp);
+		
+			MimeMessage mailMessage = senderImpl.createMimeMessage();
+			MimeMessageHelper messageHelper = new MimeMessageHelper(mailMessage,
+					true, "utf-8");
+	
+			messageHelper.setTo(to);
+			messageHelper.setFrom(from);
+			messageHelper.setSubject(subject);
+			messageHelper.setText(content, true);
+			if (attachmentfiles != null) {
+				for (int i = 0; i < attachmentfiles.size(); i++) {
+					File tmpfsr = attachmentfiles.get(i);
+					messageHelper.addAttachment(tmpfsr.getName(), tmpfsr);
+				}
+			}
+			senderImpl.send(mailMessage);
+			System.out.println("发送成功！");
+			
+		}else{
+			System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<收件地址为空");
+		}
+	}
+}

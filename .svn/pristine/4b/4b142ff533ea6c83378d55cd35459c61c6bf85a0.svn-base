@@ -1,0 +1,148 @@
+package nju.software.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import static javax.persistence.GenerationType.IDENTITY;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
+/**
+ * Teacher entity. @author MyEclipse Persistence Tools
+ */
+@Entity
+@Table(name = "teacher", uniqueConstraints = @UniqueConstraint(columnNames = "teacher_number"))
+public class Teacher implements java.io.Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1452319564355378271L;
+	// Fields
+	private Integer teacherId;
+	private String teacherName;
+	private String teacherNumber;
+	private String teacherPhone;
+	private Integer teacherJobTitle;
+	private Integer teacherEducation;
+	private Integer teacherClasses;
+	private String teacherEmail;
+	private Integer teacherQualification;
+
+	// Constructors
+
+	/** default constructor */
+	public Teacher() {
+	}
+
+	/** full constructor */
+	public Teacher(String teacherName, String teacherNumber,
+			String teacherPhone, Integer teacherJobTitle,
+			Integer teacherEducation, Integer teacherClasses,
+			String teacherEmail, Integer teacherQualification) {
+		this.teacherName = teacherName;
+		this.teacherNumber = teacherNumber;
+		this.teacherPhone = teacherPhone;
+		this.teacherJobTitle = teacherJobTitle;
+		this.teacherEducation = teacherEducation;
+		this.teacherClasses = teacherClasses;
+		this.teacherEmail = teacherEmail;
+		this.teacherQualification = teacherQualification;
+	}
+
+	// Property accessors
+	@Id
+	@GeneratedValue(strategy = IDENTITY)
+	@Column(name = "teacher_id", unique = true, nullable = false)
+	public Integer getTeacherId() {
+		return this.teacherId;
+	}
+
+	public void setTeacherId(Integer teacherId) {
+		this.teacherId = teacherId;
+	}
+
+	@Column(name = "teacher_name")
+	public String getTeacherName() {
+		return this.teacherName;
+	}
+
+	public void setTeacherName(String teacherName) {
+		this.teacherName = teacherName;
+	}
+
+	@Column(name = "teacher_number", unique = true)
+	public String getTeacherNumber() {
+		return this.teacherNumber;
+	}
+
+	public void setTeacherNumber(String teacherNumber) {
+		this.teacherNumber = teacherNumber;
+	}
+
+	@Column(name = "teacher_phone")
+	public String getTeacherPhone() {
+		return this.teacherPhone;
+	}
+
+	public void setTeacherPhone(String teacherPhone) {
+		this.teacherPhone = teacherPhone;
+	}
+
+	@Column(name = "teacher_job_title")
+	public Integer getTeacherJobTitle() {
+		return this.teacherJobTitle;
+	}
+
+	public void setTeacherJobTitle(Integer teacherJobTitle) {
+		this.teacherJobTitle = teacherJobTitle;
+	}
+
+	@Column(name = "teacher_education")
+	public Integer getTeacherEducation() {
+		return this.teacherEducation;
+	}
+
+	public void setTeacherEducation(Integer teacherEducation) {
+		this.teacherEducation = teacherEducation;
+	}
+
+	@Column(name = "teacher_classes")
+	public Integer getTeacherClasses() {
+		return this.teacherClasses;
+	}
+
+	public void setTeacherClasses(Integer teacherClasses) {
+		this.teacherClasses = teacherClasses;
+	}
+
+	@Column(name = "teacher_email")
+	public String getTeacherEmail() {
+		return this.teacherEmail;
+	}
+
+	public void setTeacherEmail(String teacherEmail) {
+		this.teacherEmail = teacherEmail;
+	}
+
+	@Column(name = "teacher_qualification")
+	public Integer getTeacherQualification() {
+		return this.teacherQualification;
+	}
+
+	public void setTeacherQualification(Integer teacherQualification) {
+		this.teacherQualification = teacherQualification;
+	}
+
+	@Override
+	public String toString() {
+		return "Teacher [teacherId=" + teacherId + ", teacherName="
+				+ teacherName + ", teacherNumber=" + teacherNumber
+				+ ", teacherPhone=" + teacherPhone + ", teacherJobTitle="
+				+ teacherJobTitle + ", teacherEducation=" + teacherEducation
+				+ ", teacherClasses=" + teacherClasses + ", teacherEmail="
+				+ teacherEmail + ", teacherQualification="
+				+ teacherQualification + "]";
+	}
+}

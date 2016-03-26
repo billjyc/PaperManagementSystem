@@ -1,0 +1,56 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
+import nju.software.dao.TeachingPointDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.TeachingPoint;
+
+@Repository("nju.software.dao.impl.TeachingPointDAOImpl")
+public class TeachingPointDAOImpl extends BaseDaoImpl<TeachingPoint> implements TeachingPointDAO {
+	private static final Logger log = LoggerFactory.getLogger(TeachingPointDAOImpl.class);
+
+	public static final String ID= "id";
+	public static final String NO= "no";
+	public static final String NAME= "name";
+	public static final String  DirectorNo="directorNo";	
+	public static final String  DirectorName="directorName";	
+	public static final String  LOCATION="location";	
+	
+	public TeachingPointDAOImpl(){
+		super();
+		this.setClazz(TeachingPoint.class);
+	}
+
+	public List<TeachingPoint> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public TeachingPoint findById(Integer id) {
+		return super.findById(id);
+	}
+
+	public List<TeachingPoint> findByNo(String no) {
+		return findByProperty(NO, no);
+	}
+
+	public List<TeachingPoint> findByName(String name) {
+		return findByProperty(NAME, name);
+	}
+
+	public List<TeachingPoint> findByDirectorNo(String directorNo) {
+		return findByProperty(DirectorNo, directorNo);
+	}
+
+	public List<TeachingPoint> findByDirectorName(String directorName) {
+		return findByProperty(DirectorName, directorName);
+	}
+
+	public List<TeachingPoint> findByLocation(String location) {
+		return findByProperty(LOCATION, location);
+	}
+}

@@ -1,0 +1,215 @@
+package nju.software.dao.impl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
+import nju.software.dao.StudentCourseInfoDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.StudentCourseInfo;
+
+@Repository("nju.software.dao.impl.StudentCourseInfoDAOImpl")
+public class StudentCourseInfoDAOImpl extends BaseDaoImpl<StudentCourseInfo> implements StudentCourseInfoDAO {
+	private static final Logger log = LoggerFactory.getLogger(CourseDAOImpl.class);
+	public static final String COURSE_NO= "courseNo";
+	public static final String COURSE_NAME= "courseName";
+	public static final String STATE= "state";
+	public static final String  SCORE="score";	
+	public static final String  STUDENT_NO="studentNo";
+	public static final String  STUDENT_NAME="studentName";
+	public static final String  COURSE_DATE="date";
+	
+	public StudentCourseInfoDAOImpl(){
+		super();
+		this.setClazz(StudentCourseInfo.class);
+	}
+
+	public List<StudentCourseInfo> findByProperty(String propertyName,
+			Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public StudentCourseInfo findById(Integer studentCourseInfoId) {
+		return super.findById(studentCourseInfoId);
+	}
+
+	public List<StudentCourseInfo> findByStudentNo(String studentNo) {
+		return findByProperty(STUDENT_NO,studentNo);
+	}
+
+	public List<StudentCourseInfo> findByCourseNo(String courseNo) {
+		return findByProperty(COURSE_NO,courseNo);
+	}
+
+	public List<StudentCourseInfo> findBySIdCNo(String studentNo,
+			String courseNo) {
+		String hql = "from StudentCourseInfo as sci where sci." + STUDENT_NO + " = ? and sci." +
+			COURSE_NO + " = ?";
+		return find(hql, studentNo, courseNo);
+	}
+
+	public List<StudentCourseInfo> findByState(Integer state) {
+		return findByProperty(STATE,state);
+	}
+
+	public List<StudentCourseInfo> findByScore(Integer score) {
+		return findByProperty(SCORE,score);
+	}
+
+	public List<StudentCourseInfo> findByStudentName(String studentName) {
+		return findByProperty(STUDENT_NAME,studentName);
+	}
+
+	public List<StudentCourseInfo> findByCourseName(String courseName) {
+		return findByProperty(COURSE_NAME,courseName);
+	}
+
+	public List<StudentCourseInfo> findByDate(Integer date) {
+		return findByProperty(COURSE_DATE,date);
+	}
+	
+	/**
+	 * return the count of records by certain property
+	 */
+	public int count(String propertyName, Object value) {
+		String hql = "select count(*) from StudentCourseInfo as model where model."
+				+ propertyName + "= ?";
+		List<?> list = find(hql, value);
+		Integer count = (Integer)list.get(0);
+		return count;
+	}
+
+	public List<Object> findStudentAssignedCourse(HashMap<String,Object> params){
+		int count =  findAll().size();
+		params.put("count", count);
+	
+		HashMap<String, Object> limits = calculateLimits(params);
+		int limit = (Integer) params.get("limit");
+		int start = (Integer) params.get("start");
+		String sidx = (String) params.get("sidx");
+		String sord = (String) params.get("sord");
+		String[] sidx_array = sidx.split(" ");
+	
+		List<Object> result = new ArrayList<Object>();
+		try {
+			Criteria criteria = createCriteria();
+			List<StudentCourseInfo> studentCourseInfoList = findByPage(criteria, start, limit);
+			if (sord != null)
+				if (sord.equals("asc"))
+					criteria.addOrder(Order.asc(sidx_array[sidx_array.length - 1]));
+				else
+					criteria.addOrder(Order.desc(sidx_array[sidx_array.length - 1]));
+			result.add(studentCourseInfoList);
+			result.add(limits);
+		} catch (RuntimeException re) {
+			log.error("find by property name limit failed", re);
+			throw re;
+		}
+		return result;
+	}
+		
+	public HashMap<String, Object> calculateLimits(
+			HashMap<String, Object> params) {
+		int page = (Integer) params.get("page");
+		int limit = (Integer) params.get("limit");
+		int count = (Integer) params.get("count");
+		int total_pages = 0;
+		int start = 0;
+	
+		if (count > 0)
+			total_pages = (int) Math.ceil((double) count / limit);
+		if (page > total_pages)
+			page = total_pages;
+	
+		start = limit * (page - 1);
+	
+		params.put("total_pages", total_pages);
+		params.put("start", start);
+		return params;
+	}
+	
+	public List<Object> findUncheckedTranscript(HashMap<String, Object> params) {
+		long count;
+		try {
+			count = findCount();
+		} catch (RuntimeException re) {
+			log.error("count by property name failed", re);
+			throw re;
+		}
+		params.put("count", (int)count);
+	
+		HashMap<String, Object> limits = calculateLimits(params);
+		int limit = (Integer) params.get("limit");
+		int start = (Integer) params.get("start");
+		String sidx = (String) params.get("sidx");
+		String sord = (String) params.get("sord");
+		String[] sidx_array = sidx.split(" ");
+		
+		List<Object> result = new ArrayList<Object>();
+		try {
+			Criteria criteria = createCriteria();
+			criteria.add(Restrictions.eq("state", new Integer(0)));
+			if (sord != null)
+				if (sord.equals("asc"))
+					criteria.addOrder(Order.asc(sidx_array[sidx_array.length - 1]));
+				else
+					criteria.addOrder(Order.desc(sidx_array[sidx_array.length - 1]));
+			List<StudentCourseInfo> studentCourseList = findByPage(criteria, start, limit);
+			result.add(studentCourseList);
+			result.add(limits);
+		} catch (RuntimeException re) {
+			log.error("find by property name limit failed", re);
+			throw re;
+		}
+		return result;
+	}
+	
+	public List<Object> findCheckedTranscript(HashMap<String, Object> params) {
+		long count;
+		try {
+			count = findCount();
+		} catch (RuntimeException re) {
+			log.error("count by property name failed", re);
+			throw re;
+		}
+		params.put("count", (int)count);
+		
+		HashMap<String, Object> limits = calculateLimits(params);
+		int limit = (Integer) params.get("limit");
+		int start = (Integer) params.get("start");
+		String sidx = (String) params.get("sidx");
+		String sord = (String) params.get("sord");
+		String[] sidx_array = sidx.split(" ");
+		
+		List<Object> result = new ArrayList<Object>();
+		try {
+			Criteria criteria = createCriteria();
+			criteria.add(Restrictions.gt("state", new Integer(0)));
+			if (sord.equals("asc"))
+				criteria.addOrder(Order.asc(sidx_array[sidx_array.length - 1]));
+			else
+				criteria.addOrder(Order.desc(sidx_array[sidx_array.length - 1]));
+			
+			List<StudentCourseInfo> studentCourseList = findByPage(criteria, start, limit);
+			result.add(studentCourseList);
+			result.add(limits);
+		} catch (RuntimeException re) {
+			log.error("find by property name limit failed", re);
+			throw re;
+		}
+		return result;
+	}
+
+	@Override
+	public List<StudentCourseInfo> findSearchStudentScore(String searchCondition) {
+		String hql = "from StudentCourseInfo " + searchCondition;
+		return find(hql);
+	}
+}

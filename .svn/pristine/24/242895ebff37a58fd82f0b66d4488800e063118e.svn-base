@@ -1,0 +1,222 @@
+package nju.software.manager.student;
+
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.List;
+
+import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.InterimReport;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.service.AccountService;
+import nju.software.service.InterimReportService;
+import nju.software.service.PaperService;
+import nju.software.service.SuggestionService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.EmailUtil;
+import nju.software.util.FileOperateUtil;
+
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class StudentInterimReportManager {
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private InterimReportService interimReportService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(StudentProposalManager.class);
+
+	/**
+	 * 中期报告完成后，发送会话给导师
+	 * @param studentId
+	 * @param interimReportFile
+	 */
+	private void sendSuggestion(Integer studentId, File interimReportFile) {
+		Student sugg_s = studentService.getStudentById(studentId);
+		Teacher sugg_t = teacherService.getTeacherByStudentId(studentId);
+		
+		Validate.notNull(sugg_s);
+		Validate.notNull(sugg_t);
+
+		Suggestion sugg=new Suggestion();
+		sugg.setLevel(0);
+		sugg.setPaperId(0);
+
+		sugg.setReceiverId(accountService.getAccountByAccountname(sugg_t.getTeacherNumber()).getAccountId());
+		sugg.setSuggestContent(sugg_s.getStudentGrade() + "年级" + "学生 " + sugg_s.getStudentName() + "(学号" + sugg_s.getStudentNumber()+")" + "提交中期检查");
+		Timestamp time = new Timestamp(new Date().getTime());
+		sugg.setSuggestTime(time);
+		sugg.setUserId(accountService.getAccountByAccountname(sugg_s.getStudentNumber()).getAccountId());
+		sugg.setSenderName(sugg_s.getStudentName());
+		sugg.setSuggestTitle("学生"+sugg_s.getStudentName()+"中期检查");
+
+		try {
+			suggestionService.sendSuggestion(sugg, interimReportFile);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 发送邮件给导师
+	 * @param studentId
+	 */
+	private void sendEmail(Integer studentId) {
+		Student s = studentService.getStudentById(studentId);
+		Teacher t = teacherService.getTeacherByStudentId(studentId);
+		EmailUtil emailUtil = new EmailUtil();
+		String to = t.getTeacherEmail();
+
+		String subject = s.getStudentGrade() + "年级学生" + s.getStudentName() + "提交中期检查";
+		String content = s.getStudentName() + "提交中期检查" + "<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+		if(to != null){
+			try {
+				emailUtil.sendMail(to, subject, content);
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	/**
+	 * 提交中期报告
+	 * @param request
+	 * @param actorId
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject submitInterimReport(HttpServletRequest request, String actorId, Integer studentId) {
+		String result_json = "";
+		JSONObject jsonobj = new JSONObject();
+		InterimReport interimReport = null;
+		Paper paper = null;
+		File interimfile = null;
+
+		try {
+			interimfile = FileOperateUtil.Upload(request,
+					FileOperateUtil.getAbsoluteFileDir(actorId), "InterimReport",
+					"submit_interimreport_file");
+			Validate.notNull(interimfile);
+		} catch (Exception e) {
+			LOGGER.error("上传文件为空！", e);
+			result_json = Constants.FAIL;
+			jsonobj.put("result_json", result_json);
+			return jsonobj;
+		}
+
+		interimReport = interimReportService.getInterimReportByStudentId(studentId);
+		paper = paperService.getPaperByStudentId(studentId);
+
+		if(interimReport == null) {
+			interimReport = new InterimReport();
+			interimReport.setStudentId(studentId);
+			interimReport.setAddress(FileOperateUtil.getRelativeFilePath(interimfile
+					.getAbsolutePath()));
+		}
+		interimReport.setStatus(Constants.INTERIM_REPORT_UNCHECKED);
+		paper.setPaperState(PaperState.INTERIM_REPORT_UNDER_REVIEW);
+		try {
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Submit interim report");
+			for(Task task : taskList) {
+				interimReportService.saveOrUpdateInterimReport(interimReport);
+				paperService.updatePaper(paper);
+				activitiAPIUtils.completeTask(task.getId());
+			}
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			LOGGER.error("保存中期报告失败！", e);
+			result_json = Constants.FAIL;
+		}
+
+		/*
+		 * 学生提交中期检查，学生向导师发起会话，系统自动生成。
+		 */
+		sendSuggestion(studentId, interimfile);
+
+		//系统后台向导师发送提醒邮件；
+		//sendEmail(studentId);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 更新中期报告
+	 * @param request
+	 * @param actorId
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject updateInterimReport(HttpServletRequest request, String actorId, Integer studentId) {
+		String result_json = "";
+		JSONObject jsonobj = new JSONObject();
+		File interimfile = null;
+		
+		try {
+			interimfile = FileOperateUtil.Upload(request,
+					FileOperateUtil.getAbsoluteFileDir(actorId), "InterimReport",
+					"update_interimreport_file");
+			Validate.notNull(interimfile);
+		} catch (Exception e) {
+			LOGGER.error("上传的中期报告文件为空！", e);
+			result_json = Constants.FAIL;
+			jsonobj.put("result_json", result_json);
+			return jsonobj;
+		}
+
+		InterimReport interimReport = interimReportService
+				.getInterimReportByStudentId(studentId);
+		interimReport.setAddress(FileOperateUtil.getRelativeFilePath(interimfile
+				.getAbsolutePath()));
+		interimReportService.updateInterimReport(interimReport);
+		result_json = Constants.SUCCESS;
+		
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	public JSONObject downloadInterimReport(HttpServletResponse response, Integer studentId) {
+		JSONObject jsonobj = new JSONObject();
+		InterimReport interimReport = interimReportService
+				.getInterimReportByStudentId(studentId);
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(interimReport.getAddress());
+
+		String result_json = "";
+		try {
+			FileOperateUtil.Download(response, absolutepath);
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			LOGGER.error("下载中期报告失败！", e);
+			result_json = Constants.FAIL;
+		} finally {
+			jsonobj.put("result_json", result_json);
+		}
+		return jsonobj;
+	}
+}

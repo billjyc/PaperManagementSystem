@@ -1,0 +1,56 @@
+﻿<script type="text/javascript">
+	$(document).ready(function() {
+		$(".detailinfo_table tr:even").addClass("detailinfo_table_even");
+		$(".detailinfo_table tr:odd").addClass("detailinfo_table_odd");
+	});
+
+	$(document).ready(function() {
+		$.post("./student_teacher_info.do", null, function(data) {
+			var tutor = data.teacher;
+			var education =  data.teacherEducation;
+			var jobTitle = data.teacherJobTitle;
+			$("[id='name']").text(tutor.teacherName);
+			$("[id='email']").text(tutor.teacherEmail);
+			$("[id='phonoe']").text(tutor.teacherPhone);
+			$("[id='jobtitle']").text(jobTitle);
+			$("[id='education']").text(education);
+		}, "json");
+	});
+</script>
+<div class="tutor_info">
+	<table class="info_table">
+		<tbody>
+			<tr align="center">
+				<th>导师信息</th>
+			</tr>
+			<tr>
+				<td>
+					<table class="detailinfo_table">
+						<tbody>
+							<tr>
+								<td class="info_mark">姓名:</td>
+								<td class="info_content" id="name"></td>
+							</tr>
+							<tr>
+								<td class="info_mark">电子邮箱:</td>
+								<td class="info_content" id="email"></td>
+							</tr>
+							<tr>
+								<td class="info_mark">联系方式:</td>
+								<td class="info_content" id="phone"></td>
+							</tr>
+							<tr>
+								<td class="info_mark">职位:</td>
+								<td class="info_content" id="jobtitle"></td>
+							</tr>
+							<tr>
+								<td class="info_mark">学历:</td>
+								<td class="info_content" id="education"></td>
+							</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

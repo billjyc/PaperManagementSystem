@@ -1,0 +1,152 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml">
+
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<head>	
+<title>个人信息</title>
+<meta http-equiv="content-type" content="text/html;charset=UFT-8" />
+
+
+<link rel="stylesheet" type="text/css" media="screen" href="../css/jquery-ui-custom.css" /> 
+<link rel="stylesheet" type="text/css" media="screen" href="../css/ui.jqgrid.css" />
+
+
+
+<link rel="stylesheet" href="../css/global.css" type="text/css" />
+<link rel="stylesheet" href="../css/tutor.css" type="text/css" />
+<script src="../js/jquery-1.9.0.min.js" type="text/javascript" ></script>
+<script src="../js/contants.js" type="text/javascript" ></script>
+<script src="../js/jquery.json-2.4.min.js" type="text/javascript" ></script>
+
+<script type="text/javascript" src="../js/grid.locale-cn.js"></script> 
+<script type="text/javascript" src="../js/jquery.jqGrid.min.js"></script> 
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		$(".detailinfo_table tr:even").addClass("detailinfo_table_even");
+		$(".detailinfo_table tr:odd").addClass("detailinfo_table_odd");
+	});
+
+	GetTeacherInfo = function() {
+		$.post("./teacherinfo.do", null, function(data) {
+			var teacher = data.teacher;
+			$("[id='name']").text(teacher.teacherName);
+			$("[id='no']").text(teacher.teacherNumber);
+			$("[name='email']").attr("value", teacher.teacherEmail);
+			$("[name='phone']").attr("value", teacher.teacherPhone);
+	
+		}, "json");
+	};
+	GetTeacherInfo();
+
+	function updateinfo() {
+		var email = $("[name='email']").val();
+		var phone = $("[name='phone']").val();
+		$.post("./updateTeacherInfo.do", {
+			email : email,
+			phone : phone
+		}, function(data) {
+			alert(data.result_json);
+		}, "json");
+	}
+	function changePassword() {
+
+		var oPassword = $("[name='oPassword']").val();
+		var nPassword = $("[name='nPassword']").val();
+		
+		$.post("./changePassword.do", {
+		
+			oPassword : oPassword,
+			nPassword : nPassword
+		}, function(data) {
+			alert(data.result_json);
+		}, "json");
+	}
+	
+</script>
+
+
+</head>
+<body>
+<%@ include file="../header.jsp" %>
+<div class="body_container">
+
+	<div class="main_container"  align="center" >
+	<div class="tutor_info">
+	<table class="info_table">
+		<tbody>
+			<tr align="center">
+				<th>个人信息</th>
+			</tr>
+			<tr>
+				<td>
+					<table>
+						<tbody>
+							<tr>
+								<td class="info_mark">姓名:</td>
+								<td class="info_content" id="name"></td>
+							</tr>
+							<tr>
+								<td class="info_mark">编号:</td>
+								<td class="info_content" id="no"></td>
+							</tr>
+							<tr>
+								<td class="info_mark">电子邮箱:</td>
+								<td class="info_content"><input type="text" name="email" />
+								</td>
+							</tr>
+							<tr>
+								<td class="info_mark">联系方式:</td>
+								<td class="info_content"><input type="text" name="phone" />
+								</td>
+							</tr>
+							
+							<tr>
+								<td />
+								<td class="info_content"><input type="button" value="更新"
+									onclick="updateinfo()" /></td>
+							</tr>
+						</tbody>
+					</table></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<table class="info_table">
+		<tbody>
+			<tr align="center">
+				<th>密码修改</th>
+			</tr>
+			<tr>
+				<td>
+					<table>
+						<tbody>
+						
+			
+							</tr>
+								<tr>
+								<td class="info_mark">   原密码             :    </td>
+								<td class="info_content"><input type="password" name="oPassword" />
+								</td>
+							</tr>
+							<tr>
+								<td class="info_mark">   新密码             :    </td>
+								<td class="info_content"><input type="password" name="nPassword" />
+								</td>
+							</tr>
+						
+							<tr>
+								<td />
+								<td class="info_content"><input type="button" value="修改"
+									onclick="changePassword()" /></td>
+							</tr>
+						</tbody>
+					</table></td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+	</div>
+</div>
+<%@ include file="../footer.jsp" %>
+</body>
+</html>

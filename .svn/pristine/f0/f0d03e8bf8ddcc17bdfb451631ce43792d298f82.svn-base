@@ -1,0 +1,177 @@
+package nju.software.controller.teacher;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONObject;
+import nju.software.manager.teacher.TeacherPaperManager;
+import nju.software.util.JSONUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教师论文工作控制类
+ * @author billjyc
+ * @date 2015-3-21
+ *
+ */
+@Controller
+public class TeacherPaperController {
+	@Autowired
+	private JSONUtil jsonUtil;
+	private static Logger logger = LoggerFactory.getLogger(TeacherPaperController.class);
+	@Autowired
+	private TeacherPaperManager teacherPaperManager;
+	
+	/**
+	 * 获得老师负责的学生的论文列表
+	 * @author dinglingjuan
+	 */
+	@RequestMapping(value = "/tutor/getallthesis.do")
+	@ResponseBody
+	public void getAllPaperList(HttpServletRequest request,HttpServletResponse response,
+			ModelMap model){
+		HttpSession session = request.getSession();
+		int teacherId = (Integer) session.getAttribute("teacherId");
+		
+		JSONObject jsonobj = teacherPaperManager.getAllPaperList(teacherId);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 获得初稿待定稿列表
+	 */
+	@RequestMapping(value = "/tutor/getfirstcheck.do")
+	@ResponseBody
+	public void getFirstCheck(HttpServletRequest request, HttpServletResponse response,
+			ModelMap model){
+		HttpSession session = request.getSession();
+		String actorNo = (String) session.getAttribute("actorNo");
+		JSONObject jsonobj = teacherPaperManager.getFirstCheck(actorNo);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 判断初审待定稿是否通过
+	 *@author jerry.lu 
+	 *@date   2014.3.18
+	 */
+	@RequestMapping(value = "/tutor/judgefirstcheck.do")
+	@ResponseBody
+	public void judgeFirstCheck(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("paper_id") String paperIdS, 
+			@RequestParam("task_id") String taskIdS, 
+			@RequestParam("result") String resultS, 
+			@RequestParam("addtion") String addition) {
+		String actorNo = (String) request.getSession().getAttribute("actorNo");
+		
+		JSONObject jsonobj = teacherPaperManager.judgeFirstCheck(paperIdS, resultS, actorNo, request, taskIdS, addition);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得通过重复率列表
+	 */
+	@RequestMapping(value="/tutor/getdetectionpassed.do")
+	@ResponseBody
+	public void getDetectionPassed(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+		JSONObject jsonobj = teacherPaperManager.getDetectionPassed();
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 通过答辩前定稿（导师）
+	 * @author Jason
+	 */
+	@RequestMapping(value = "/tutor/beforedefensedecision.do")
+	public void beforeDefenseDecision(HttpServletRequest request, HttpServletResponse response,ModelMap model, 
+			@RequestParam("jsonstr") String jsonstr) {
+		JSONObject jsonobj = teacherPaperManager.beforeDefenseDecision(jsonstr);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 通过答辩的论文列表（导师）
+	 */
+	@RequestMapping(value="/tutor/passdefenselist.do")
+	public void getPassDefenseList(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+		HttpSession session = request.getSession();
+		String actorNo = (String)session.getAttribute("actorNo");
+		
+		JSONObject jsonobj = teacherPaperManager.getPassDefenseList(actorNo);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 答辩前待定稿列表（导师）
+	 * @author Jason
+	 */
+	@RequestMapping(value="/tutor/beforedefenselist.do")
+	public void getBeforeDefenseList(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+		HttpSession session = request.getSession();
+		String actorNo = (String)session.getAttribute("actorNo");
+		
+		JSONObject jsonobj = teacherPaperManager.getBeforeDefenseList(actorNo);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 通过答辩后定稿（导师）
+	 */
+	@RequestMapping(value = "/tutor/afterdefensedecision.do")
+	public void afterDefenseDecision(HttpServletRequest request, HttpServletResponse response,
+			ModelMap model, @RequestParam("jsonstr") String jsonstr) {
+		JSONObject jsonobj = teacherPaperManager.afterDefenseDecision(jsonstr);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 暂缓后待定稿列表（导师）
+	 * @author Jason
+	 */
+	@RequestMapping(value="/tutor/reprievedlist.do")
+	public void getReprievedList(HttpServletRequest request,HttpServletResponse response, ModelMap model){
+		HttpSession session = request.getSession();
+		String actorNo = (String)session.getAttribute("actorNo");
+		
+		JSONObject jsonobj = teacherPaperManager.getReprievedList(actorNo);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 暂缓后定稿决议（导师）, 准备进行暂缓答辩
+	 * @author Jason
+	 */
+	@RequestMapping(value = "/tutor/afterreprievedecision.do")
+	public void afterReprieveDecision(HttpServletRequest request, HttpServletResponse response,ModelMap model, 
+			@RequestParam("jsonstr") String jsonstr) {
+		JSONObject jsonobj = teacherPaperManager.afterReprieveDecision(jsonstr);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 下载论文
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param path
+	 */
+	@RequestMapping(value = "/tutor/downloadpaper.do", method = RequestMethod.POST)
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void downloadpaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, @RequestParam("path") String path) {
+		teacherPaperManager.downloadPaper(response, path);
+	}
+}

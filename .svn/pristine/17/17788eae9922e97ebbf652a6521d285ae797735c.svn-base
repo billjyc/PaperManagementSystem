@@ -1,0 +1,1186 @@
+package nju.software.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Accessory;
+import nju.software.entity.Account;
+import nju.software.entity.Course;
+import nju.software.entity.InterimReport;
+import nju.software.entity.Paper;
+import nju.software.entity.Proposal;
+import nju.software.entity.Student;
+import nju.software.entity.StudentCourseInfo;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.jsonmodel.JsonCourse;
+import nju.software.jsonmodel.JsonPaper;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.jsonmodel.JsonStudentCourseInfo;
+import nju.software.jsonmodel.JsonTeacher;
+import nju.software.service.AccountService;
+import nju.software.service.InterimReportService;
+import nju.software.service.PaperService;
+import nju.software.service.ProposalService;
+import nju.software.service.ReportService;
+import nju.software.service.StudentCourseInfoService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+import nju.software.util.FileOperateUtil;
+import nju.software.util.JbpmAPIUtil;
+
+import org.apache.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.jbpm.task.query.TaskSummary;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+@Controller
+public class StudentController {
+	@Autowired
+	private JbpmAPIUtil jbpmAPIUtil;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentCourseInfoService studentCourseInfoService;	
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private ProposalService proposalService;
+	@Autowired
+	private InterimReportService interimReportService;
+	@Autowired
+	SuggestionService suggestionService ;
+	@Autowired
+	private ReportService reportService;
+	
+
+	private static Logger logger = Logger.getLogger(StudentController.class);
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+
+	/**
+	 * 获得用户sessionId事件
+	 * 
+	 * @author wsd
+	 * @param id
+	 *            是学生登录后放在session的studentId
+	 */
+	@RequestMapping(value = "/student/getsessionid.do")
+	@ResponseBody
+	public void getSessionId(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		int id = (Integer) request.getSession().getAttribute("studentId");
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("sessionid", id);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取当前学生信息 展示学生个人信息事件,edit by wsd
+	 * 
+	 * @author wsd
+	 * @param id
+	 *            用户存在session中的ID
+	 * @param jsonstudent
+	 *            获得的学生对象转换为jsonstudent
+	 * @param result_json
+	 *            执行方法体成功与否的判断信息，用于返回前台展示用户提示信息
+	 */
+	@RequestMapping(value = "/student/studentInfo.do")
+	@ResponseBody
+	public void studentInfo(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		Student student = null;
+		String result_json = "";
+		try {
+			student = studentService.getStudentById(studentId);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		// 转换为jsonstudent
+		JsonStudent jsonstudent = new JsonStudent(student);
+
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("student", jsonstudent);
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 更新学生信息
+	 * 
+	 * @author zl
+	 */
+	@RequestMapping(value = "/student/updatestudentInfo.do")
+	@ResponseBody
+	public void updateStudentInfo(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		String email = request.getParameter("email");
+		String phone = request.getParameter("phone");
+		System.out.println(">>>>>>>>>>>>>>>email" + email + ">>>phone" + phone);
+		Student student = null;
+		String result_json = "";
+		try {
+			student = studentService.getStudentById(studentId);
+			student.setStudentEmail(email);
+			student.setStudentPhone(phone);
+			studentService.updateStudentInfo(student);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 导师信息 学生页面获得导师信息事件
+	 * 
+	 * @param studentId
+	 *            是学生登陆后放在session中的记录信息，主键
+	 * @param result_json
+	 *            执行方法体成功与否的判断信息，用于返回前台展示用户提示信息
+	 */
+	@RequestMapping(value = "/student/student_teacher_info.do")
+	@ResponseBody
+	public void studentTeacherInfo(String email, String passwordFake,
+			HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		JsonTeacher jsonteacher = new JsonTeacher();
+		Teacher teacher = null;
+		String result_json = "";
+		// 获得老师信息块
+
+		try {
+			teacher = teacherService.getTeacherByStudentId(studentId);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+
+		}
+		// 返回json数据
+		int accountId = accountService.getAccountByAccountname(
+				teacher.getTeacherNumber()).getAccountId();
+		jsonteacher = JsonTeacher.teacher2JsonTeacher(teacher);
+		jsonteacher.setAccountId(accountId);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("teacher", jsonteacher);
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得学生论文状态
+	 * 
+	 * @author wsd
+	 * @param studentId
+	 *            学生存放在session中的主键
+	 * @param paperstatus
+	 *            学生论文状态
+	 * @param result_json
+	 *            执行方法体成功与否的判断信息，用于返回前台展示用户提示信息
+	 */
+	@RequestMapping(value = "/student/getpaperstatus.do")
+	@ResponseBody
+	public void getPaperStatus(String email, String passwordFake,
+			HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		String paperstatus = "";
+		String result_json = "";
+		Paper paper = null;
+		// 获得学生论文状态
+		try {
+			// ----需要编码----
+			// paperstatus = Contants.XXX
+			paper = paperService.getPaperByStudentId(studentId);
+			if (paper != null) {
+				paperstatus = paper.getPaperState();
+			} else {
+				paperstatus = Constants.UNCOMMITTED;
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("paperstatus", paperstatus);
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 提交开题报告
+	 */
+	@RequestMapping(value = "/student/submitproposal.do")
+	@ResponseBody
+	public void submitProposal(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String result_json = "";
+		
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+		File proposalfile = FileOperateUtil
+				.Upload(request, getAbsoluteFileDir(actorId), "Proposal",
+						"submit_proposal_file");
+		if (proposalfile == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			sendJson(response, jsonobj);
+		}
+
+		Proposal proposal = new Proposal();
+		proposal.setStudentId(studentId);
+		proposal.setStatus(Constants.PROPOSAL_FAILED);
+		proposal.setProposalAddress(getRelativeFilePath(proposalfile
+				.getAbsolutePath()));
+
+		try {
+			List<TaskSummary> taskSummarys = jbpmAPIUtil
+					.getAssignedTasks(actorId); // 任务系统中用户id为学号或编号
+			System.out.println("123");
+			for (TaskSummary task : taskSummarys) {
+				if (task.getName().equals("submit proposal")) {
+					proposalService
+							.addProposal(proposal, task.getId(), actorId);
+				}
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		
+	
+
+
+		
+		
+		/*
+		 * 学生向导师发起新的会话
+		 */
+		
+		Student sugg_s=studentService.getStudentById(studentId);
+		Teacher sugg_t=teacherService.getTeacherByStudentId(studentId);
+		
+		Suggestion sugg=new Suggestion();
+		sugg.setLevel(0);
+		sugg.setPaperId(0);
+		
+		sugg.setReceiverId(accountService.getAccountByAccountname(sugg_t.getTeacherNumber()).getAccountId());
+		sugg.setSuggestContent(sugg_s.getStudentGrade()+"年级"+"学生 "+sugg_s.getStudentName()+"(学号"+sugg_s.getStudentNumber()+")"+"提交开题报告");
+		Timestamp time = new Timestamp(new Date().getTime());
+		sugg.setSuggestTime(time);
+		sugg.setUserId(accountService.getAccountByAccountname(sugg_s.getStudentNumber()).getAccountId());
+		sugg.setSenderName(sugg_s.getStudentName());
+		sugg.setSuggestTitle("学生"+sugg_s.getStudentName()+"提交开题报告");
+		
+	
+		try {
+			int new_sugg_id = suggestionService.addSuggestion(sugg);
+			String affix=getRelativeFilePath(proposalfile
+					.getAbsolutePath());
+			Accessory a = new Accessory();
+			a.setPath(affix);
+			a.setSuggestionId(new_sugg_id);//添加附件
+			suggestionService.addAccessory(a);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		//向导师发送提醒邮件；
+		/*
+				Student s=studentService.getStudentById(studentId);
+				
+				Teacher t=teacherService.getTeacherByStudentId(studentId);
+			EmailService emailService=new EmailService();
+			      String to=t.getTeacherEmail();
+				
+				String subject=s.getStudentGrade()+"年级学生"+s.getStudentName()+"提交开题报告";
+				String content=s.getStudentName()+"提交开题报告"+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				if(!to.isEmpty()){
+				try {
+					emailService.sendMail(to, subject, content);
+				} catch (MessagingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				}
+				
+		
+		*/
+		
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+		
+		
+		
+		
+	}
+	
+	
+	@RequestMapping(value = "/student/changePassword.do")
+	@ResponseBody
+	public void changePassword(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+
+		int accountId = (Integer) request.getSession()
+		.getAttribute("accountId");
+		
+String oPassword = request.getParameter("oPassword");
+String nPassword = request.getParameter("nPassword");
+
+System.out.println(">>>>>>>>>>>>>>>accountId" + accountId + ">>>oPassword" + oPassword + ">>>nPassword" + nPassword);
+Account account = null;
+String result_json = "";
+try {
+	account = accountService.getAccountByAccountId(accountId);
+	
+	if(account.getAccountPassword().equals(oPassword)){
+		account.setAccountPassword(nPassword);
+		accountService.updateAccount(account);
+		result_json = SUCCESS;	
+	}
+	else{
+		result_json = FAIL;
+	}
+
+	
+} catch (Exception e) {
+	e.printStackTrace();
+	result_json = FAIL;
+}
+	}
+	
+	
+	
+	/**
+	 * 导出指定学生成绩单excel
+	 */
+	@RequestMapping(value = "/student/exportTranscriptExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportStudentTranscriptExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+	String studentNo=(String) session.getAttribute("actorId");
+		HSSFWorkbook wb =reportService.exportTranscriptByStudentNo(studentNo);
+		         response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		        response.setHeader("Content-disposition", "attachment;filename="+studentNo+" transcript.xls");  
+		         OutputStream ouputStream;
+				try {
+					ouputStream = response.getOutputStream();
+					   wb.write(ouputStream);  
+				        ouputStream.flush();  
+				         ouputStream.close();  
+
+				}catch(IOException e){
+					e.printStackTrace();
+				}  
+				String result=SUCCESS;
+				JSONObject jsonobj = new JSONObject();
+				jsonobj.put("result", result);
+				sendJson(response, jsonobj);
+	}
+	
+	
+	
+	public void sendmail(String from, String fpassword, String to,
+			String subject, String content, List<File> attachmentfiles)
+			throws MessagingException {
+		System.out.println(">>>>>>>>>>" + from);
+		//System.out.println(">>>>>>>>>>" + getMailHost(from));
+		System.out.println(">>>>>>>>>>" + "localHost");
+		System.out.println(">>>>>>>>>>" + fpassword);
+		System.out.println(">>>>>>>>>>" + to);
+		System.out.println(">>>>>>>>>>" + subject);
+		System.out.println(">>>>>>>>>>" + content);
+		JavaMailSenderImpl senderImpl = new JavaMailSenderImpl();
+		//senderImpl.setHost(getMailHost(from));
+		senderImpl.setHost("localhost");
+		senderImpl.setUsername(from);
+		senderImpl.setPassword(fpassword);
+		
+		Properties javaMailProp = new Properties();
+		javaMailProp.setProperty("mail.smtp.auth", "true");
+		senderImpl.setJavaMailProperties(javaMailProp);
+	
+		MimeMessage mailMessage = senderImpl.createMimeMessage();
+		MimeMessageHelper messageHelper = new MimeMessageHelper(mailMessage,
+				true, "utf-8");
+
+		messageHelper.setTo(to);
+		messageHelper.setFrom(from);
+		messageHelper.setSubject(subject);
+		messageHelper.setText(content, true);
+
+		if (attachmentfiles != null) {
+			for (int i = 0; i < attachmentfiles.size(); i++) {
+				File tmpfsr = attachmentfiles.get(i);
+				messageHelper.addAttachment(tmpfsr.getName(), tmpfsr);
+			}
+		}
+		senderImpl.send(mailMessage);
+		System.out.println("发送成功！");
+	}
+
+	private  String getMailHost(String email) {
+		if ((email != null) && (email.length() > 0)) {
+			int dot = email.lastIndexOf('@');
+			if ((dot > -1) && (dot < (email.length() - 1))) {
+				return email.substring(dot + 1);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 提交中期报告
+	 *  
+	 */
+	@RequestMapping(value = "/student/submitinterimreport.do")
+	@ResponseBody
+	public void submitInterimReport(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		HttpSession session = request.getSession();
+		String result_json = "";
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+
+		File interimfile = FileOperateUtil.Upload(request,
+				getAbsoluteFileDir(actorId), "InterimReport",
+				"submit_interimreport_file");
+		if (interimfile == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			sendJson(response, jsonobj);
+		}
+
+		InterimReport interimReport = new InterimReport();
+		interimReport.setStudentId(studentId);
+		interimReport.setStatus(Constants.INTERIM_REPORT_FAILED);
+		interimReport.setAddress(getRelativeFilePath(interimfile
+				.getAbsolutePath()));
+
+		try {
+			List<TaskSummary> taskSummarys = jbpmAPIUtil
+					.getAssignedTasks(actorId); // 任务系统中用户id为学号或编号
+			for (TaskSummary task : taskSummarys) {
+				if (task.getName().equals("submit interim report")) {
+					interimReportService.addInterimReport(interimReport,
+							task.getId(), actorId);
+				}
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		
+		/*
+		 * 学生提交中期检查，学生向导师发起会话，系统自动生成。
+		 */
+		
+		Student sugg_s=studentService.getStudentById(studentId);
+		Teacher sugg_t=teacherService.getTeacherByStudentId(studentId);
+		
+		Suggestion sugg=new Suggestion();
+		sugg.setLevel(0);
+		sugg.setPaperId(0);
+		
+		sugg.setReceiverId(accountService.getAccountByAccountname(sugg_t.getTeacherNumber()).getAccountId());
+		sugg.setSuggestContent(sugg_s.getStudentGrade()+"年级"+"学生 "+sugg_s.getStudentName()+"(学号"+sugg_s.getStudentNumber()+")"+"提交中期检查");
+		Timestamp time = new Timestamp(new Date().getTime());
+		sugg.setSuggestTime(time);
+		sugg.setUserId(accountService.getAccountByAccountname(sugg_s.getStudentNumber()).getAccountId());
+		sugg.setSenderName(sugg_s.getStudentName());
+		sugg.setSuggestTitle("学生"+sugg_s.getStudentName()+"中期检查");
+		
+	
+		try {
+			int new_sugg_id = suggestionService.addSuggestion(sugg);
+			String affix=getRelativeFilePath(interimfile
+					.getAbsolutePath());
+			Accessory a = new Accessory();
+			a.setPath(affix);
+			a.setSuggestionId(new_sugg_id);//添加附件
+			suggestionService.addAccessory(a);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		//系统后台向导师发送提醒邮件；
+		/*
+		EmailService emailService=new EmailService();
+		        String to=sugg_t.getTeacherEmail();
+				String subject=sugg_s.getStudentGrade()+"年级学生"+sugg_s.getStudentName()+"提交中期检查";
+				String content=sugg_s.getStudentName()+"提交中期检查"+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+			if(to !=null){
+				try {
+					emailService.sendMail(to, subject, content);
+				} catch (MessagingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		
+*/
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 更新开题报告
+	 * 
+	 * @author zhanglei
+	 */
+	@RequestMapping(value = "/student/updateproposal.do")
+	@ResponseBody
+	public void updateProposal(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String result_json = SUCCESS;
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+
+		File proposalfile = FileOperateUtil
+				.Upload(request, getAbsoluteFileDir(actorId), "Proposal",
+						"update_proposal_file");
+		if (proposalfile == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			sendJson(response, jsonobj);
+		}
+
+		Proposal proposal = proposalService.getProposalByStudentId(studentId);
+		proposal.setProposalAddress(getRelativeFilePath(proposalfile
+				.getAbsolutePath()));
+		proposalService.updateProposal(proposal);
+		
+		
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 提交中期报告
+	 */
+	@RequestMapping(value = "/student/updateinterimreport.do")
+	@ResponseBody
+	public void updateInterimReport(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String result_json = SUCCESS;
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+
+		File interimfile = FileOperateUtil.Upload(request,
+				getAbsoluteFileDir(actorId), "InterimReport",
+				"update_interimreport_file");
+		if (interimfile == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			sendJson(response, jsonobj);
+		}
+
+		InterimReport interimReport = interimReportService
+				.getInterimReportByStudentId(studentId);
+		interimReport.setAddress(getRelativeFilePath(interimfile
+				.getAbsolutePath()));
+		interimReportService.updateInterimReport(interimReport);
+		
+		
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得学生论文进度状态
+	 * 
+	 * @author zhanglei
+	 */
+	@RequestMapping(value = "/student/getpaperprocess.do")
+	@ResponseBody
+	public void getPaperProcess(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		String proposalfilename = "";
+		String interimReportfilename = "";
+
+		String result_json = "";
+		try {
+			Proposal proposal = proposalService
+					.getProposalByStudentId(studentId);
+			if (proposal != null) {
+				proposalfilename = FileOperateUtil.getFileName(proposal
+						.getProposalAddress());
+			}
+
+			InterimReport interimReport = interimReportService
+					.getInterimReportByStudentId(studentId);
+			if (interimReport != null) {
+				interimReportfilename = FileOperateUtil
+						.getFileName(interimReport.getAddress());
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		String actorId = (String) request.getSession().getAttribute("actorId");
+		String currentphase = "";
+		List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId); // 任务系统中用户id为学号或编号
+		for (TaskSummary task : taskSummarys) {
+			if (task.getName().equals("submit proposal")) {
+				currentphase = "submit proposal";
+			} else if (task.getName().equals("submit interim report")) {
+				currentphase = "submit interim report";
+			}
+		}
+
+		if (currentphase.equals("")) {
+			Teacher teacher = teacherService.getTeacherByStudentId(studentId);
+			if (teacher == null) {
+				currentphase = "null";
+			} else {
+				String teacher_actorid = teacher.getTeacherNumber();
+				List<TaskSummary> teachertasksummarys = jbpmAPIUtil
+						.getAssignedTasks(teacher_actorid);
+				for (TaskSummary task : teachertasksummarys) {
+					if (task.getName().equals("proposal finalize")) {
+						currentphase = "proposal finalize";
+					} else if (task.getName().equals("interim report finalize")) {
+						currentphase = "interim report finalize";
+					}
+				}
+				if (currentphase == "") {
+					currentphase = "paper phase";
+				}
+			}
+		}
+
+		System.out.println(">>>>>>>>>>>>>>>>>>>" + currentphase);
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("currentphase", currentphase);
+		jsonobj.put("proposalfile", proposalfilename);
+		jsonobj.put("interimreportfile", interimReportfilename);
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 提交论文，未提交状态下学生提交论文，包含papertitle
+	 * 
+	 * @author wsd
+	 * @param papertitle
+	 *            论文题目
+	 * @param paperaffix
+	 *            论文附言
+	 */
+	@RequestMapping(value = "/student/uploadpaper.do")
+	@ResponseBody
+	public void uploadPaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		String result_json = "";
+		MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+		MultipartFile file = multipartRequest.getFile("upload_file");
+
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		String filename = file.getOriginalFilename();
+		String dir = "C:\\upload\\thesis\\" + studentId;
+		File save = new File(dir, filename);
+
+		try {
+			save.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (save.exists() == false) {
+			save.mkdirs();
+		}
+
+		try {
+			file.transferTo(save);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 提交论文
+	 */
+	@RequestMapping(value = "/student/submitpaper.do")
+	@ResponseBody
+	public void submitPaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String result_json = "";
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+		String papertitle = request.getParameter("title");// papertitle
+		String paperaffix = request.getParameter("affix");
+		// 上传文件
+		File save = FileOperateUtil.Upload(request,
+				getAbsoluteFileDir(actorId), papertitle, "submit_file");
+		if (save == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			sendJson(response, jsonobj);
+		}
+		Paper paper = new Paper();
+		paper.setStudentId(studentId);
+		paper.setPaperTitle(papertitle);
+		paper.setPaperAddress(getRelativeFilePath(save.getAbsolutePath()));
+		paper.setPaperState(Constants.DRAFT_COMPLETED);
+		paper.setPaperAffix1(paperaffix);// 学生的附言，放affix1 还是affix2要注意
+
+		try {
+			List<TaskSummary> taskSummarys = jbpmAPIUtil
+					.getAssignedTasks(actorId);
+			for (TaskSummary task : taskSummarys) {
+				if (task.getName().equals("submit papers")) {
+					paperService.addPaper(paper, task.getId(), actorId);
+				}
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			//e.printStackTrace();
+			result_json = FAIL;
+		}
+
+	
+		
+		//向导师发起会话
+	
+		Student sugg_s=studentService.getStudentById(studentId);
+		Teacher sugg_t=teacherService.getTeacherByStudentId(studentId);
+		
+		Suggestion sugg=new Suggestion();
+		sugg.setLevel(0);
+		sugg.setPaperId(paper.getPaperId());//设置论文paperId
+		System.out.println("---------------"+paper.getPaperId());
+		sugg.setReceiverId(accountService.getAccountByAccountname(sugg_t.getTeacherNumber()).getAccountId());
+		sugg.setSuggestContent(sugg_s.getStudentGrade()+"年级"+"学生 "+sugg_s.getStudentName()+"(学号"+sugg_s.getStudentNumber()+")"+"提交论文");
+		Timestamp time = new Timestamp(new Date().getTime());
+		sugg.setSuggestTime(time);
+		sugg.setUserId(accountService.getAccountByAccountname(sugg_s.getStudentNumber()).getAccountId());
+		sugg.setSenderName(sugg_s.getStudentName());
+		sugg.setSuggestTitle("学生"+sugg_s.getStudentName()+"提交论文");
+		
+	
+		try {
+			int new_sugg_id = suggestionService.addSuggestion(sugg);
+			String affix=getRelativeFilePath(save
+					.getAbsolutePath());
+			Accessory a = new Accessory();
+			a.setPath(affix);
+			a.setSuggestionId(new_sugg_id);//添加附件
+			suggestionService.addAccessory(a);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
+		//向导师发送提醒邮件；
+		/*
+		EmailService emailService=new EmailService();
+        String to=sugg_t.getTeacherEmail();
+		String subject=sugg_s.getStudentGrade()+"年级学生"+sugg_s.getStudentName()+"提交中期检查";
+		String content="<p>"+paperaffix+"</p>";
+	if(to !=null){
+		try {
+			emailService.sendMail(to, subject, content);
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+          */
+		
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		sendJson(response, jsonobj);	
+	}
+
+	/**
+	 * 获得整个论文信息
+	 * 
+	 * @author wsd
+	 */
+	@RequestMapping(value = "/student/getpaper.do")
+	@ResponseBody
+	public void getPaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		String result_json = "";
+
+		// 获得paper
+		Paper paper = null;
+		try {
+			// paper = ...
+			paper = paperService.getPaperByStudentId(studentId);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JsonPaper jsonpaper = JsonPaper.paper2JsonPaper(paper,
+				studentService.getStudentById(studentId));
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("paper", jsonpaper);
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+		//
+	}
+
+	/**
+	 * 更新论文事件
+	 * 
+	 * @author wsd
+	 * @param paperstr是传过来的paper
+	 *            json数据
+	 */
+	@RequestMapping(value = "/student/updatepaper.do")
+	@ResponseBody
+	public void updatePaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		String result_json = "";
+		HttpSession session = request.getSession();
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+		String papertitle = request.getParameter("title");// papertitle
+		String paperaffix1 = request.getParameter("affix");// paper
+		System.out.println(paperaffix1);
+		System.out.println(papertitle);
+		// 更新论文操作
+		File save = FileOperateUtil.Upload(request,
+				getAbsoluteFileDir(actorId), papertitle, "update_file");
+		if (save == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			sendJson(response, jsonobj);
+		}
+		// 更新到数据库
+		Paper opaper = paperService.getPaperByStudentId(studentId);
+		opaper.setPaperAddress(getRelativeFilePath(save.getAbsolutePath()));
+		opaper.setPaperTitle(papertitle);
+		opaper.setPaperAffix1(paperaffix1);
+		paperService.updatePaper(opaper);
+		
+		
+		
+		
+
+		try {
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 更新论文标题
+	 * 
+	 * @author zl
+	 * @param
+	 */
+	@RequestMapping(value = "/student/updatepapername.do")
+	@ResponseBody
+	public void updatePaperName(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		String result_json = "";
+		String papertitle = request.getParameter("title");// papertitle
+		System.out.println(papertitle);
+		HttpSession session = request.getSession();
+		int studentId = (Integer) session.getAttribute("studentId");
+		// 更新论文操作
+		// 更新到数据库
+		Paper opaper = paperService.getPaperByStudentId(studentId);
+		System.out.println(papertitle);
+		opaper.setPaperTitle(papertitle);
+		paperService.updatePaper(opaper);
+
+		try {
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 论文状态
+	 */
+	@RequestMapping(value = "/paperstatus.do", method = RequestMethod.POST)
+	public String paperStatue(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int studentId = Integer.parseInt((String) session
+				.getAttribute("actorId"));
+
+		Paper paper = paperService.getPaperByStudentId(studentId);
+
+		// System.out.println(email);
+
+		return "index";
+	}
+
+	/**
+	 * 下载论文
+	 * 
+	 * @author zhanglei
+	 */
+	@RequestMapping(value = "/student/downloadpaper.do", method = RequestMethod.POST)
+	public void downloadpaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int studentId = (Integer) session.getAttribute("studentId");
+
+		Paper paper = paperService.getPaperByStudentId(studentId);
+		String absolutepath = getAbsoluteFilePath(paper.getPaperAddress());
+		// System.out.println(email);
+
+		FileOperateUtil.Download(response, absolutepath);
+
+		String result_json = "";
+		try {
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 下载论文
+	 * 
+	 * @author zhanglei
+	 */
+	@RequestMapping(value = "/student/downloadproposal.do", method = RequestMethod.POST)
+	public void downloadproposal(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int studentId = (Integer) session.getAttribute("studentId");
+
+		Proposal proposal = proposalService.getProposalByStudentId(studentId);
+		String absolutepath = getAbsoluteFilePath(proposal.getProposalAddress());
+		System.out.println(absolutepath);
+
+		FileOperateUtil.Download(response, absolutepath);
+
+		String result_json = "";
+		try {
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 下载论文
+	 * 
+	 * @author zhanglei
+	 */
+	@RequestMapping(value = "/student/downloadinterimreport.do", method = RequestMethod.POST)
+	public void downloadinterimreport(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int studentId = (Integer) session.getAttribute("studentId");
+
+		InterimReport interimReport = interimReportService
+				.getInterimReportByStudentId(studentId);
+		String absolutepath = getAbsoluteFilePath(interimReport.getAddress());
+		// System.out.println(email);
+
+		FileOperateUtil.Download(response, absolutepath);
+
+		String result_json = "";
+		try {
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		sendJson(response, jsonobj);
+	}
+
+	public void sendJson(HttpServletResponse response, JSONObject jsonobj) {
+		try {
+			PrintWriter out = response.getWriter();
+			out.print(jsonobj);
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	/**
+	 * 获得学生的课程信息
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/student/getcourseinfo.do")
+	@ResponseBody
+	public void getCousreInfoList(HttpServletRequest request,HttpServletResponse response,
+			ModelMap model){
+		HttpSession session = request.getSession();
+		String studentNo = (String) session.getAttribute("actorId");
+		List<StudentCourseInfo> courseInfoList = studentCourseInfoService.getInfoByStudentNo(studentNo);
+		String result_json = "";
+		ArrayList<JsonStudentCourseInfo> JsonCourseInfoList = new ArrayList<JsonStudentCourseInfo>();
+			try{
+			if(courseInfoList!=null){
+				for(int i=0;i<courseInfoList.size();i++){
+					StudentCourseInfo courseInfo = courseInfoList.get(i);
+					if(courseInfo!=null){
+						//JsonStudentCourseInfo JsonStudentCourseInfo = JsonStudentCourseInfo.course2JsonStudentCourseInfo(courseInfo);
+						JsonCourseInfoList.add(new JsonStudentCourseInfo(courseInfo));
+					}
+				}
+			}
+			result_json = "success";
+		}catch(Exception e){
+			logger.error("get course list failed: ",e);
+			result_json = FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(JsonCourseInfoList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		
+		sendJson(response, jsonobj);
+	}
+	
+
+	private String getAbsoluteFileDir(String studentid) {
+		String rootdirectory = System.getProperty("web.root");
+		String dir = rootdirectory + getRelativeFileDir(studentid);
+		File dirf = new File(dir);
+		dirf.mkdirs();
+		return dir;
+	}
+
+	private String getRelativeFileDir(String studentid) {
+		String dir = "document" + File.separator + studentid;
+		return dir;
+	}
+
+	private String getRelativeFilePath(String absolutepath) {
+		return absolutepath.replace(System.getProperty("web.root"), "");
+	}
+
+	private String getAbsoluteFilePath(String relativepath) {
+		return System.getProperty("web.root") + relativepath;
+	}
+}

@@ -1,0 +1,73 @@
+package nju.software.manager.teacher;
+
+import java.sql.Timestamp;
+import java.util.Date;
+
+import nju.software.entity.InterimReport;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+
+import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TeacherInterimReportManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired 
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	
+	public void sendSuggestion(Integer teacherId, InterimReport interimReport) {
+		Student s = studentService.getStudentById(interimReport.getStudentId());
+		Teacher t = teacherService.getTeacherById(teacherId);
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		if(interimReport.getStatus() == Constants.INTERIM_REPORT_PASSED) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的中期报告";
+			content = "你的中期报告已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "完成论文后，请上传";
+		} else if(interimReport.getStatus() == Constants.INTERIM_REPORT_FAILED) {
+			title = "导师" + t.getTeacherName() + "驳回了你的中期报告";
+			content = "你的中期报告已经被导师" + t.getTeacherName() + "驳回，" 
+					+ "请修改后再次上传，交由导师检查";
+		} else {
+			return;
+		}
+		
+		Suggestion suggestion = new Suggestion();
+		suggestion.setLevel(0);
+		suggestion.setPaperId(0);
+		
+		Integer receiverId = accountService.getAccountByAccountname(s.getStudentNumber()).getAccountId();
+		suggestion.setReceiverId(receiverId);
+		Timestamp time = new Timestamp(new Date().getTime());
+		suggestion.setSuggestTime(time);
+		Integer senderId = accountService.getAccountByAccountname(t.getTeacherNumber()).getAccountId();
+		suggestion.setUserId(senderId);
+		suggestion.setSenderName("导师" + t.getTeacherName());
+		
+		suggestion.setSuggestTitle(title);
+		suggestion.setSuggestContent(content);
+		
+		try {
+			suggestionService.sendSuggestion(suggestion, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}

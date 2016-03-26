@@ -1,0 +1,224 @@
+package nju.software.manager.teacher;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Paper;
+import nju.software.entity.Proposal;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.jsonmodel.JsonProposal;
+import nju.software.jsonmodel.ProposalTask;
+import nju.software.service.AccountService;
+import nju.software.service.PaperService;
+import nju.software.service.ProposalService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.FileOperateUtil;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+public class TeacherProposalManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired 
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	@Autowired
+	private ProposalService proposalService;
+	@Autowired
+	private PaperService paperService;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TeacherProposalManager.class);
+	
+	/**
+	 * 教师对开题报告进行审查后，发送会话
+	 */
+	private void sendSuggestion(Proposal proposal) {
+		Student s = studentService.getStudentById(proposal.getStudentId());
+		Teacher t = teacherService.getTeacherById(s.getTeacherId());
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		if(proposal.getStatus() == Constants.PROPOSAL_PASSED) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的开题报告";
+			content = "你的开题报告已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "完成中期报告后，请上传";
+		} else if(proposal.getStatus() == Constants.PROPOSAL_FAILED) {
+			title = "导师" + t.getTeacherName() + "驳回了你的开题报告";
+			content = "你的开题报告已经被导师" + t.getTeacherName() + "驳回，" 
+					+ "请修改后再次上传，交由导师检查";
+		} else {
+			return;
+		}
+		
+		Suggestion suggestion = new Suggestion();
+		suggestion.setLevel(0);
+		suggestion.setPaperId(0);
+		
+		Integer receiverId = accountService.getAccountByAccountname(s.getStudentNumber()).getAccountId();
+		suggestion.setReceiverId(receiverId);
+		LOGGER.debug("receiver id: {}", receiverId);
+		Timestamp time = new Timestamp(new Date().getTime());
+		suggestion.setSuggestTime(time);
+		Integer senderId = accountService.getAccountByAccountname(t.getTeacherNumber()).getAccountId();
+		suggestion.setUserId(senderId);
+		LOGGER.debug("sender id: {}", senderId);
+		suggestion.setSenderName("导师" + t.getTeacherName());
+		
+		suggestion.setSuggestTitle(title);
+		suggestion.setSuggestContent(content);
+		
+		try {
+			suggestionService.sendSuggestion(suggestion, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 获取待审开题报告
+	 * @param actorNo
+	 * @return
+	 */
+	public JSONObject getUncheckedProposal(String actorNo) {
+		List<ProposalTask> proposalList = new ArrayList<ProposalTask>();
+		LOGGER.debug("actor Id: {}", actorNo);
+
+		String result_json = "";
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Proposal Finalize");
+			for(Task task : taskList) {
+				ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+				LOGGER.debug("process instance id: {}", instance.getId());
+				if(instance != null) {
+					int studentId = (Integer) (activitiAPIUtils.getVariable(instance.getId(), "studentId"));
+					Student student = studentService.getStudentById(studentId);
+					Proposal proposal = proposalService.getProposalByStudentId(studentId);
+
+					if(proposal.getStatus() == Constants.PROPOSAL_UNCHECKED) {
+						proposalList.add(new ProposalTask(proposal, student, Long.parseLong(task.getId())));
+					}
+				}
+			}
+			result_json = Constants.SUCCESS;
+		}catch(Exception e){
+			LOGGER.error("获取待检开题报告失败", e);
+			result_json = Constants.FAIL;
+		}
+
+		JSONArray jsonlist = JSONArray.fromObject(proposalList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	public JSONObject getPassedProposal(Integer teacherId) {
+		List<JsonProposal> jsonList = new ArrayList<JsonProposal>();
+		String result_json = "";
+		try{
+			List<Proposal> proposalList = proposalService.getProposalByStatus(Constants.PROPOSAL_PASSED, teacherId);
+			for(Proposal proposal : proposalList){
+				Student s = studentService.getStudentById(proposal.getStudentId());
+				jsonList.add(new JsonProposal(proposal, s));
+			}
+			result_json = Constants.SUCCESS;
+		}catch(Exception e){
+			LOGGER.error("获取已通过开题报告列表失败", e);
+			result_json = Constants.FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 判定开题报告是否通过
+	 * @param judgestr
+	 * @return
+	 */
+	public JSONObject judgeProposal(String judgestr) {
+		JSONObject judge_json = JSONObject.fromObject(judgestr);
+		Integer proposalId = judge_json.getInt("proposalId");
+		long taskId = judge_json.getLong("taskId");
+		boolean result = judge_json.getInt("result") == Constants.PROPOSAL_PASSED ? true : false ; 
+
+		String result_json = "";
+		try{
+			Proposal proposal = proposalService.getProposalById(proposalId);
+			Validate.notNull(proposal);
+			
+			Paper paper = paperService.getPaperByStudentId(proposal.getStudentId());
+
+			if(result) {
+				proposal.setStatus(Constants.PROPOSAL_PASSED);
+				paper.setPaperState(PaperState.INTERIM_REPORT_UNSUBMITED);
+			} else {
+				proposal.setStatus(Constants.PROPOSAL_FAILED);
+				paper.setPaperState(PaperState.UNPROPOSED);
+			}
+
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put("isPassed", result);
+			//更新开题报告状态
+			proposalService.updateProposal(proposal);
+			//更新论文状态
+			paperService.updatePaper(paper);
+			//教师完成任务
+			activitiAPIUtils.completeTask(String.valueOf(taskId), data);
+			//发送会话给学生
+			sendSuggestion(proposal);
+			result_json = Constants.SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = Constants.FAIL;
+		}
+
+		JSONObject jsonobj =  new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 下载开题报告
+	 * @param path
+	 * @param response
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public void downloadProposal(String path, HttpServletResponse response) {
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(path);
+		FileOperateUtil.Download(response, absolutepath);
+	}
+}

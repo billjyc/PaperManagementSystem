@@ -1,0 +1,130 @@
+package nju.software.controller;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.Account;
+import nju.software.entity.Director;
+import nju.software.entity.HeadTeacher;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.manager.LoginManager;
+import nju.software.util.Constants;
+import nju.software.util.JSONUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+/**
+ * 控制用户的登录，判断用户的类型，进行不同页面的跳转
+ */
+
+@Controller
+public class LoginController {
+	@Autowired
+	private LoginManager loginManager;
+	@Autowired
+	private JSONUtil jsonUtil;
+
+	private static Logger logger = LoggerFactory.getLogger(LoginController.class);
+
+	/**
+	 * 登陆验证，页面跳转
+	 */
+	@RequestMapping(value = "/login.do" , method = RequestMethod.POST)
+	public String VertifyAccount(HttpServletRequest request, HttpServletResponse response, Model model
+			, @RequestParam("username") String accountName, @RequestParam("passwordFake") String accountPassword){
+		HttpSession session = request.getSession();
+		Account account = loginManager.verifyAccount(accountName, accountPassword);
+		if(account != null){
+			session.setAttribute("accountId", account.getAccountId());
+			logger.debug("account level: {}", account.getAccountLevel());
+			logger.debug("account id: {}", account.getAccountId());
+			if(account.getAccountLevel() == Constants.STUDENT){
+				Student student = loginManager.getStudentById(account.getStudentId());	//当前登录学生
+				if(student != null){
+					session.setAttribute("actorId",student.getStudentNumber());
+					session.setAttribute("actorLabel", Constants.ACTOR_STUDENT);
+					session.setAttribute("studentId",student.getStudentId());
+					session.setAttribute("actorName", student.getStudentName());
+					return "redirect:/student/student_main.jsp";
+				}
+			} else if (account.getAccountLevel() == Constants.DEAN){
+				Teacher teacher = loginManager.getTeacherById(account.getTeacherId());	//当前登录教师（教务员）
+				if(teacher != null){
+					session.setAttribute("actorId",teacher.getTeacherNumber());
+					session.setAttribute("actorLabel", Constants.ACTOR_DEAN);
+					session.setAttribute("teacherId", teacher.getTeacherId());
+					session.setAttribute("actorName", teacher.getTeacherName());
+					return "redirect:/dean/index.jsp";	
+				}
+			} else if(account.getAccountLevel()==Constants.TEACHER){
+				Teacher teacher = loginManager.getTeacherById(account.getTeacherId());	//当前登录教师
+				if(teacher != null){
+					session.setAttribute("actorNo",teacher.getTeacherNumber());
+					session.setAttribute("actorLabel", Constants.ACTOR_TEACHER);
+					session.setAttribute("teacherId", teacher.getTeacherId());
+					session.setAttribute("actorName", teacher.getTeacherName());
+					return "redirect:/tutor/index.jsp";
+				}
+			} else if(account.getAccountLevel()==Constants.ADMIN){
+				Teacher teacher = loginManager.getTeacherById(account.getTeacherId());//当前登录教师（管理员）
+				if(teacher != null){
+					session.setAttribute("actorNo", teacher.getTeacherNumber());
+					session.setAttribute("actorId", teacher.getTeacherNumber());
+					session.setAttribute("actorLabel", Constants.ACTOR_ADMIN);
+					session.setAttribute("teacherId", teacher.getTeacherId());
+					session.setAttribute("actorName", teacher.getTeacherName());
+					return "redirect:/admin/index.jsp";
+				}
+			} else if(account.getAccountLevel() == Constants.DIRECTOR){
+				Director director = loginManager.getDirectorById(account.getTeacherId());
+				if(director != null){
+					session.setAttribute("actorNo", director.getNo());
+					session.setAttribute("actorLabel", Constants.ACTOR_DIRECTOR);
+					session.setAttribute("id", director.getId());
+					session.setAttribute("actorName", director.getName());
+					return "redirect:/director/index.jsp";
+				}
+			} else if(account.getAccountLevel() == Constants.HEADTEACHER){
+				HeadTeacher headTeacher = loginManager.getHeadTeacherById(account.getTeacherId());
+				if(headTeacher != null){
+					session.setAttribute("actorNo", headTeacher.getNo());
+					session.setAttribute("actorLabel", Constants.ACTOR_HEADTEACHER);
+					session.setAttribute("id", headTeacher.getId());
+					session.setAttribute("actorName", headTeacher.getName());
+					return "redirect:/headTeacher/index.jsp";
+				}
+			} else{
+				return "redirect:/mylogin.jsp";
+			}
+		}
+		return "redirect:/mylogin.jsp";
+	}
+
+	/**
+	 * 登出
+	 */
+	@RequestMapping(value = "/logout.do" , method = RequestMethod.GET)
+	public String Logout(HttpServletRequest request, HttpServletResponse response, ModelMap modle){
+		logger.debug("登出----->");
+		HttpSession session = request.getSession();
+		session.invalidate();
+		return "redirect:/mylogin.jsp";
+	}
+
+	@RequestMapping(value = "/shownotice.do")
+	public void getNotice(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		JSONObject jsonobj = loginManager.getNotice();
+		jsonUtil.sendJson(response, jsonobj);
+	}
+}

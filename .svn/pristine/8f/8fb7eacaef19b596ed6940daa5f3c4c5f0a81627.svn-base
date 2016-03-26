@@ -1,0 +1,449 @@
+package nju.software.controller.teacher;
+
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Accessory;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.jsonmodel.BeforeDefenseTask;
+import nju.software.jsonmodel.DefenseTask;
+import nju.software.jsonmodel.FirstCheckTask;
+import nju.software.jsonmodel.JsonPaper;
+import nju.software.manager.teacher.TeacherPaperManager;
+import nju.software.service.AccountService;
+import nju.software.service.PaperService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.FileOperateUtil;
+import nju.software.util.JSONUtil;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教师论文工作控制类
+ * @author billjyc
+ * @date 2015-3-21
+ *
+ */
+@Controller
+public class TeacherPaperController {
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	
+	private static Logger logger = LoggerFactory.getLogger(TeacherPaperController.class);
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private TeacherPaperManager teacherPaperManager;
+	
+	/**
+	 * 获得老师负责的学生的论文列表
+	 * @author dinglingjuan
+	 */
+	@RequestMapping(value = "/tutor/getallthesis.do")
+	@ResponseBody
+	public void getAllPaperList(HttpServletRequest request,HttpServletResponse response,
+			ModelMap model){
+		HttpSession session = request.getSession();
+		int teacherId = (Integer) session.getAttribute("teacherId");
+		List<Student> studentList = studentService.getStudentsByTeacherId(teacherId);
+		String result_json = "";
+		ArrayList<JsonPaper> paperList = new ArrayList<JsonPaper>();
+		try{
+			if(studentList != null){
+				for(int i = 0;i < studentList.size(); i++){
+					int studentId = studentList.get(i).getStudentId();
+					Paper paper = paperService.getPaperByStudentId(studentId);
+					Student student = studentService.getStudentById(studentId);
+					if(paper != null){
+						JsonPaper jsonPaper = JsonPaper.paper2JsonPaper(paper,student);
+						paperList.add(jsonPaper);
+					}
+				}
+			}
+			result_json = "success";
+		}catch(Exception e){
+			logger.error("get all thesis list failed: ",e);
+			result_json = FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(paperList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 获得初稿待定稿列表
+	 */
+	@RequestMapping(value = "/tutor/getfirstcheck.do")
+	@ResponseBody
+	public void getFirstCheck(HttpServletRequest request, HttpServletResponse response,
+			ModelMap model){
+		HttpSession session = request.getSession();
+		String actorNo = (String) session.getAttribute("actorNo");
+		String result_json = "";
+		ArrayList<FirstCheckTask> firstCheckTaskList = new ArrayList<FirstCheckTask>();
+
+		List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Preliminary Finalize");
+		try{
+			for(Task task : taskList) {
+				ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+
+				if(instance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(instance.getId(), "studentId");
+					Student student = studentService.getStudentById(studentId);
+					Paper paper = paperService.getPaperByStudentId(studentId);
+
+					FirstCheckTask firstCheckTask = FirstCheckTask.toFirstCheckTask(paper, student, Long.parseLong(task.getId()));
+					firstCheckTaskList.add(firstCheckTask);
+				}
+			}
+
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("get first check list failed: ",e);
+			result_json = FAIL;
+		}
+
+		JSONArray jsonlist = JSONArray.fromObject(firstCheckTaskList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 判断初审待定稿是否通过
+	 *@author jerry.lu 
+	 *@date   2014.3.18
+	 */
+	@RequestMapping(value = "/tutor/judgefirstcheck.do")
+	@ResponseBody
+	public void judgeFirstCheck(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("paper_id") String paperIdS, 
+			@RequestParam("task_id") String taskIdS, 
+			@RequestParam("result") String resultS, 
+			@RequestParam("addtion") String addition) {
+		String actorNo = (String) request.getSession().getAttribute("actorNo");
+		Integer paperId = Integer.parseInt(paperIdS);
+		Long.parseLong(taskIdS);
+		boolean result = resultS.equals(PaperState.FIRST_DRAFT_FINALIZED.toString()) ? true : false ; 
+		String result_json = "";
+		
+		Paper paper = paperService.getPaperByPaperId(paperId);
+		Validate.notNull(paper);
+		//根据审查结果设定论文的状态
+		if(result) {
+			paper.setPaperState(PaperState.FIRST_DRAFT_FINALIZED);	
+		} else {
+			paper.setPaperState(PaperState.UNCOMMITED);	
+		}
+		paperService.updatePaper(paper);
+		result_json = SUCCESS;
+
+		logger.info("导师提交指导意见");
+		Timestamp time1 = new Timestamp(new Date().getTime());
+		//导师向学生开启会话submit_views
+		File views = FileOperateUtil
+				.Upload(request, FileOperateUtil.getAbsoluteFileDir(actorNo), "views" + time1,
+						"submit_views");
+		try{
+			teacherPaperManager.sendFirstCheckSuggestion(paper, views);
+		} catch(Exception e) {
+			logger.error("发送会话失败！", e);
+			result_json = FAIL;
+		}
+
+		//完成任务，根据isPassed转向不同的task
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("isPassed", result);
+		activitiAPIUtils.completeTask(taskIdS, data);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得通过重复率列表
+	 */
+	@RequestMapping(value="/tutor/getdetectionpassed.do")
+	@ResponseBody
+	public void getDetectionPassed(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+		List<Paper> list = paperService.getPapersByState(PaperState.JUDGE_READY);
+		ArrayList<JsonPaper> json_list = new ArrayList<JsonPaper>();
+		for(Paper p : list){
+			Student s  = studentService.getStudentById(p.getStudentId());
+			JsonPaper jsonPaper = JsonPaper.paper2JsonPaper(p, s);
+			json_list.add(jsonPaper);
+		}
+		JSONArray list_json = JSONArray.fromObject(json_list);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 通过答辩前定稿（导师）
+	 * @author Jason
+	 */
+	@RequestMapping(value = "/tutor/beforedefensedecision.do")
+	public void beforeDefenseDecision(HttpServletRequest request, HttpServletResponse response,ModelMap model, 
+			@RequestParam("jsonstr") String jsonstr) {
+		JSONObject judge_json = JSONObject.fromObject(jsonstr);
+		Integer paperId = judge_json.getInt("paperid");
+		long taskId = judge_json.getLong("taskid");
+		HttpSession session = request.getSession();
+		session.getAttribute("actorNo");
+
+		String result_json = "";
+		try {
+			Paper paper = paperService.getPaperByPaperId(paperId);
+			if(paper != null){
+				paper.setPaperState(PaperState.FINALIZED_BEFORE_DEFENSE);
+				paperService.updatePaper(paper);
+				activitiAPIUtils.completeTask(String.valueOf(taskId));
+				//发送会话
+				teacherPaperManager.sendBeforeDefenseDecisionSuggestion(paper);
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("Exception! ", e);
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj =  new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 通过答辩的论文列表（导师）
+	 */
+	@RequestMapping(value="/tutor/passdefenselist.do")
+	public void getPassDefenseList(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+		String result_json = "";
+		List<DefenseTask> list = new ArrayList<DefenseTask>();
+
+		HttpSession session = request.getSession();
+		String actorNo = (String)session.getAttribute("actorNo");
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Defense Finalize");
+			for(Task task : taskList) {
+				ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+
+				if(processInstance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+					Paper paper = paperService.getPaperByStudentId(studentId);
+					Student student = studentService.getStudentById(paper.getStudentId());
+					list.add(DefenseTask.toDefenseTask(student, paper, Long.parseLong(task.getId())));
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		JSONArray list_json = JSONArray.fromObject(list);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("list", list_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 答辩前待定稿列表（导师）
+	 * @author Jason
+	 */
+	@RequestMapping(value="/tutor/beforedefenselist.do")
+	public void getBeforeDefenseList(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+		String result_json = "";
+		List<BeforeDefenseTask> list = new ArrayList<BeforeDefenseTask>();
+
+		HttpSession session = request.getSession();
+		String actorNo = (String)session.getAttribute("actorNo");
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Defense Finalize Before");
+
+			for(Task task : taskList) {
+				ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+
+				if(processInstance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+					Paper paper = paperService.getPaperByStudentId(studentId);
+					Student student = studentService.getStudentById(paper.getStudentId());
+					list.add(BeforeDefenseTask.toBeforeDefenseTask(student, paper, Long.parseLong(task.getId())));
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		JSONArray list_json = JSONArray.fromObject(list);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("list", list_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 通过答辩后定稿（导师）
+	 */
+	@RequestMapping(value = "/tutor/afterdefensedecision.do")
+	public void afterDefenseDecision(HttpServletRequest request, HttpServletResponse response,
+			ModelMap model, @RequestParam("jsonstr") String jsonstr) {
+		String result_json = "";
+		JSONObject judge_json = JSONObject.fromObject(jsonstr);
+		Integer paperId = judge_json.getInt("paperid");
+		long taskId = judge_json.getLong("taskid");
+		HttpSession session = request.getSession();
+		session.getAttribute("actorNo");
+		try {
+			Paper paper = paperService.getPaperByPaperId(paperId);
+			if(paper != null){
+				paper.setPaperState(PaperState.FINALIZED_AFTER_DEFENSE);
+				paperService.updatePaper(paper);
+				activitiAPIUtils.completeTask(String.valueOf(taskId));
+				teacherPaperManager.sendAfterDefenseDecisionSuggestion(paper);
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 暂缓后待定稿列表（导师）
+	 * @author Jason
+	 */
+	@RequestMapping(value="/tutor/reprievedlist.do")
+	public void getReprievedList(HttpServletRequest request,HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		List<DefenseTask> list = new ArrayList<DefenseTask>();
+
+		HttpSession session = request.getSession();
+		String actorNo = (String)session.getAttribute("actorNo");
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Reprieve Finalize");
+			for(Task task : taskList) {
+				ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+
+				if(processInstance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+					Paper paper = paperService.getPaperByStudentId(studentId);
+					Student student = studentService.getStudentById(paper.getStudentId());
+					list.add(DefenseTask.toDefenseTask(student, paper, Long.parseLong(task.getId())));
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		JSONArray list_json = JSONArray.fromObject(list);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("list", list_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 暂缓后定稿决议（导师）, 准备进行暂缓答辩
+	 * @author Jason
+	 */
+	@RequestMapping(value = "/tutor/afterreprievedecision.do")
+	public void afterReprieveDecision(HttpServletRequest request, HttpServletResponse response,ModelMap model, 
+			@RequestParam("jsonstr") String jsonstr) {
+		HttpSession session = request.getSession();
+		session.getAttribute("actorNo");
+		JSONObject judge_json = JSONObject.fromObject(jsonstr);
+		Integer paperId = judge_json.getInt("paperid");
+		long taskId = judge_json.getLong("taskid");
+
+		String result_json = "";
+		try {
+			Paper paper = paperService.getPaperByPaperId(paperId);
+			if(paper != null){
+				paper.setPaperState(PaperState.FINALIZED_AFTER_REPRIEVE);
+				paperService.updatePaper(paper);
+				activitiAPIUtils.completeTask(String.valueOf(taskId));
+				teacherPaperManager.sendAfterReprieveDecisionSuggestion(paper);
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj =  new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 下载论文
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param path
+	 */
+	@RequestMapping(value = "/tutor/downloadpaper.do", method = RequestMethod.POST)
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void downloadpaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, @RequestParam("path") String path) {
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(path);
+		FileOperateUtil.Download(response, absolutepath);
+	}
+}

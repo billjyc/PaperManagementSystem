@@ -1,0 +1,161 @@
+package nju.software.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+
+import static javax.persistence.GenerationType.IDENTITY;
+
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
+import nju.software.entity.enums.TeacherEducation;
+import nju.software.entity.enums.TeacherJobTitle;
+import nju.software.entity.enums.TeacherQualification;
+import nju.software.entity.enums.TeacherType;
+
+/**
+ * Teacher entity. @author MyEclipse Persistence Tools
+ */
+@Entity
+@Table(name = "teacher", uniqueConstraints = @UniqueConstraint(columnNames = "teacher_number"))
+public class Teacher implements java.io.Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1452319564355378271L;
+	// Fields
+	private Integer teacherId;
+	private String teacherName;
+	private String teacherNumber;
+	private String teacherPhone;
+	private TeacherJobTitle teacherJobTitle;
+	private TeacherEducation teacherEducation;
+	private TeacherType teacherClasses;
+	private String teacherEmail;
+	private TeacherQualification teacherQualification;
+
+	// Constructors
+
+	/** default constructor */
+	public Teacher() {
+	}
+
+	/** full constructor */
+	public Teacher(String teacherName, String teacherNumber,
+			String teacherPhone, TeacherJobTitle teacherJobTitle,
+			TeacherEducation teacherEducation, TeacherType teacherClasses,
+			String teacherEmail, TeacherQualification teacherQualification) {
+		this.teacherName = teacherName;
+		this.teacherNumber = teacherNumber;
+		this.teacherPhone = teacherPhone;
+		this.teacherJobTitle = teacherJobTitle;
+		this.teacherEducation = teacherEducation;
+		this.teacherClasses = teacherClasses;
+		this.teacherEmail = teacherEmail;
+		this.teacherQualification = teacherQualification;
+	}
+
+	// Property accessors
+	@Id
+	@GeneratedValue(strategy = IDENTITY)
+	@Column(name = "teacher_id", unique = true, nullable = false)
+	public Integer getTeacherId() {
+		return this.teacherId;
+	}
+
+	public void setTeacherId(Integer teacherId) {
+		this.teacherId = teacherId;
+	}
+
+	@Column(name = "teacher_name")
+	public String getTeacherName() {
+		return this.teacherName;
+	}
+
+	public void setTeacherName(String teacherName) {
+		this.teacherName = teacherName;
+	}
+
+	@Column(name = "teacher_number", unique = true)
+	public String getTeacherNumber() {
+		return this.teacherNumber;
+	}
+
+	public void setTeacherNumber(String teacherNumber) {
+		this.teacherNumber = teacherNumber;
+	}
+
+	@Column(name = "teacher_phone")
+	public String getTeacherPhone() {
+		return this.teacherPhone;
+	}
+
+	public void setTeacherPhone(String teacherPhone) {
+		this.teacherPhone = teacherPhone;
+	}
+
+	@Enumerated(value = EnumType.ORDINAL)
+	@Column(name = "teacher_job_title")
+	public TeacherJobTitle getTeacherJobTitle() {
+		return this.teacherJobTitle;
+	}
+
+	public void setTeacherJobTitle(TeacherJobTitle teacherJobTitle) {
+		this.teacherJobTitle = teacherJobTitle;
+	}
+
+	@Enumerated(value = EnumType.ORDINAL)
+	@Column(name = "teacher_education")
+	public TeacherEducation getTeacherEducation() {
+		return this.teacherEducation;
+	}
+
+	public void setTeacherEducation(TeacherEducation teacherEducation) {
+		this.teacherEducation = teacherEducation;
+	}
+
+	@Enumerated(value = EnumType.ORDINAL)
+	@Column(name = "teacher_classes")
+	public TeacherType getTeacherClasses() {
+		return this.teacherClasses;
+	}
+
+	public void setTeacherClasses(TeacherType teacherClasses) {
+		this.teacherClasses = teacherClasses;
+	}
+
+	@Column(name = "teacher_email")
+	public String getTeacherEmail() {
+		return this.teacherEmail;
+	}
+
+	public void setTeacherEmail(String teacherEmail) {
+		this.teacherEmail = teacherEmail;
+	}
+
+	@Enumerated(value = EnumType.ORDINAL)
+	@Column(name = "teacher_qualification")
+	public TeacherQualification getTeacherQualification() {
+		return this.teacherQualification;
+	}
+
+	public void setTeacherQualification(TeacherQualification teacherQualification) {
+		this.teacherQualification = teacherQualification;
+	}
+
+	@Override
+	public String toString() {
+		return "Teacher [teacherId=" + teacherId + ", teacherName="
+				+ teacherName + ", teacherNumber=" + teacherNumber
+				+ ", teacherPhone=" + teacherPhone + ", teacherJobTitle="
+				+ teacherJobTitle + ", teacherEducation=" + teacherEducation
+				+ ", teacherClasses=" + teacherClasses + ", teacherEmail="
+				+ teacherEmail + ", teacherQualification="
+				+ teacherQualification + "]";
+	}
+}

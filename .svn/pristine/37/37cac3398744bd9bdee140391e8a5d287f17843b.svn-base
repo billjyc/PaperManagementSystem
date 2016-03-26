@@ -1,0 +1,268 @@
+package nju.software.service.impl;
+
+import java.util.HashMap;
+import java.util.List;
+
+import nju.software.dao.StudentDAO;
+import nju.software.dao.TeacherDAO;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.ActivitiGroup;
+import nju.software.entity.enums.TeacherEducation;
+import nju.software.entity.enums.TeacherJobTitle;
+import nju.software.entity.enums.TeacherQualification;
+import nju.software.entity.enums.TeacherType;
+import nju.software.service.TeacherService;
+import nju.software.service.activiti.ActivitiAccountService;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service("teacherServiceImpl")
+public class TeacherServiceImpl implements TeacherService {
+	@Autowired
+	private TeacherDAO teacherDAO;
+	@Autowired
+	private StudentDAO studentDAO;
+	@Autowired
+	private ActivitiAccountService activitiAccountService;
+
+	private static final Logger logger = LoggerFactory.getLogger(TeacherServiceImpl.class);
+	
+	
+	public Teacher addTeacherInfo(Teacher teacher) throws Exception {
+		try {
+			Teacher t = getTeacherByTeacherNumber(teacher.getTeacherNumber());
+			Validate.isTrue(t == null);
+			
+			teacherDAO.save(teacher);
+			activitiAccountService.addTeacher(teacher);
+			
+		}catch(IllegalArgumentException ie) {
+			logger.error("已经存在相同的教师号！", ie);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return teacher;
+	}
+
+	public boolean deleteTeacherInfo(int teacherId) {
+		try {
+			Teacher teacher = teacherDAO.findById(teacherId);
+			teacherDAO.delete(teacher);
+			
+			activitiAccountService.deleteUser(teacher.getTeacherNumber(), ActivitiGroup.TEACHER.toString().toLowerCase());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	public boolean deleteTeacherInfoByNumber(String teacherNumber) {
+		try {
+			Teacher teacher = teacherDAO.findByTeacherNumber(teacherNumber)
+					.get(0);
+			teacherDAO.delete(teacher);
+			
+			activitiAccountService.deleteUser(teacher.getTeacherNumber(), ActivitiGroup.TEACHER.toString().toLowerCase());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+
+	};
+
+	public Teacher updateTeacherInfo(Teacher teacher) {
+		try {
+			teacherDAO.update(teacher);
+			activitiAccountService.updateTeacher(teacher);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return teacher;
+
+	}
+
+	public Teacher getTeacherByStudentId(int studentId) {
+		Teacher teacher = null;
+		try {
+			Integer tid = studentDAO.findById(studentId).getTeacherId();
+			if(tid == null){
+				return null;
+			}
+			teacher = teacherDAO.findById(tid);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return teacher;
+	}
+
+	public List<Teacher> getAllTeachers() {
+		List<Teacher> result = null;
+		try {
+			logger.debug("get all teachers---->");
+			result = teacherDAO.findAll();
+			Validate.notNull(result);
+		} catch (Exception e) {
+			logger.error("exception", e);
+		}
+		return result;
+	}
+
+	public List<Object> getAllLimit(HashMap<String, Object> params) {
+		List<Object> result = null;
+		try {
+			result = teacherDAO.findAllLimit(params);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return result;
+	}
+
+	public Teacher getTeacherById(int teacherId) {		
+		Teacher teacher=null;
+		try {
+			teacher = teacherDAO.findById(teacherId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return teacher;
+	}
+
+	public Teacher getTeacherByTeacherNumber(String teacherNumber) {
+
+		List<Teacher> teacherList = teacherDAO
+				.findByTeacherNumber(teacherNumber);
+		if (teacherList != null && !teacherList.isEmpty()) {
+			return teacherList.get(0);
+		}
+		return null;
+	}
+
+	public Teacher getTeacherByTeacherName(String teacherName) {
+		List<Teacher> teacherList = teacherDAO.findByTeacherName(teacherName);
+		if (teacherList != null && !teacherList.isEmpty()) {
+			return teacherList.get(0);
+		} else
+			return null;
+	}
+
+	public List<Teacher> getInnerTeachers() {
+		return teacherDAO.findByTeacherClasses(TeacherType.INNERTEACHER);
+
+	}
+
+	public List<Teacher> getOuterTeachers() {
+		return teacherDAO.findByTeacherClasses(TeacherType.OUTERTEACHER);
+	}
+
+
+	public String formatQualification(TeacherQualification qualification) {
+		return qualification.getQualification();
+		/*if (qualify == Constants.ACADEMIC_DOCTOR_TUTOR)
+			return "博导";
+		else if (qualify == Constants.ACADEMIC_MASTER_TUTOR)
+			return "工学硕士导师";
+		else
+			return "工程硕士导师";
+*/
+	}
+
+	public TeacherQualification formatQualification(String qualify) {
+		return TeacherQualification.getTeacherQualificationByString(qualify);
+		/*if (qualify.equals("博导"))
+			return Constants.ACADEMIC_DOCTOR_TUTOR;
+		else if (qualify.equals("工学硕士导师"))
+			return Constants.ACADEMIC_MASTER_TUTOR;
+		else if (qualify.equals("工程硕士导师"))
+			return Constants.ENGINEERING_MASTER_TUTOR;
+		else
+			return Constants.ERROR_INPUT;*/
+	}
+
+	public String formatClasses(TeacherType type) {
+		/*if (classes == Constants.INNERTEACHER) {
+			return "校内";
+		} else {
+			return "校外";
+		}*/
+		return type.getType();
+	}
+
+	public TeacherType formatClasses(String classes) {
+		/*if (classes.equals("本校"))
+			return Constants.INNERTEACHER;
+		else if (classes.equals("外校"))
+			return Constants.OUTERTEACHER;
+		else
+			return Constants.ERROR_INPUT;*/
+		return TeacherType.getTeacherTypeByType(classes);
+	}
+
+	public TeacherJobTitle formatJobTitle(String jobTitle) {
+		return TeacherJobTitle.getJobTitlebyTitle(jobTitle);
+		/*if (jobTitle.equals("讲师"))
+			return Constants.INSTRUCTOR;
+		else if (jobTitle.equals("高级工程师"))
+			return Constants.SENIORENGINEER;
+		else if (jobTitle.equals("副教授"))
+			return Constants.ASSOCIATEPROFESSOR;
+		else
+			return Constants.FULLPROFESSOR;*/
+	}
+
+	public String formatJobTitle(TeacherJobTitle teacherJobTitle) {
+		return teacherJobTitle.getTitle();
+		/*if (jobTitle == Constants.INSTRUCTOR)
+			return "讲师";
+		else if (jobTitle == Constants.SENIORENGINEER)
+			return "高级工程师";
+		else if (jobTitle == Constants.ASSOCIATEPROFESSOR)
+			return "副教授";
+		else
+			return "教授";
+	}*/
+	}
+
+	public TeacherEducation formatEducation(String education) {
+		return TeacherEducation.getTeacherEducationByStatus(education);
+		/*if (education.equals("本科"))
+			return Constants.BACHELOR;
+		else if (education.equals("硕士"))
+			return Constants.MASTER;
+		else if (education.equals("博士"))
+			return Constants.DOCTOR;
+		else
+			return Constants.POSTDOCTOR;*/
+	}
+
+	public String formatEducation(TeacherEducation education) {
+		return education.getEducation();
+		/*if (education == Constants.BACHELOR)
+			return "本科";
+		else if (education == Constants.MASTER)
+			return "硕士";
+		else if (education == Constants.DOCTOR)
+			return "博士";
+		else
+			return "博士后";*/
+	}
+
+	@Override
+	public List<Teacher> getTeacherByJobTitle(TeacherJobTitle jobTitle) {
+		return teacherDAO.findByTeacherJobTitle(jobTitle);
+	}
+
+	@Override
+	public List<Teacher> getTeacherHigherThanEducation(
+			TeacherEducation education) {
+		return teacherDAO.findByTeacherEducation(education);
+	}
+}

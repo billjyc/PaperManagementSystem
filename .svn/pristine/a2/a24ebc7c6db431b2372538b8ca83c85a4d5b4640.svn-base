@@ -1,0 +1,250 @@
+package nju.software.util;
+
+import java.io.File;
+import java.util.ArrayList;
+
+import org.antlr.grammar.v3.ANTLRv3Parser.finallyClause_return;
+
+public class Constants {
+	
+	//开题报告状态
+	public final static int PROPOSAL_UNCHECKED = 0;
+	public final static int PROPOSAL_PASSED = 1;
+	public final static int PROPOSAL_FAILED = 2;
+	
+	//中期检查状态
+	public final static int INTERIM_REPORT_UNCHECKED = 0;
+	public final static int INTERIM_REPORT_PASSED = 1;
+	public final static int INTERIM_REPORT_FAILED = 2;
+	
+	//论文状态
+	public final static String TUTOR_UNASSIGNED = "未分配导师";
+	public final static String UNCOMMITTED = "uncommitted";//未提交
+	public final static String DRAFT_COMPLETED = "draft completed";//完成初稿
+	public final static String THE_FIRST_FINALIZED = "first finalized";//初步定稿
+	public final static String DETECTION_PASSED = "detection passed";//重复率检测通过
+	public final static String JUDGE_READY ="judge ready";//评审分配完成，待评审
+	public final static String JUDGE_PASSED ="judge passed";//评审通过
+	public final static String DEFENSE_FINALIZED_BEFORE ="defense finalized before";//答辩前定稿完成
+	public final static String DEFENSE_READY ="defense ready";//答辩分配完成，待答辩 
+	public final static String DEFENSE_SUCCESS ="defense success"; //通过答辩
+	public final static String REPRIEVE ="reprieve"; //暂缓通过
+	public final static String FINALIZED_AFTER_REPRIEVE = "finalized after reprieve";//暂缓后定稿完成
+	public final static String FINALIZED_AFTER_DEFENSE = "finalized after defense";//答辩后定稿完成
+	
+
+	
+	
+	
+	//Account Level
+	public final static int DEAN = 1;//1代表教务员
+	public final static int TEACHER = 2;//2代表指导老师
+	public final static int STUDENT = 3;//3代表学生
+	public final static int ADMIN = 4;//管理员
+	public final static int HEADTEACHER=5;//班主任
+	public final static int DIRECTOR=6;//教学点负责人
+	
+	public final static String ACTOR_DEAN = "dean";//actorLabel中代表教务员
+	public final static String ACTOR_TEACHER = "teacher";//actorLabel中代表指导老师
+	public final static String ACTOR_STUDENT = "student";//actorLabel中代表学生
+	public final static String ACTOR_ADMIN = "admin";
+	public final static String ACTOR_HEADTEACHER="headteacher";
+	public final static String ACTOR_DIRECTOR="director";
+	
+	//Teacher
+	//类型
+	public final static int INNERTEACHER = 1;//校内教师
+	public final static int OUTERTEACHER = 2;//校外教师
+	//学历
+	public final static int BACHELOR = 1;//本科
+	public final static int MASTER = 2;//硕士
+	public final static int DOCTOR = 3;//博士
+	public final static int POSTDOCTOR = 4;//博士后
+	//职称
+	public final static int INSTRUCTOR = 1;//讲师
+	public final static int SENIORENGINEER = 2;//高级工程师
+	public final static int ASSOCIATEPROFESSOR = 3;//副教授
+	public final static int FULLPROFESSOR = 4;//教授
+	//资质
+	public final static int ENGINEERING_MASTER_TUTOR = 1;//工程硕士导师
+	public final static int ACADEMIC_MASTER_TUTOR = 2;//工学硕士导师
+	public final static int ACADEMIC_DOCTOR_TUTOR = 3;//博导
+	
+	//Student
+	public final static int FULL_TIME = 1;//全日制
+	public final static int PART_TIME = 2;//在职
+	
+	public final static int ENGINEERING_MASTER = 1;//工程硕士
+	public final static int ACADEMIC_MASTER = 2;//工学硕士
+	public final static int ACADEMIC_DOCTOR = 3;//3代表工学博士
+	public final static int ERROR_INPUT=-1;
+
+	//Score
+	public final static int NA = 0;//暂无
+	public final static int EXCELLENT = 1;//优
+	public final static int GOOD = 2;//良
+	public final static int MEDIUM = 3;//中
+	public final static int PASS = 4;//及格
+	
+	//Fee
+	public final static ArrayList<String> GRANT_TYPE = new ArrayList<String>(){{ 
+		add("现金");
+		add("工资卡");
+	}};
+	
+	public final static ArrayList<String> FEE_TYPE = new ArrayList<String>(){{
+		add("指导费发放");
+		add("评审费发放");
+		add("答辩费发放");
+		//add("答辩评委费");
+		//add("答辩秘书费");
+		add("二次评审费发放");
+		add("二次答辩费发放");
+		add("二次评审费收取");
+		add("二次答辩费收取");
+	}};
+	
+	//Excel
+	public final static ArrayList<String> TEACHER_HEADER = new ArrayList<String>(){{ 
+		add("编号");
+		add("姓名");
+		add("类别");
+		add("学历");
+		add("职称");
+		add("资质");
+		add("联系电话");
+		add("邮件地址");
+	}};
+	//Excel
+		public final static ArrayList<String> CLASS_HEADER=new ArrayList<String>(){{
+		add("班级编号");
+		add("班级名称");
+		add("级号");
+		add("大小");
+		add("班主任编号");
+		add("班主任名称");
+		add("教学点编号");
+		add("教学点名称");
+		add("开课日期");
+		
+		}};
+	//Excel
+	public final static ArrayList<String> COURSE_HEADER = new ArrayList<String>(){{ 
+		add("课程号");
+		add("课程名");
+		add("教师编号");//number
+		add("教师姓名");
+		add("年份");
+	}};
+	
+	
+	//Excel
+	public final static ArrayList<String> TEACHINGPOINT_HEADER=new ArrayList<String>(){{
+		add("编号");
+		add("名称");
+		add("地点");
+		add("负责人编号");
+		add("负责人姓名");
+	
+		
+	}};
+	
+	//Excel
+	public final static ArrayList<String> TRANSCRIPT_HEADER = new ArrayList<String>(){{ 
+		add("学生学号");//number
+		add("学生姓名");
+		add("课程号");
+		add("课程名");
+		add("成绩");
+		add("年份");
+	}};
+	
+	//Excel
+	public final static ArrayList<String> STUDENT_TRANSCRIPT_HEADER = new ArrayList<String>(){{ 
+		add("课程号");
+		add("课程名");
+		add("成绩");
+		add("年份");
+	}};
+	
+	//Excel
+	public final static ArrayList<String> COURSE_TRANSCRIPT_HEADER = new ArrayList<String>(){{ 
+		add("学生学号");
+		add("学生姓名");
+		add("成绩");
+
+	}};
+	
+	
+	//Excel
+	public final static ArrayList<String> STUDENT_COURSE_INFO_HEADER = new ArrayList<String>(){{ 
+		add("学生学号");//number
+		add("学生姓名");
+		add("课程号");
+		add("课程名");
+		add("年份");
+	}};
+
+	public final static ArrayList<String> HEAD_TEACHER_HEADER = new ArrayList<String>(){{ 
+		add("工号");//number
+		add("姓名");
+		add("电话");
+		add("邮件地址");
+
+	}};
+	
+	public final static ArrayList<String>CLASS_ASSIGNED_HEADER = new ArrayList<String>(){{ 
+		add("学号");//number
+		add("姓名");
+		add("班级编号");
+		add("班级名称");
+		add("教学点编号");
+
+	}};
+	public final static ArrayList<String> DIRECTOR_HEADER = new ArrayList<String>(){{ 
+		add("工号");//number
+		add("姓名");
+		add("电话");
+		add("邮件地址");
+
+	}};
+	
+	public final static ArrayList<String> STUDENT_HEADER = new ArrayList<String>(){{ 
+		add("学号");
+		add("姓名");
+		add("年级");
+		add("班级");
+		add("攻读学位");
+		add("类型");
+		add("联系电话");
+		add("备用电话");
+		add("邮件地址");
+	}};
+	public final static ArrayList<String> CHARGE_FEE_HEADER = new ArrayList<String>(){{ 
+		add("学号");
+		add("学生姓名");
+		add("收取金额");
+		add("收取日期");
+	}};
+	
+	public final static ArrayList<String> GRANT_FEE_HEADER = new ArrayList<String>(){{ 
+		add("学号");
+		add("学生姓名");
+		add("教师编号");
+		add("教师姓名");
+		add("费用金额");
+		add("发放方式");
+		add("发放日期");		
+	}};
+	
+	
+	public final static int EXCEL_COLUMN_WITH1 = 3000;// 普通表格宽度
+	public final static int EXCEL_COLUMN_WITH2 = 6000;// 邮件选项表格宽度
+
+	public final static String SAVE_DIRECTORY = System.getProperty("web.root")
+			+ "document" + File.separatorChar + "excels";
+
+	public final static String PROCESS_DEFINITION_KEY = "paperManagement";
+	
+	public final static String TEST_EMAIL = "huanying5555556666@163.com";
+}

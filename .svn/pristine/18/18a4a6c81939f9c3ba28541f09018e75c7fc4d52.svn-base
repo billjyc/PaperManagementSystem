@@ -1,0 +1,203 @@
+package nju.software.controller.student;
+
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.Accessory;
+import nju.software.entity.InterimReport;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.manager.student.StudentInterimReportManager;
+import nju.software.service.AccountService;
+import nju.software.service.InterimReportService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.FileOperateUtil;
+import nju.software.util.JSONUtil;
+
+import org.activiti.engine.task.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 学生中期报告控制类
+ * @author jiayicong
+ * @date 2015-3-21
+ *
+ */
+@Controller
+public class StudentInterimReportController {
+	private static Logger logger = LoggerFactory.getLogger(StudentInterimReportController.class);
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private InterimReportService interimReportService;
+	@Autowired
+	private StudentInterimReportManager studentInterimReportManager;
+	
+	/**
+	 * 提交中期报告
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/student/submitinterimreport.do")
+	@ResponseBody
+	public void submitInterimReport(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		HttpSession session = request.getSession();
+		String result_json = "";
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+
+		InterimReport interimReport = null;
+
+		File interimfile = FileOperateUtil.Upload(request,
+				FileOperateUtil.getAbsoluteFileDir(actorId), "InterimReport",
+				"submit_interimreport_file");
+		FileOperateUtil.getMultipartFile(request,
+				FileOperateUtil.getAbsoluteFileDir(actorId), "InterimReport",
+				"submit_interimreport_file");
+
+		if (interimfile == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			jsonUtil.sendJson(response, jsonobj);
+		}
+
+		interimReport = interimReportService.getInterimReportByStudentId(studentId);
+
+		if(interimReport == null) {
+			interimReport = new InterimReport();
+			interimReport.setStudentId(studentId);
+			interimReport.setAddress(FileOperateUtil.getRelativeFilePath(interimfile
+					.getAbsolutePath()));
+		}
+		interimReport.setStatus(Constants.INTERIM_REPORT_UNCHECKED);
+		try {
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Submit interim report");
+			for(Task task : taskList) {
+				interimReportService.saveOrUpdateInterimReport(interimReport);
+
+				activitiAPIUtils.completeTask(task.getId());
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		/*
+		 * 学生提交中期检查，学生向导师发起会话，系统自动生成。
+		 */
+		studentInterimReportManager.sendSuggestion(studentId, interimfile);
+
+		//系统后台向导师发送提醒邮件；
+		//studentInterimReportManager.sendEmail(studentId);
+		
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 更新中期报告
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/student/updateinterimreport.do")
+	@ResponseBody
+	public void updateInterimReport(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String result_json = SUCCESS;
+
+		int studentId = (Integer) session.getAttribute("studentId");
+		String actorId = (String) session.getAttribute("actorId");
+
+		File interimfile = FileOperateUtil.Upload(request,
+				FileOperateUtil.getAbsoluteFileDir(actorId), "InterimReport",
+				"update_interimreport_file");
+		if (interimfile == null) {
+			result_json = FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			jsonUtil.sendJson(response, jsonobj);
+		}
+
+		InterimReport interimReport = interimReportService
+				.getInterimReportByStudentId(studentId);
+		interimReport.setAddress(FileOperateUtil.getRelativeFilePath(interimfile
+				.getAbsolutePath()));
+		interimReportService.updateInterimReport(interimReport);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 下载中期报告
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/student/downloadinterimreport.do", method = RequestMethod.POST)
+	public void downloadinterimreport(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int studentId = (Integer) session.getAttribute("studentId");
+
+		InterimReport interimReport = interimReportService
+				.getInterimReportByStudentId(studentId);
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(interimReport.getAddress());
+
+		FileOperateUtil.Download(response, absolutepath);
+
+		String result_json = "";
+		try {
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+}

@@ -1,0 +1,123 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.PaperDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Paper;
+
+import org.hibernate.LockMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for Paper
+ * entities. Transaction control of the save(), update() and delete() operations
+ * can directly support Spring container-managed transactions or they can be
+ * augmented to handle user-managed Spring transactions. Each of these methods
+ * provides additional information for how to configure it for the desired type
+ * of transaction control.
+ * 
+ * @see nju.software.dataobject.Paper
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.PaperDAOImpl")
+public class PaperDAOImpl extends BaseDaoImpl<Paper> implements PaperDAO{
+	private static final Logger log = LoggerFactory.getLogger(PaperDAOImpl.class);
+	// property constants
+	public static final String STUDENT_ID = "studentId";
+	public static final String PAPER_TITLE = "paperTitle";
+	public static final String PAPER_STATE = "paperState";
+	public static final String PAPER_VERSION = "paperVersion";
+	public static final String PAPER_ADDRESS = "paperAddress";
+	public static final String PAPER_AFFIX1 = "paperAffix1";
+	public static final String PAPER_AFFIX2 = "paperAffix2";
+	public static final String PAPER_GUIDE_ADDRESS = "paperGuideAddress";
+	public static final String PAPER_REPETITION_RATE = "paperRepetitionRate";
+	public static final String PAPER_ID = "paperId";
+	
+	public PaperDAOImpl(){
+		super();
+		this.setClazz(Paper.class);
+	}
+
+	public Paper findById(java.lang.Integer id) {
+		return super.findById(id);
+	}
+
+	public List<Paper> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Paper> findByStudentId(Object studentId) {
+		return findByProperty(STUDENT_ID, studentId);
+	}
+
+	public List<Paper> findByPaperTitle(Object paperTitle) {
+		return findByProperty(PAPER_TITLE, paperTitle);
+	}
+
+	public List<Paper> findByPaperState(Object paperState) {
+		return findByProperty(PAPER_STATE, paperState);
+	}
+
+	public List<Paper> findByPaperVersion(Object paperVersion) {
+		return findByProperty(PAPER_VERSION, paperVersion);
+	}
+
+	public List<Paper> findByPaperAddress(Object paperAddress) {
+		return findByProperty(PAPER_ADDRESS, paperAddress);
+	}
+
+	public List<Paper> findByPaperAffix1(Object paperAffix1) {
+		return findByProperty(PAPER_AFFIX1, paperAffix1);
+	}
+
+	public List<Paper> findByPaperAffix2(Object paperAffix2) {
+		return findByProperty(PAPER_AFFIX2, paperAffix2);
+	}
+
+	public List<Paper> findByPaperGuideAddress(Object paperGuideAddress) {
+		return findByProperty(PAPER_GUIDE_ADDRESS, paperGuideAddress);
+	}
+
+	public List<Paper> findByPaperRepetitionRate(Object paperRepetitionRate) {
+		return findByProperty(PAPER_REPETITION_RATE, paperRepetitionRate);
+	}
+	
+	public int count(String propertyName, Object value) {
+		String hql = "select count(*) from Paper as p where p." + propertyName + " = ?";
+		List<?> list = find(hql, value);
+		Integer count = (Integer)list.get(0);
+		return count;
+	}
+	
+	public int countByTeacher(Object teacherId){
+		String hql = "select count(paper) from Paper paper, Student student " +
+				"where student.studentId = paper.studentId " +
+				"and student.teacherId = ?";
+		List<?> list = find(hql, teacherId);
+		Integer count = (Integer)list.get(0);
+		return count;
+	}
+
+	/**
+	 * return the count of records
+	 */
+	public int count() {
+		return (int)findCount();
+	}
+
+	public int countByTeacherAndStatus(Object teacherId, Object status) {
+		String hql = "select count(paper) from Paper paper, Student student " +
+				"where student.studentId = paper.studentId " +
+				"and student.teacherId = ? and paper.paperState = ? ";
+		List<?> list = find(hql, teacherId, status);
+		Integer count = (Integer)list.get(0);
+		return count;
+	}
+}

@@ -1,0 +1,563 @@
+package nju.software.controller;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Account;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.jsonmodel.JsonTeacher;
+import nju.software.service.AccountService;
+import nju.software.service.ReportService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+import nju.software.util.ExcelUtil;
+import nju.software.util.JSONUtil;
+
+import org.apache.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+@Controller
+public class AdminController {
+	@Autowired
+	private AccountService accountService;
+	
+	@Autowired
+	private StudentService studentService;
+	
+	@Autowired
+	private TeacherService teacherService;
+	
+	@Autowired
+	private ReportService reportService;
+	
+	@Autowired
+	private JSONUtil jsonUtil;
+	
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	private final static String savedir = System.getProperty("web.root")+"documents//excels";
+
+	
+	private static Logger logger = Logger.getLogger(AdminController.class);
+	
+	/**
+	 * 所有学生列表，分页
+	 * @author Jason
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value="/admin/getallstudents.do") //改动
+	@ResponseBody
+	public void getAllStudents(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("type") String typeS, @RequestParam("page") String pageS, 
+			@RequestParam("rows") String rowsS, @RequestParam("sidx") String sidx, 
+			@RequestParam("sord") String sord, @RequestParam("_search") String search){
+		Integer type = Integer.parseInt(typeS);
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 9999 : Integer.parseInt(rowsS);
+		List<Student> studentList=null;
+		  JSONObject jsonobj = new JSONObject();
+		if(search.equalsIgnoreCase("true")){
+			String  searchOper = request.getParameter("searchOper"); 
+			String  searchString = request.getParameter("searchString"); 
+			String  searchField = request.getParameter("searchField"); 
+			String searchCondition=getSearch(searchField,searchOper,searchString);
+			studentList=studentService.findSearch(searchCondition);
+			
+		}else{
+			HashMap<String,Object> params=new HashMap<String,Object>();
+			params.put("page", page);
+			params.put("limit", limit);
+			params.put("sidx", sidx);
+			params.put("sord", sord);
+			params.put("type", type);
+			
+			List<Object> result = studentService.getAllLimit(params);
+		    studentList = (List<Student>)result.get(0);
+			HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+			
+			jsonobj.put("page", limits.get("page"));
+			jsonobj.put("total_pages", limits.get("total_pages"));
+			jsonobj.put("records", limits.get("count"));
+		}
+
+		List<JsonStudent> studentlist_j = jsonUtil.converToJsonStudent(studentList);
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+        jsonobj.put("list", studentlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 所有老师列表
+	 * @author Jason
+	 */
+	@RequestMapping(value="/admin/getallteachers.do")
+	@ResponseBody
+	public void getAllTeachers(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<Teacher> result = teacherService.getAllTeachers();
+		List<JsonTeacher> teacherlist_j = jsonUtil.converToJsonTeacher(result);
+		JSONArray teacherlist_jsonobj = JSONArray.fromObject(teacherlist_j);
+		
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", teacherlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	
+	/**
+	 * 添加学生账号
+	 * @param ajax传入学生json对象
+	 */
+	@RequestMapping(value = "/admin/importstudent.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importStudent(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String studentstr = request.getParameter("jsonStr");
+		JSONObject stu_json = JSONObject.fromObject(studentstr);
+		
+		Student student = new Student();	//Persistent Object
+		student.setStudentName((String) stu_json.get("name"));
+		student.setStudentNumber((String) stu_json.get("num"));
+		student.setStudentEmail((String) stu_json.get("email"));
+		student.setStudentGrade((String) stu_json.get("grade"));
+		student.setStudentPhone((String) stu_json.get("phone"));
+		
+		String result_json = "";
+		try {
+			studentService.addStudentInfo(student);
+			student = studentService.getStudentByStudentNumber(student.getStudentNumber());	
+			
+			Account studentAccount = new Account();
+			studentAccount.setAccountLevel(Constants.STUDENT);
+			studentAccount.setAccountName(student.getStudentNumber());
+			studentAccount.setAccountPassword(student.getStudentNumber());
+			studentAccount.setStudentId(student.getStudentId());
+			
+			result_json = accountService.addAccount(studentAccount) ? SUCCESS : FAIL;
+		} catch (Exception e) {
+			result_json = FAIL;
+			logger.error("添加学生信息失败：", e);
+		}	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	
+	/**
+	 * 添加教师账号
+	 * @author 王少东
+	 *//*
+	@RequestMapping(value = "/admin/importteacher.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String teacherstr = request.getParameter("jsonStr");
+		JSONObject teacher_json = JSONObject.fromObject(teacherstr);
+
+		Teacher teacher = new Teacher();
+		teacher.setTeacherName((String) teacher_json.get("name"));
+		teacher.setTeacherNumber((String) teacher_json.get("num"));
+		teacher.setTeacherClasses((String) teacher_json.get("classes"));
+		teacher.setTeacherJobTitle((String) teacher_json.get("zc"));
+		teacher.setTeacherEducation((String) teacher_json.get("education"));
+		teacher.setTeacherEmail((String) teacher_json.get("email"));
+		teacher.setTeacherPhone((String) teacher_json.get("phone"));
+		
+		String result_json = "";
+		try {
+			teacherService.addTeacherInfo(teacher);
+			teacher = teacherService.getTeacherByTeacherNumber(teacher.getTeacherNumber());
+			
+			Account teacherAccount = new Account();
+			teacherAccount.setAccountLevel(Constants.TEACHER);
+			teacherAccount.setAccountName(teacher.getTeacherNumber());
+			teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+			teacherAccount.setTeacherId(teacher.getTeacherId());
+			
+			result_json = accountService.addAccount(teacherAccount) ? SUCCESS : FAIL;
+		} catch (Exception e) {
+			result_json = FAIL;
+			logger.error("添加老师信息失败：", e);
+		}
+		
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}*/
+	/**
+	 * 导入学生的excel文件
+	 */
+	
+	@RequestMapping(value = "/admin/importStudentExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importStudentExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		 response.setContentType("text/html;charset=UTF-8");
+			String result = "";
+			JSONObject jsonobj = new JSONObject();
+		
+			
+			try {  ExcelUtil excel=new ExcelUtil();
+				  List<ArrayList<String>> dataLst=excel.importExcel(request, response,"file");
+					
+				Iterator<ArrayList<String>> it = dataLst.iterator();
+				it.next();
+				while (it.hasNext()) {
+	               
+					ArrayList<String> innerLst = it.next();
+					Student student = new Student();
+					student.setStudentNumber(innerLst.get(0));
+					student.setStudentName(innerLst.get(1));
+					student.setStudentGrade(studentService.formatGrade(innerLst.get(2))+"");
+					student.setDegreeType(studentService.formatDegreeType(innerLst.get(3)));
+					student.setStudyTime(studentService.formatStudyTime(innerLst.get(4)));
+					student.setStudentPhone(innerLst.get(5));
+					student.setStudentPhoneX(innerLst.get(6));
+					student.setStudentEmail(innerLst.get(7));
+
+					try{
+						// Add student
+						studentService.addStudentInfo(student);
+						// Get student id
+						student = studentService.getStudentByStudentNumber(student.getStudentNumber());
+						// Add account
+						Account studentAccount = new Account();
+						studentAccount.setAccountLevel(Constants.STUDENT);
+						studentAccount.setAccountName(student.getStudentNumber());
+						studentAccount.setAccountPassword(student.getStudentNumber());
+						studentAccount.setStudentId(student.getStudentId());
+						if (accountService.addAccount(studentAccount))
+							result = "导入成功";
+					}catch(Exception e){
+						result = "用户名重复，已存在" + innerLst.get(0);
+						e.printStackTrace();
+					}
+				}
+
+			} catch (Exception e) {
+				if (result != null)
+					result = "请输入正确的文件,格式依照本页学生列表";
+				e.printStackTrace();
+			}
+			
+			jsonobj.put("result", result);
+			jsonUtil.sendJson(response, jsonobj);
+
+		}
+		/**
+		 *导出学生excel
+		 */
+
+		@RequestMapping(value = "/admin/exportStudentExcel.do")
+		@ResponseBody
+		@Transactional(rollbackFor=Exception.class)
+		public void exportStudentExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+	              HSSFWorkbook wb =reportService.exportStudent();
+			         response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+			        response.setHeader("Content-disposition", "attachment;filename=student.xls");  
+			         OutputStream ouputStream;
+					try {
+						ouputStream = response.getOutputStream();
+						   wb.write(ouputStream);  
+					        ouputStream.flush();  
+					         ouputStream.close();  
+
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}  
+	}
+	
+		/**
+		 * 导入老师excel
+		 */
+		@RequestMapping(value = "/admin/importTeacherExcel.do")
+		@ResponseBody
+		@Transactional(rollbackFor=Exception.class)
+		public void importTeacherExcel(HttpServletRequest request,
+				HttpServletResponse response, ModelMap model)  {
+		        String result="";
+		        response.setContentType("text/html;charset=UTF-8");
+		   	  ArrayList<String> innerLst;
+		      try{
+		    	  List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+		    	  Iterator<ArrayList<String>> it=dataLst.iterator();
+		    	  it.next();
+		         
+		        while(it.hasNext())
+		         {  
+		        	
+		        	  innerLst=it.next();
+		        	 	Teacher teacher = new Teacher();
+				    	teacher.setTeacherName(innerLst.get(1));
+				    	teacher.setTeacherNumber(innerLst.get(0));
+				    	teacher.setTeacherClasses(teacherService.formatClasses(innerLst.get(2)));
+				    	teacher.setTeacherEducation(teacherService.formatEducation(innerLst.get(3)));
+				    	teacher.setTeacherJobTitle(teacherService.formatJobTitle(innerLst.get(4)));
+				    	teacher.setTeacherQualification(teacherService.formatQualification(innerLst.get(5)));
+	                 	teacher.setTeacherPhone(innerLst.get(6));
+				    	teacher.setTeacherEmail(innerLst.get(7));
+				      
+					try{
+						  teacherService.addTeacherInfo(teacher);
+					    	teacher = teacherService.getTeacherByTeacherNumber(teacher.getTeacherNumber());
+							Account teacherAccount = new Account();
+							teacherAccount.setAccountLevel(Constants.TEACHER);
+							teacherAccount.setAccountName(teacher.getTeacherNumber());
+							teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+							teacherAccount.setTeacherId(teacher.getTeacherId());
+						if (accountService.addAccount(teacherAccount))
+							result = "导入成功";
+					} catch (Exception e) {
+						result = "用户名重复，已存在" + innerLst.get(1);
+						e.printStackTrace();
+					}
+		         }
+				
+			} catch (Exception e) {
+				if (result != null)
+					result = "请输入正确的文件,格式依照本页教师列表";
+				e.printStackTrace();
+			}
+
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result", result);
+			jsonUtil.sendJson(response, jsonobj);
+		}
+		/**
+		 * 导出老师excel
+		 */
+		@RequestMapping(value = "/admin/exportTeacherExcel.do")
+		@ResponseBody
+		@Transactional(rollbackFor=Exception.class)
+		public void exportTeacherExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+	              HSSFWorkbook wb =reportService.exportTeacher(); 
+			         response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+			        response.setHeader("Content-disposition", "attachment;filename=teacher.xls");  
+			         OutputStream ouputStream;
+					try {
+						ouputStream = response.getOutputStream();
+						   wb.write(ouputStream);  
+					        ouputStream.flush();  
+					         ouputStream.close();  
+
+					} catch (IOException e) {
+						e.printStackTrace();
+					}  
+		}
+		
+		/**
+		 * 编辑老师表
+		 */
+		@RequestMapping(value = "/admin/editteacher.do")
+		@ResponseBody
+		@Transactional(rollbackFor=Exception.class)
+		public void editTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+//			  request.setCharacterEncoding("utf-8");
+
+//			  Enumeration e = request.getParameterNames();
+//			  while(e.hasMoreElements()){
+//				  String paraName=(String)e.nextElement();
+//				  System.out.println(paraName+": "+request.getParameter(paraName));
+//			  } 
+			  
+			  String oper = request.getParameter("oper");	//操作类型 del,edit,add
+			  if(oper != null && oper.equals("del")){
+				  //通过teacherId删除
+				  int teacherId = Integer.parseInt(request.getParameter("teacherId"));
+				  try{
+					  String teacherNum = teacherService.getTeacherById(teacherId).getTeacherNumber();
+					  int accountId = accountService.getAccountByAccountname(teacherNum).getAccountId();
+					  accountService.deleteAccount(accountId);
+					  teacherService.deleteTeacherInfo(teacherId);
+				  }catch(Exception e){
+					  e.printStackTrace();
+				  }
+			  }else if(oper != null){
+				  String teacherNumber= request.getParameter("teacherNumber");
+				  String teacherName= request.getParameter("teacherName");
+				  int teacherClasses= Integer.parseInt(request.getParameter("teacherClasses"));
+				  int teacherEducation = Integer.parseInt(request.getParameter("teacherEducation"));
+				  int teacherJobTitle = Integer.parseInt(request.getParameter("teacherJobTitle"));
+				  int teacherQualification = Integer.parseInt(request.getParameter("teacherQualification"));
+				  String teacherPhone= request.getParameter("teacherPhone");
+				  String teacherEmail = request.getParameter("teacherEmail");
+				  
+				  Teacher teacher = new Teacher();
+				  teacher.setTeacherClasses(teacherClasses);
+				  teacher.setTeacherEducation(teacherEducation);
+				  teacher.setTeacherEmail(teacherEmail);
+				  teacher.setTeacherJobTitle(teacherJobTitle);
+				  teacher.setTeacherName(teacherName);
+				  teacher.setTeacherNumber(teacherNumber);
+				  teacher.setTeacherPhone(teacherPhone);
+				  teacher.setTeacherQualification(teacherQualification);
+				 
+				  try{
+					  if(oper.equals("edit")){
+						  //更新需要设置teacherId
+						  teacher.setTeacherId(Integer.parseInt(request.getParameter("teacherId")));
+						  teacherService.updateTeacherInfo(teacher);
+					  }else if(oper.equals("add")){
+						  teacherService.addTeacherInfo(teacher);
+						  teacher = teacherService.getTeacherByTeacherNumber(teacher.getTeacherNumber());
+						  
+						  Account teacherAccount = new Account();
+						  teacherAccount.setAccountLevel(Constants.TEACHER);
+						  teacherAccount.setAccountName(teacher.getTeacherNumber());
+						  teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+						  teacherAccount.setTeacherId(teacher.getTeacherId());
+						  accountService.addAccount(teacherAccount);
+					  }
+				  }catch(Exception e){
+					  e.printStackTrace();
+					  Account teacherAccount = new Account();
+						teacherAccount.setAccountLevel(Constants.TEACHER);
+						teacherAccount.setAccountName(teacher.getTeacherNumber());
+						teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+						teacherAccount.setTeacherId(teacher.getTeacherId());
+						
+						accountService.addAccount(teacherAccount) ;
+				  }
+			  } 
+		}
+		/**
+		 * 编辑学生表
+		 */
+		@RequestMapping(value = "/admin/editstudent.do")
+		@ResponseBody
+		@Transactional(rollbackFor=Exception.class)
+		public void editStudent(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+			  String oper = request.getParameter("oper");	//操作类型 del,edit,add
+			  if(oper != null && oper.equals("del")){
+				  int studentId = Integer.parseInt(request.getParameter("studentId"));
+				  try{
+					  String studentNum = studentService.getStudentById(studentId).getStudentNumber();
+					  int accountId = accountService.getAccountByAccountname(studentNum).getAccountId();
+					  accountService.deleteAccount(accountId);
+					  studentService.deleteStudentInfo(studentId);
+				  }catch(Exception e){
+					  e.printStackTrace();
+				  }
+			  }else if(oper != null){
+				  String studentNumber= request.getParameter("studentNumber");
+				  String studentName= request.getParameter("studentName");
+				  String studentGrade= request.getParameter("studentGrade");
+				  Integer studentDegreeType = Integer.parseInt(request.getParameter("studentDegreeType"));
+				  Integer studentType = Integer.parseInt(request.getParameter("studentType"));
+				  String studentPhone1 = request.getParameter("studentPhone1");
+				  String studentPhone2 = request.getParameter("studentPhone2");
+				  String studentEmail = request.getParameter("studentEmail");
+				  
+				  Student student = new Student();
+				  student.setStudentEmail(studentEmail);
+				  student.setStudentGrade(studentGrade);
+				  student.setStudentName(studentName);
+				  student.setStudentNumber(studentNumber);
+				  student.setStudentPhone(studentPhone1);
+				  student.setStudentPhoneX(studentPhone2);
+				  student.setDegreeType(studentDegreeType);
+				  student.setStudyTime(studentType);
+				  
+				  try{
+					  if(oper.equals("edit")){
+						  student.setStudentId(Integer.parseInt(request.getParameter("studentId")));
+						  studentService.updateStudentInfo(student);
+					  }else if(oper.equals("add")){
+						  studentService.addStudentInfo(student);
+						  student = studentService.getStudentByStudentNumber(student.getStudentNumber());	
+							
+						  Account studentAccount = new Account();
+						  studentAccount.setAccountLevel(Constants.STUDENT);
+						  studentAccount.setAccountName(student.getStudentNumber());
+						  studentAccount.setAccountPassword(student.getStudentNumber());
+						  studentAccount.setStudentId(student.getStudentId());
+						  accountService.addAccount(studentAccount);
+					  }
+				  }catch(Exception e){
+					  e.printStackTrace();
+				  }
+			  } 
+		}
+	
+	/**
+	 * 得到搜索条件
+	 * @param col:表中属性， Oper：操作符      val：搜索 值
+	 */
+	public String getSearch(String col,String oper,String val){
+		
+		HashMap<String, String> map=new HashMap<String, String>();
+		map.put("eq","=");
+		map.put("ne","<>");
+		map.put("lt", "<");
+		map.put("le", "<=");
+		map.put("gt",">");
+		map.put("ge", ">=");
+		map.put("bw", "LIKE");
+		map.put("bn", "NOT LIKE");
+		map.put("in", "LIKE");
+		map.put("ni", "NOT LIKE");
+		map.put("ew", "LIKE");
+		map.put("en", "NOT LIKE");
+		map.put("cn", "LIKE");
+		map.put("nc", "NOT LIKE");
+	     if(oper.equals("bw") || oper.equals("bn") ) val =val+ "%";
+		    if(oper.equals("ew") || oper.equals("en") ) val = "%"+val;
+		    if(oper.equals("cn") || oper.equals("nc")  || oper.equals("in") || oper.equals("ni")) val = "%"+val+"%";
+		    return "WHERE "+ col+" "+ map.get(oper)+" '"+ val+"'" ;
+			
+		}
+	
+	/**
+	 * 封装导入excel文件的方法
+	 */
+	
+	public List<ArrayList<String>> importExcel(HttpServletRequest request,
+			HttpServletResponse response) throws IllegalStateException, IOException{
+		try {
+			request.setCharacterEncoding("UTF-8");
+			 MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;   
+		        // 获得文件：
+		      MultipartFile mfile = multipartRequest.getFile("file");  
+		        String filename=mfile.getOriginalFilename();
+				  
+					File save= new File(savedir,filename);
+				    if(save.exists() == false) {
+				        save.mkdirs();
+				        }
+			
+				    mfile.transferTo(save);
+	 		         List<ArrayList<String>> dataLst= new ExcelUtil()
+		                .read(savedir+"\\"+filename);
+			       return dataLst;
+			} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return null;
+		}
+	}
+}

@@ -1,0 +1,156 @@
+package nju.software.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+
+import static javax.persistence.GenerationType.IDENTITY;
+
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import nju.software.entity.enums.PaperState;
+
+/**
+ * Paper entity. @author MyEclipse Persistence Tools
+ */
+@Entity
+@Table(name = "paper")
+public class Paper implements java.io.Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2390543680748635208L;
+	
+	// Fields
+	private Integer paperId;
+	private Integer studentId;
+	private String paperTitle;
+	private PaperState paperState;
+	private Integer paperVersion;
+	private String paperAddress;
+	private String paperAffix1;
+	private String paperAffix2;
+	private String paperGuideAddress;
+	private Integer paperRepetitionRate;
+
+	// Constructors
+
+	/** default constructor */
+	public Paper() {
+	}
+
+	/** full constructor */
+	public Paper(Integer studentId, String paperTitle, PaperState paperState,
+			Integer paperVersion, String paperAddress, String paperAffix1,
+			String paperAffix2, String paperGuideAddress,
+			Integer paperRepetitionRate) {
+		this.studentId = studentId;
+		this.paperTitle = paperTitle;
+		this.paperState = paperState;
+		this.paperVersion = paperVersion;
+		this.paperAddress = paperAddress;
+		this.paperAffix1 = paperAffix1;
+		this.paperAffix2 = paperAffix2;
+		this.paperGuideAddress = paperGuideAddress;
+		this.paperRepetitionRate = paperRepetitionRate;
+	}
+
+	// Property accessors
+	@Id
+	@GeneratedValue(strategy = IDENTITY)
+	@Column(name = "paper_id", unique = true, nullable = false)
+	public Integer getPaperId() {
+		return this.paperId;
+	}
+
+	public void setPaperId(Integer paperId) {
+		this.paperId = paperId;
+	}
+
+	@Column(name = "student_id")
+	public Integer getStudentId() {
+		return this.studentId;
+	}
+
+	public void setStudentId(Integer studentId) {
+		this.studentId = studentId;
+	}
+
+	@Column(name = "paper_title")
+	public String getPaperTitle() {
+		return this.paperTitle;
+	}
+
+	public void setPaperTitle(String paperTitle) {
+		this.paperTitle = paperTitle;
+	}
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "paper_state")
+	public PaperState getPaperState() {
+		return this.paperState;
+	}
+
+	public void setPaperState(PaperState paperState) {
+		this.paperState = paperState;
+	}
+
+	@Column(name = "paper_version", columnDefinition = "INT default 0")
+	public Integer getPaperVersion() {
+		return this.paperVersion;
+	}
+
+	public void setPaperVersion(Integer paperVersion) {
+		this.paperVersion = paperVersion;
+	}
+
+	@Column(name = "paper_address")
+	public String getPaperAddress() {
+		return this.paperAddress;
+	}
+
+	public void setPaperAddress(String paperAddress) {
+		this.paperAddress = paperAddress;
+	}
+
+	@Column(name = "paper_affix1")
+	public String getPaperAffix1() {
+		return this.paperAffix1;
+	}
+
+	public void setPaperAffix1(String paperAffix1) {
+		this.paperAffix1 = paperAffix1;
+	}
+
+	@Column(name = "paper_affix2")
+	public String getPaperAffix2() {
+		return this.paperAffix2;
+	}
+
+	public void setPaperAffix2(String paperAffix2) {
+		this.paperAffix2 = paperAffix2;
+	}
+
+	@Column(name = "paper_guide_address")
+	public String getPaperGuideAddress() {
+		return this.paperGuideAddress;
+	}
+
+	public void setPaperGuideAddress(String paperGuideAddress) {
+		this.paperGuideAddress = paperGuideAddress;
+	}
+
+	@Column(name = "paper_repetition_rate")
+	public Integer getPaperRepetitionRate() {
+		return this.paperRepetitionRate;
+	}
+
+	public void setPaperRepetitionRate(Integer paperRepetitionRate) {
+		this.paperRepetitionRate = paperRepetitionRate;
+	}
+
+}

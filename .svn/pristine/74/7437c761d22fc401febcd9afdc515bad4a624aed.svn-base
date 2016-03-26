@@ -1,0 +1,115 @@
+package nju.software.util;
+
+import java.util.List;
+
+import org.activiti.engine.FormService;
+import org.activiti.engine.HistoryService;
+import org.activiti.engine.IdentityService;
+import org.activiti.engine.ManagementService;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.RuntimeService;
+import org.activiti.engine.TaskService;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+/**
+ * 封装activiti API的工具类
+ * @author jiayicong
+ * @date 2015-3-5
+ *
+ */
+public class ActivitiAPIUtils {
+	private RepositoryService repositoryService;
+	private RuntimeService runtimeService;
+	private IdentityService identityService;
+	private TaskService taskService;
+	private FormService formService;
+	private HistoryService historyService;
+	private ManagementService managementService;
+	
+	private static Logger logger = LoggerFactory.getLogger(ActivitiAPIUtils.class);
+	
+	public void setRepositoryService(RepositoryService repositoryService) {
+		this.repositoryService = repositoryService;
+	}
+	
+	public void setRuntimeService(RuntimeService runtimeService) {
+		this.runtimeService = runtimeService;
+	}
+	
+	public void setIdentityService(IdentityService identityService) {
+		this.identityService = identityService;
+	}
+	
+	public void setTaskService(TaskService taskService) {
+		this.taskService = taskService;
+	}
+	
+	public void setFormService(FormService formService) {
+		this.formService = formService;
+	}
+	
+	public void setHistoryService(HistoryService historyService) {
+		this.historyService = historyService;
+	}
+	
+	public void setManagementService(ManagementService managementService) {
+		this.managementService = managementService;
+	}
+	
+	/**
+	 * 根据流程定义的key启动流程实例
+	 * @param processDefinitionKey
+	 * @return
+	 */
+	public ProcessInstance startProcessInstanceByKey(String processDefinitionKey) {
+		logger.debug("启动流程实例----->");
+		logger.debug("process definition key: {}", processDefinitionKey);
+		return runtimeService.startProcessInstanceByKey(processDefinitionKey);
+	}
+	
+	/**
+	 * 根据流程定义的Id启动流程实例
+	 * @param processDefinitionId
+	 * @return
+	 */
+	public ProcessInstance startProcessInstanceById(String processDefinitionId) {
+		logger.debug("启动流程实例----->");
+		logger.debug("processDefinitionId: {}", processDefinitionId);
+		return runtimeService.startProcessInstanceById(processDefinitionId);
+	}
+	
+	/**
+	 * 签收任务
+	 * @param taskId
+	 * @param userId
+	 */
+	public void claimTask(String taskId, String userId) {
+		logger.debug("签收任务----->");
+		logger.debug("taskId: {}, userId: {}", taskId, userId);
+		taskService.claim(taskId, userId);
+	}
+	
+	/**
+	 * 完成任务
+	 * @param taskId
+	 */
+	public void completeTask(String taskId){
+		logger.debug("完成任务----->");
+		logger.debug("taskId: {}", taskId);
+		taskService.complete(taskId);
+	}
+	
+	/**
+	 * 根据用户id获取该用户作为候选人的任务列表
+	 * @param userId
+	 * @return
+	 */
+	public List<Task> getTaskListByUserId(String userId){
+		logger.debug("getTaskListByUserId: {}", userId);
+		return taskService.createTaskQuery().taskCandidateUser(userId).list();
+	}
+}

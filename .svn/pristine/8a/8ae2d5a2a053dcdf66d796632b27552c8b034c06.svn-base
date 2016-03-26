@@ -1,0 +1,105 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.InterimReportDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.InterimReport;
+
+import org.hibernate.LockMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for
+ * InterimReport entities. Transaction control of the save(), update() and
+ * delete() operations can directly support Spring container-managed
+ * transactions or they can be augmented to handle user-managed Spring
+ * transactions. Each of these methods provides additional information for how
+ * to configure it for the desired type of transaction control.
+ * 
+ * @see nju.software.dataobject.InterimReport
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.InterimReportDAOImpl")
+public class InterimReportDAOImpl extends BaseDaoImpl<InterimReport> implements InterimReportDAO{
+	private static final Logger log = LoggerFactory
+			.getLogger(InterimReportDAOImpl.class);
+	// property constants
+	public static final String ADDRESS = "address";
+	public static final String STUDENT_ID = "studentId";
+	public static final String STATUS = "status";
+	public static final String ID = "id";
+
+	public InterimReportDAOImpl(){
+		super();
+		this.setClazz(InterimReport.class);
+	}
+
+	public InterimReport findById(java.lang.Integer id) {
+		return super.findById(id);
+	}
+
+	public List<InterimReport> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<InterimReport> findByAddress(Object address) {
+		return findByProperty(ADDRESS, address);
+	}
+
+	public List<InterimReport> findByStudentId(Object studentId) {
+		return findByProperty(STUDENT_ID, studentId);
+	}
+
+	public List<InterimReport> findByStatus(Object status) {
+		return findByProperty(STATUS, status);
+	}
+
+	public int count(String propertyName, Object value) {
+		String hql = "select count(*) from InterimReport as ir where ir." + propertyName + " = ?";
+		List<?> list = find(hql, value);
+		if(list!=null && list.size()== 1) {
+			return Integer.parseInt(String.valueOf(list.get(0)));
+		}
+		return 0;
+	}
+
+	public int countByTeacher(Object value) {
+		String hql = "select count(ir) from InterimReport as ir, Student as s " +
+				"where s.studentId = ir.studentId " +
+				"and s.teacherId = " + value;
+		List<?> list = find(hql);
+		if(list != null && list.size() == 1) {
+			return Integer.parseInt(String.valueOf(list.get(0)));
+		}
+		return 0;
+	}
+
+	public int count() {
+		return count();
+	}
+
+	public int countByTeacherAndStatus(Integer teacherId, Integer status) {
+		String hql = "select count(interimReport) from InterimReport as interimReport, Student as student " +
+				"where student.studentId = interimReport.studentId " +
+				"and student.teacherId = ?" + " and interimReport.status = ?";
+		List<?>list = find(hql, teacherId, status);
+		if(list != null && list.size()== 1) {
+			return Integer.parseInt(String.valueOf(list.get(0)));
+		}
+		return 0;
+	}
+
+	public List<InterimReport> findByStatus(int status, int teacherId) {
+		String hql = "from InterimReport as interimReport, student as student " +
+				"where student.studentId = interimReport.studentId " +
+				"and student.teacherId = ? " + 
+				"and interimReport.status = ?";
+		return find(hql, teacherId, status);
+	}
+}

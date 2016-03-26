@@ -1,0 +1,12 @@
+package nju.software.service;
+
+import nju.software.web.vo.Msg;
+
+public interface MessageService {
+	
+	public Msg getMsg(int teacherId, int accountId);
+	
+	public int getStudentInfoC(int teacherId);
+	
+	public int getAllThesisC(int teacherId);
+}

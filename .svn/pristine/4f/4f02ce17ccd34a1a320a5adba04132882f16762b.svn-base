@@ -1,0 +1,35 @@
+package nju.software.dao;
+
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import nju.software.dao.common.BaseDao;
+import nju.software.entity.Suggestion;
+
+@Repository("nju.software.dao.SuggestionDAO")
+public interface SuggestionDAO extends BaseDao<Suggestion>{
+
+	public abstract Suggestion findById(java.lang.Integer id);
+
+	public abstract List<Suggestion> findByUserId(Object userId);
+	
+	public abstract List<Suggestion> findByReceiverId(Object receiverId);
+	
+	public abstract List<Suggestion> findByReceiverIdByLevel(Object receiverId,Object level);
+
+	public abstract HashMap<Integer, String> findAllContanctsByUserId(int userId);
+	
+	public abstract List<Suggestion> findBetween2(int userId, int id);
+	
+	public abstract int count(String propertyName, Object value);
+	
+	public abstract int count();
+	
+	public abstract int countNeedReply(Object accountId);
+	
+	public abstract int countByUser(Object accountId);
+	
+	public abstract int countByNotRead(Object accountId);
+}

@@ -1,0 +1,456 @@
+package nju.software.controller;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Account;
+import nju.software.entity.Classes;
+import nju.software.entity.Director;
+import nju.software.entity.HeadTeacher;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.entity.TeachingPoint;
+import nju.software.entity.enums.TeacherEducation;
+import nju.software.entity.enums.TeacherJobTitle;
+import nju.software.entity.enums.TeacherQualification;
+import nju.software.entity.enums.TeacherType;
+import nju.software.jsonmodel.JsonClasses;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.service.AccountService;
+import nju.software.service.ClassesService;
+import nju.software.service.DirectorService;
+import nju.software.service.HeadTeacherService;
+import nju.software.service.ReportService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.service.TeachingPointService;
+import nju.software.util.Constants;
+import nju.software.util.JSONUtil;
+
+import org.apache.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+@Controller
+public class DirectorController {
+	@Autowired
+	private AccountService accountService;
+
+	@Autowired
+	private StudentService studentService;
+
+	@Autowired
+	private TeacherService teacherService;
+
+	@Autowired
+	private ReportService reportService;
+
+
+	@Autowired
+	private DirectorService directorService;
+
+
+	@Autowired
+	private HeadTeacherService headTeacherService;
+
+	@Autowired
+	private TeachingPointService teachingPointService;
+
+	@Autowired
+	private ClassesService classesService;
+	@Autowired
+	private JSONUtil jsonUtil;
+
+	private Director director;
+	private List<TeachingPoint> teachingPointList;
+
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	private final static String savedir = System.getProperty("web.root")+"documents//excels";
+
+
+	private static Logger logger = Logger.getLogger(DirectorController.class);
+
+	/**
+	 * 获得所辖教学点学生列表，分页
+	 * @author Jason
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value="/director/getStudent.do") //改动
+	@ResponseBody
+	public void getStudent(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		HttpSession session = request.getSession();
+		String directorNo=	(String) session.getAttribute("actorNo");
+		director=directorService.getDirectorByNo(directorNo).get(0);
+
+		teachingPointList=teachingPointService.getTeachingPointByDirectorNo(directorNo);	
+
+		Integer type = Integer.parseInt(request.getParameter("type"));
+		String pageS = request.getParameter("page");
+		String rowsS = request.getParameter("rows");
+		String sidx = request.getParameter("sidx");
+		String sord = request.getParameter("sord");
+		String search=request.getParameter("_search");
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 9999 : Integer.parseInt(rowsS);
+		List<Student> studentList=null;
+		JSONObject jsonobj = new JSONObject();
+		if(search.equalsIgnoreCase("true")){
+			String  searchOper = request.getParameter("searchOper"); 
+			String  searchString = request.getParameter("searchString"); 
+			String  searchField = request.getParameter("searchField"); 
+			String searchCondition=getSearch(searchField,searchOper,searchString);
+			studentList=studentService.findSearch(searchCondition);
+
+		}else{
+			HashMap<String,Object> params=new HashMap<String,Object>();
+			params.put("page", page);
+			params.put("limit", limit);
+			params.put("sidx", sidx);
+			params.put("sord", sord);
+			params.put("type", type);
+
+			List<Object> result = studentService.getAllLimit(params);
+			studentList = (List<Student>)result.get(0);
+			HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+			jsonobj.put("page", limits.get("page"));
+			jsonobj.put("total_pages", limits.get("total_pages"));
+			jsonobj.put("records", limits.get("count"));
+		}
+
+		List<Student> studentList2=new ArrayList();
+		try{
+			for(Student s:studentList){
+				for(TeachingPoint t:teachingPointList){
+					String tpn=s.getTeachingPointNo();
+
+					if((tpn!=null&&tpn.equals(t.getNo()))){
+						studentList2.add(s);
+
+					}
+				}
+			}
+		}
+		catch(Exception e){
+			e.printStackTrace();
+
+		}
+		List<JsonStudent> studentlist_j = jsonUtil.converToJsonStudent(studentList2);
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		jsonobj.put("list", studentlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+
+	/**
+	 * 得到所管辖教学点的班主任
+	 * @author wss
+	 */
+	@RequestMapping(value="/director/getheadteachers.do")
+	@ResponseBody
+	public void getHeadTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		HttpSession session = request.getSession();
+		String directorNo=	(String) session.getAttribute("actorNo");
+
+
+		List<HeadTeacher> result = headTeacherService.getHeadTeacherByDirectoNo(directorNo);
+
+
+
+		JSONArray teacherlist_jsonobj = JSONArray.fromObject(result);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", teacherlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 得到所管辖教学点的班级
+	 * @author wss
+	 */
+	@RequestMapping(value="/director/getClasses.do")
+	@ResponseBody
+	public void getClasses(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		HttpSession session = request.getSession();
+		String directorNo=	(String) session.getAttribute("actorNo");
+
+
+
+
+		List<Classes>  result=classesService.getClassesByDirectorNo(directorNo);
+
+		List<JsonClasses> jclasslist = jsonUtil.converToJsonClasses(result);
+
+		JSONArray classlist_jsonobj = JSONArray.fromObject(jclasslist);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", classlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 *导出学生excel
+	 */
+
+	@RequestMapping(value = "/director/exportStudentExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportStudentExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HttpSession session = request.getSession();
+		String directorNo=	(String) session.getAttribute("actorNo");
+		List<Student> studentList=studentService.getStudentByDirectorNo(directorNo);
+
+
+		HSSFWorkbook wb =reportService.exportStudent(studentList);
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=student.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+
+	/**
+	 * 导出老师excel
+	 */
+	@RequestMapping(value = "/director/exportHeadTeacherExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportTeacherExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HttpSession session = request.getSession();
+		String directorNo=	(String) session.getAttribute("actorNo");
+
+
+		List<HeadTeacher> headTeacherList = headTeacherService.getHeadTeacherByDirectoNo(directorNo);
+
+
+		HSSFWorkbook wb =reportService.exportHeadTeacher(headTeacherList); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=teacher.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导出教学点班级excel
+	 */
+	@RequestMapping(value = "/director/exportClassesExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportClassesExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HttpSession session = request.getSession();
+		String directorNo=	(String) session.getAttribute("actorNo");
+
+
+		List<Classes> classList = classesService.getClassesByDirectorNo(directorNo);
+
+
+		HSSFWorkbook wb =reportService.exportClasses(classList); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=classes.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}  
+	}
+
+
+	/**
+	 * 编辑老师表
+	 */
+	@RequestMapping(value = "/director/editteacher.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+
+		String oper = request.getParameter("oper");	//操作类型 del,edit,add
+		if(oper != null && oper.equals("del")){
+			//通过teacherId删除
+			int teacherId = Integer.parseInt(request.getParameter("teacherId"));
+			try{
+				String teacherNum = teacherService.getTeacherById(teacherId).getTeacherNumber();
+				int accountId = accountService.getAccountByAccountname(teacherNum).getAccountId();
+				accountService.deleteAccount(accountId);
+				teacherService.deleteTeacherInfo(teacherId);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper != null){
+			String teacherNumber= request.getParameter("teacherNumber");
+			String teacherName= request.getParameter("teacherName");
+			String teacherClasses = request.getParameter("teacherClasses");
+			String teacherEducation = request.getParameter("teacherEducation");
+			String teacherJobTitle = request.getParameter("teacherJobTitle");
+			String teacherQualification = request.getParameter("teacherQualification");
+			String teacherPhone= request.getParameter("teacherPhone");
+			String teacherEmail = request.getParameter("teacherEmail");
+
+			Teacher teacher = new Teacher();
+			teacher.setTeacherClasses(TeacherType.valueOf(teacherClasses));
+			teacher.setTeacherEducation(TeacherEducation.valueOf(teacherEducation));
+			teacher.setTeacherEmail(teacherEmail);
+			teacher.setTeacherJobTitle(TeacherJobTitle.valueOf(teacherJobTitle));
+			teacher.setTeacherName(teacherName);
+			teacher.setTeacherNumber(teacherNumber);
+			teacher.setTeacherPhone(teacherPhone);
+			teacher.setTeacherQualification(TeacherQualification.valueOf(teacherQualification));
+
+			try{
+				if(oper.equals("edit")){
+					//更新需要设置teacherId
+					teacher.setTeacherId(Integer.parseInt(request.getParameter("teacherId")));
+					teacherService.updateTeacherInfo(teacher);
+				}else if(oper.equals("add")){
+					teacherService.addTeacherInfo(teacher);
+					teacher = teacherService.getTeacherByTeacherNumber(teacher.getTeacherNumber());
+
+					Account teacherAccount = new Account();
+					teacherAccount.setAccountLevel(Constants.TEACHER);
+					teacherAccount.setAccountName(teacher.getTeacherNumber());
+					teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+					teacherAccount.setTeacherId(teacher.getTeacherId());
+					accountService.addAccount(teacherAccount);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+				Account teacherAccount = new Account();
+				teacherAccount.setAccountLevel(Constants.TEACHER);
+				teacherAccount.setAccountName(teacher.getTeacherNumber());
+				teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+				teacherAccount.setTeacherId(teacher.getTeacherId());
+
+				accountService.addAccount(teacherAccount) ;
+			}
+		} 
+	}
+	/**
+	 * 编辑学生表
+	 */
+	@RequestMapping(value = "/director/editstudent.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editStudent(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String oper = request.getParameter("oper");	//操作类型 del,edit,add
+		if(oper != null && oper.equals("del")){
+			int studentId = Integer.parseInt(request.getParameter("studentId"));
+			try{
+				String studentNum = studentService.getStudentById(studentId).getStudentNumber();
+				int accountId = accountService.getAccountByAccountname(studentNum).getAccountId();
+				accountService.deleteAccount(accountId);
+				studentService.deleteStudentInfo(studentId);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper != null){
+			String studentNumber= request.getParameter("studentNumber");
+			String studentName= request.getParameter("studentName");
+			String studentGrade= request.getParameter("studentGrade");
+			Integer studentDegreeType = Integer.parseInt(request.getParameter("studentDegreeType"));
+			Integer studentType = Integer.parseInt(request.getParameter("studentType"));
+			String studentPhone1 = request.getParameter("studentPhone1");
+			String studentPhone2 = request.getParameter("studentPhone2");
+			String studentEmail = request.getParameter("studentEmail");
+
+			Student student = new Student();
+			student.setStudentEmail(studentEmail);
+			student.setStudentGrade(studentGrade);
+			student.setStudentName(studentName);
+			student.setStudentNumber(studentNumber);
+			student.setStudentPhone(studentPhone1);
+			student.setStudentPhoneX(studentPhone2);
+			student.setDegreeType(studentDegreeType);
+			student.setStudyTime(studentType);
+
+			try{
+				if(oper.equals("edit")){
+					student.setStudentId(Integer.parseInt(request.getParameter("studentId")));
+					studentService.updateStudentInfo(student);
+				}else if(oper.equals("add")){
+					studentService.addStudentInfo(student);
+					student = studentService.getStudentByStudentNumber(student.getStudentNumber());	
+
+					Account studentAccount = new Account();
+					studentAccount.setAccountLevel(Constants.STUDENT);
+					studentAccount.setAccountName(student.getStudentNumber());
+					studentAccount.setAccountPassword(student.getStudentNumber());
+					studentAccount.setStudentId(student.getStudentId());
+					accountService.addAccount(studentAccount);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		} 
+	}
+
+	/**
+	 * 得到搜索条件
+	 * @param col:表中属性， Oper：操作符      val：搜索 值
+	 */
+	public String getSearch(String col,String oper,String val){
+
+		HashMap<String, String> map=new HashMap<String, String>();
+		map.put("eq","=");
+		map.put("ne","<>");
+		map.put("lt", "<");
+		map.put("le", "<=");
+		map.put("gt",">");
+		map.put("ge", ">=");
+		map.put("bw", "LIKE");
+		map.put("bn", "NOT LIKE");
+		map.put("in", "LIKE");
+		map.put("ni", "NOT LIKE");
+		map.put("ew", "LIKE");
+		map.put("en", "NOT LIKE");
+		map.put("cn", "LIKE");
+		map.put("nc", "NOT LIKE");
+		if(oper.equals("bw") || oper.equals("bn") ) val =val+ "%";
+		if(oper.equals("ew") || oper.equals("en") ) val = "%"+val;
+		if(oper.equals("cn") || oper.equals("nc")  || oper.equals("in") || oper.equals("ni")) val = "%"+val+"%";
+		return "WHERE "+ col+" "+ map.get(oper)+" '"+ val+"'" ;
+	}
+}

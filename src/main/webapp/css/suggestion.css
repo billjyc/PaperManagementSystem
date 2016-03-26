@@ -1,0 +1,17 @@
+@CHARSET "UTF-8";
+.new_suggestion{width:960px;margin:0 auto;position:relative;}
+.new_suggestion .col{margin:10px 0;overflow:hidden;}
+.new_suggestion .label{float:left;width:60px;font-size:12px;padding-top:5px;}
+.new_suggestion .apadd{float:left;width:896px;min-height:26px;_height:26px;overflow:auto;border:1px solid #D1D5D6;
+box-shadow:inset 0 0 3px rgba(0,0,0,0.1);background: #fff;}
+.new_suggestion .sender{float:left;height:27px;line-height:27px;}
+.new_suggestion .apadd textarea{border:none;font-size:12px;overflow:hidden;resize:none;outline:none;height:20px;line-height:20px;}
+.new_suggestion .apadd input{border:none;box-shadow:none;height:20px;line-height: 20px;width: 98%;font-size: 12px;font-weight: 700;color: #000;padding: 3px 5px;}
+.new_suggestion .student_list {position:absolute;left:60px;top:66px;z-index:999;background:#fff;width:200px;line-height:25px;border:2px solid #ccc;padding:5px 10px 10px;}
+.new_suggestion .student_list li{cursor:pointer;}
+.new_suggestion .student_list .top span{color:#3c5f84;font-size:14px;font-weight:bold;}
+.new_suggestion .student_list .top #close{position:absolute;right:15px;top:5px;}
+.new_suggestion .apadd_suc{border:1px solid #bbd8fb;background:#f3f7fd;float:left;vertical-align:middle;height:18px;white-space:nowrap;padding:0 5px;margin:3px 3px 0 3px;}
+.new_suggestion .apaddshan {background:url('images/ui-icons_cd0a0a_256x240.png') no-repeat -84px -133px;display: inline-block;vertical-align: middle;width:8px;height:8px;margin-left:5px;}
+.new_suggestion .attsp{background-color:#e0ecf9;}
+.new_suggestion #affix{opacity:0;position:absolute;left:0;top:110px;}

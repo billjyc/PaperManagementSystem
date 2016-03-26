@@ -1,0 +1,146 @@
+package nju.software.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import static javax.persistence.GenerationType.IDENTITY;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * Suggestion entity. @author MyEclipse Persistence Tools
+ */
+@Entity
+@Table(name = "suggestion")
+public class Suggestion implements java.io.Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2673347284224080739L;
+	// Fields
+	private Integer suggestionId;
+	private Integer paperId;
+	private Integer userId;
+	private String senderName;
+	private Integer receiverId;
+	private Date suggestTime;
+	private String suggestContent;
+	private String suggestTitle;
+	private Integer level;
+	private Boolean isRead;
+
+	// Constructors
+
+	/** default constructor */
+	public Suggestion() {
+	}
+
+	/** full constructor */
+	public Suggestion(Integer paperId, Integer userId, String senderName,
+			Integer receiverId, Date suggestTime, String suggestContent,
+			String suggestTitle, Integer level) {
+		this.paperId = paperId;
+		this.userId = userId;
+		this.senderName = senderName;
+		this.receiverId = receiverId;
+		this.suggestTime = suggestTime;
+		this.suggestContent = suggestContent;
+		this.suggestTitle = suggestTitle;
+		this.level = level;
+	}
+
+	// Property accessors
+	@Id
+	@GeneratedValue(strategy = IDENTITY)
+	@Column(name = "suggestion_id", unique = true, nullable = false)
+	public Integer getSuggestionId() {
+		return this.suggestionId;
+	}
+
+	public void setSuggestionId(Integer suggestionId) {
+		this.suggestionId = suggestionId;
+	}
+
+	@Column(name = "paper_id")
+	public Integer getPaperId() {
+		return this.paperId;
+	}
+
+	public void setPaperId(Integer paperId) {
+		this.paperId = paperId;
+	}
+
+	@Column(name = "user_id")
+	public Integer getUserId() {
+		return this.userId;
+	}
+
+	public void setUserId(Integer userId) {
+		this.userId = userId;
+	}
+
+	@Column(name = "sender_name", length = 45)
+	public String getSenderName() {
+		return this.senderName;
+	}
+
+	public void setSenderName(String senderName) {
+		this.senderName = senderName;
+	}
+
+	@Column(name = "receiver_id")
+	public Integer getReceiverId() {
+		return this.receiverId;
+	}
+
+	public void setReceiverId(Integer receiverId) {
+		this.receiverId = receiverId;
+	}
+
+	@Column(name = "suggest_time", length = 19)
+	public Date getSuggestTime() {
+		return this.suggestTime;
+	}
+
+	public void setSuggestTime(Date suggestTime) {
+		this.suggestTime = suggestTime;
+	}
+
+	@Column(name = "suggest_content")
+	public String getSuggestContent() {
+		return this.suggestContent;
+	}
+
+	public void setSuggestContent(String suggestContent) {
+		this.suggestContent = suggestContent;
+	}
+
+	@Column(name = "suggest_title")
+	public String getSuggestTitle() {
+		return this.suggestTitle;
+	}
+
+	public void setSuggestTitle(String suggestTitle) {
+		this.suggestTitle = suggestTitle;
+	}
+
+	@Column(name = "level")
+	public Integer getLevel() {
+		return this.level;
+	}
+
+	public void setLevel(Integer level) {
+		this.level = level;
+	}
+
+	@Column(name = "is_read", nullable = false, columnDefinition = "bit default 0")
+	public Boolean getIsRead() {
+		return isRead;
+	}
+
+	public void setIsRead(Boolean isRead) {
+		this.isRead = isRead;
+	}
+
+}

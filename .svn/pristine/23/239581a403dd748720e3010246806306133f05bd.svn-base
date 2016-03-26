@@ -1,0 +1,86 @@
+package nju.software.dao.common;
+
+import java.io.Serializable;
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+@Repository("nju.software.dao.common.BaseDao")
+public interface BaseDao<T> {
+	/**
+	 * 根据id加载实体
+	 * @param id
+	 * @return
+	 */
+	T findById(Serializable id);
+	
+	/**
+	 * 保存实体
+	 * @param entity
+	 * @return
+	 */
+	Serializable save(T entity);
+	
+	/**
+	 * 更新实体
+	 * @param entity
+	 */
+	void update(T entity);
+	
+	/**
+	 * 删除实体
+	 * @param entity
+	 */
+	void delete(T entity);
+	
+	/**
+	 * 根据id删除实体
+	 * @param entityClazz
+	 * @param id
+	 */
+	void delete(Serializable id);
+	
+	/**
+	 * 获取所有实体
+	 * @param entityClazz
+	 * @return
+	 */
+	List<T> findAll();
+	
+	/**
+	 * 合并实体
+	 * @param entity
+	 */
+	void merge(T entity);
+	
+	/**
+	 * 获取实体总数
+	 * @param entityClazz
+	 * @return
+	 */
+	long findCount();
+	
+	/**
+	 * 新建实体
+	 * @param entity
+	 */
+	void create(T entity);
+	
+	/**
+	 * 清空session
+	 */
+	void clear();
+	
+	/**
+	 * 根据id加载实体
+	 * @param id
+	 * @return
+	 */
+	T load(Serializable id);
+	
+	/**
+	 * 强制清空session
+	 */
+	void flush();
+	
+}

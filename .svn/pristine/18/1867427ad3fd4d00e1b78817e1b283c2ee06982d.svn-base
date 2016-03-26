@@ -1,0 +1,286 @@
+package nju.software.service.impl;
+
+
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.persistence.EntityManagerFactory;
+
+import nju.software.dao.ClassesDAO;
+import nju.software.dao.DefenceDAO;
+import nju.software.dao.PaperDAO;
+import nju.software.dao.StudentDAO;
+import nju.software.dao.StudentScoreDAO;
+import nju.software.dao.TeacherDAO;
+import nju.software.entity.Classes;
+import nju.software.entity.Student;
+import nju.software.entity.TeachingPoint;
+import nju.software.service.StudentService;
+import nju.software.service.TeachingPointService;
+import nju.software.util.Constants;
+
+import org.drools.SystemEventListener;
+import org.drools.SystemEventListenerFactory;
+import org.jbpm.task.User;
+import org.jbpm.task.service.TaskService;
+import org.jbpm.task.service.TaskServiceSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service("studentServiceImpl")
+public class StudentServiceImpl implements StudentService{
+	@Autowired
+	private StudentDAO studentDAO;
+	@Autowired
+	private DefenceDAO defenceDao;
+	@Autowired
+	private TeacherDAO teacherDao;
+	@Autowired
+	private PaperDAO paperDao;
+	@Autowired
+	private StudentScoreDAO scoreDao;
+	@Autowired
+	private ClassesDAO classesDao;
+	@Autowired
+	private EntityManagerFactory emf;
+	
+	@Autowired
+	private 	TeachingPointService teachingPointService;
+	
+	public Student addStudentInfo(Student student) throws Exception {
+		// TODO Auto-generated method stub
+		try{
+			studentDAO.save(student);
+			SystemEventListener listener = SystemEventListenerFactory.getSystemEventListener();
+			TaskService taskService = new TaskService(emf,
+					listener);
+			TaskServiceSession taskSession = taskService.createSession();
+			taskSession.addUser(new User(student.getStudentNumber()));
+
+		}catch(Exception e){
+			throw e;
+		}
+		return student;
+	}
+
+	public Student updateStudentInfo(Student student) {
+		try{
+			studentDAO.update(student);
+			SystemEventListener listener = SystemEventListenerFactory.getSystemEventListener();
+			TaskService taskService = new TaskService(emf,
+					listener);
+			TaskServiceSession taskSession = taskService.createSession();
+			taskSession.addUser(new User(student.getStudentNumber()));
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		return student;
+	}
+
+	public boolean deleteStudentInfo(int studentId) {
+		// TODO Auto-generated method stub
+		try{
+			Student student = studentDAO.findById(studentId);
+			studentDAO.delete(student);
+		}catch(Exception e){
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	public List<Student> getStudentsByTeacherId(int teacherId) {
+		List<Student> studentList = null;
+		try{
+			studentList = studentDAO.findByProperty("teacherId", teacherId);
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		return studentList;
+	}
+	
+	public Student getStudentById(int studentId){
+		Student student=null;
+		try {
+			student = studentDAO.findById(studentId);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return student;
+	}
+
+	public Student getStudentByStudentNumber(String studentNumber) {
+		Student student = studentDAO.findByStudentNumber(studentNumber).get(0);
+		return student;
+	}
+	
+	public List<Object> getAllStudentsWithTeacherLimit(HashMap<String,Object> params) {
+		List<Object> result = null;
+		try{
+			result = studentDAO.findAllWithTeacherLimit(params);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	public List<Student> getAllStudentsWithOutTeacher() {
+		return studentDAO.findAllWithOutTeacher();
+	}
+
+	public List<Object> getStudentsByTeacherIdLimit(int teacherId, HashMap<String,Object> params) {
+		List<Object> result = null;
+		try{
+			result = studentDAO.findByPropertyLimit("teacherId", teacherId,params);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return result;
+	}
+public List<Student> findSearch(String searchCondition) {
+	List<Student> studentList = null;
+	try{
+		studentList = studentDAO.findSearch(searchCondition);
+	}catch(Exception e){
+		e.printStackTrace();
+		return null;
+	}
+	return studentList;
+	}
+	public List<Object> getAllLimit(HashMap<String,Object> params){
+		List<Object> result = null;
+		try{
+			result = studentDAO.findAllLimit(params);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	public List<Student> getAllStudent() {
+		return studentDAO.findAll();
+	}  
+	public String formatStudyTime(int studyTime){
+		if(studyTime==Constants.FULL_TIME)  return "全日制";
+		else return "在职";
+	}
+	public String formatDegreeType(int degreeType){
+		if(degreeType==Constants.ENGINEERING_MASTER) return "工程硕士";
+		else if( degreeType==Constants.ACADEMIC_MASTER) return "工学硕士";
+		else return "工学博士";
+	}
+	
+    public int  formatStudyTime(String studytime){
+	      if(studytime.equals("全日制")) return Constants.FULL_TIME;
+	      else if(studytime.equals("在职")) return Constants.PART_TIME;
+	    
+	      else  return Constants.ERROR_INPUT;
+	 
+    }
+    public int formatDegreeType(String type){
+    	if(type.equals("工程硕士")) return Constants.ENGINEERING_MASTER;
+    	else if(type.equals("工学硕士")) return Constants.ACADEMIC_MASTER;
+    	else if(type.equals("工学博士"))  return Constants.ACADEMIC_DOCTOR;
+    	else return Constants.ERROR_INPUT;
+    
+     }
+
+	public String formatGrade(int grade) {
+		if(grade==1) return "一年级";
+		else if(grade==2) return "二年级";
+		else   return "三年级";
+	
+	}
+
+	public int formatGrade(String grade) {
+		if(grade.equals("一年级")||grade.equals("研一")||grade.equals("博一"))
+			return 1;
+		else if (grade.equals("二年级")||grade.equals("研二")||grade.equals("博二"))
+		return 2 ;
+		else return 3;
+	}
+
+	public boolean validAssign(String stusdentNum) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	
+
+
+	public List<Classes> getAllClasses() {
+		return classesDao.findAll();
+	}
+
+	public Classes getClassById(Integer id) {
+		return classesDao.findById(id);
+	}
+
+	public List<Student> getStudentsByClassNo(String classNo) {
+		List<Student> studentList = null;
+		try{
+			studentList = studentDAO.findByProperty("classNo", classNo);
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		return studentList;
+	}
+
+	public List<Student> getStudentWithoutClass() {
+		List<Student> studentList = null;
+		try{
+			studentList = studentDAO.findAllWithOutClass();
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		return studentList;
+	}
+
+	public List<Student> getStudentWithClass() {
+		List<Student> studentList = null;
+		try{
+			studentList = studentDAO.findAllWithClass();
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		return studentList;
+	}
+
+	public List<Student> getStudentsByTPNo(String TPNo) {
+		List<Student> studentList = null;
+		try{
+			studentList = studentDAO.getStudentByTPNo(TPNo);
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		return studentList;
+	}
+
+	public List<Student> getStudentByDirectorNo(String directorNo) {
+		List<TeachingPoint> teachingPointList =teachingPointService.getTeachingPointByDirectorNo(directorNo);
+		List<Student> studentList = new ArrayList();
+		
+		for(TeachingPoint tp:teachingPointList){
+			List<Student> temp=getStudentsByTPNo(tp.getNo());
+			for(Student s:temp){
+				studentList.add(s);
+			}
+		}
+		
+		return studentList;
+	}
+	
+	
+	
+
+	
+	
+}

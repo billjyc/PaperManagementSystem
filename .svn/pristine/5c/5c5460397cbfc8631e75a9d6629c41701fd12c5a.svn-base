@@ -1,0 +1,138 @@
+package nju.software.atmosphere.service;
+
+import java.util.Map;
+
+import org.atmosphere.cpr.Broadcaster;
+import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
+import org.atmosphere.cpr.DefaultBroadcaster;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.common.collect.Maps;
+
+import nju.software.atmosphere.dto.Command;
+import nju.software.dao.InterimReportDAO;
+import nju.software.dao.PaperDAO;
+import nju.software.dao.ProposalDAO;
+import nju.software.dao.StudentDAO;
+import nju.software.dao.SuggestionDAO;
+import nju.software.dao.TeacherDAO;
+import nju.software.entity.enums.PaperState;
+import nju.software.util.Constants;
+import nju.software.web.vo.Msg;
+
+@Service("messageServiceImpl")
+public class MessageServiceImpl implements MessageService {
+	@Autowired
+	private TeacherDAO teacherDAO;
+	@Autowired
+	private StudentDAO studentDAO;
+	@Autowired
+	private PaperDAO paperDAO;
+	@Autowired
+	private ProposalDAO proposalDAO;
+	@Autowired
+	private InterimReportDAO interimReportDao;
+	@Autowired
+	private SuggestionDAO suggestionDAO;
+	
+	private Map<String, Thread> runningPublishers = Maps.newConcurrentMap();
+	
+	private static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
+
+
+	public Msg getMsg(int teacherId, int accountId) {
+		Msg tm = new Msg();
+		tm.setStudentInfo(studentDAO.count("teacherId", teacherId));
+		tm.setAllThesis(paperDAO.countByTeacher(teacherId));
+		tm.setUncheckedProposal(proposalDAO.countByTeacherAndStatus(teacherId, Constants.PROPOSAL_UNCHECKED));
+		tm.setPassedProposal(proposalDAO.countByTeacherAndStatus(teacherId, Constants.PROPOSAL_PASSED));
+		tm.setFirstCheck(paperDAO.countByTeacherAndStatus(teacherId, PaperState.FIRST_DRAFT_COMPLETED));
+		tm.setUncheckedInterim(interimReportDao.countByTeacherAndStatus(teacherId, Constants.INTERIM_REPORT_UNCHECKED));
+		tm.setpassedInterim(interimReportDao.countByTeacherAndStatus(teacherId,Constants.INTERIM_REPORT_PASSED));
+		tm.setBeforeDefense(paperDAO.countByTeacherAndStatus(teacherId, PaperState.JUDGE_PASSED));
+		tm.setDefenseFinalized(paperDAO.countByTeacherAndStatus(teacherId, PaperState.DEFENSE_PASSED));
+		tm.setReprieveList(paperDAO.countByTeacherAndStatus(teacherId, PaperState.DEFENSE_REPRIEVED));
+		tm.setInbox(suggestionDAO.countByUser(accountId));
+		tm.setSendList(suggestionDAO.count("userId", accountId));
+		tm.setNeedReply(suggestionDAO.countNeedReply(accountId));
+		return tm;
+	}
+
+	public int getStudentInfoC(int teacherId) {
+		return studentDAO.count("teacherId", teacherId);
+	}
+
+	public int getAllThesisC(int teacherId) {
+		return paperDAO.countByTeacher(teacherId);
+	}
+
+	@Override
+	public void execute(Command command) {
+		Broadcaster broadcaster = command.getResource().getAtmosphereConfig().getBroadcasterFactory()
+				.lookup(DefaultBroadcaster.class, command.getChannel(), true);
+		command.execute(broadcaster);
+		if (!broadcaster.isDestroyed() && !isRunningThreadOnChannel(command.getChannel())) {
+			startMessagingThread(command.getChannel(), broadcaster);
+		}
+	}
+
+	private synchronized boolean isRunningThreadOnChannel(String channel) {
+		return runningPublishers.containsKey(channel) && runningPublishers.get(channel).isAlive();
+	}
+
+	private synchronized void startMessagingThread(String channel, Broadcaster broadcaster) {
+		Thread thread = new Thread(new ChannelPublisher(broadcaster, channel));
+		thread.start();
+		runningPublishers.put(channel, thread);
+	}
+
+	public class ChannelPublisher implements Runnable, BroadcasterLifeCyclePolicyListener {
+		private final Broadcaster broadcaster;
+		private int counter;
+		private boolean shouldRun = true;
+		private final String channel;
+
+		public ChannelPublisher(Broadcaster broadcaster, String channel) {
+			this.broadcaster = broadcaster;
+			this.channel = channel;
+			broadcaster.addBroadcasterLifeCyclePolicyListener(this);
+		}
+
+		@Override
+		public void run() {
+			while (shouldRun) {
+				counter++;
+				broadcaster.broadcast("counter " + counter + ", channel: " + channel);
+				await();
+			}
+			runningPublishers.remove(channel);
+		}
+
+		private void await() {
+			try {
+				Thread.sleep(400);
+			} catch (InterruptedException e) {
+				logger.error("Interrupted chat broadcast thread", e);
+			}
+		}
+
+		@Override
+		public void onEmpty() {
+			shouldRun = false;
+			logger.debug("Shutting down multicast thread for channel {}, no subscribers connected.", channel);
+		}
+
+		@Override
+		public void onIdle() {
+			//nothing needed
+		}
+
+		@Override
+		public void onDestroy() {
+			shouldRun = false;
+		}
+	}
+}

@@ -1,0 +1,110 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.DefenceDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Defence;
+
+import org.hibernate.LockMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for
+ * Defence entities. Transaction control of the save(), update() and delete()
+ * operations can directly support Spring container-managed transactions or they
+ * can be augmented to handle user-managed Spring transactions. Each of these
+ * methods provides additional information for how to configure it for the
+ * desired type of transaction control.
+ * 
+ * @see nju.software.dataobject.Defence
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.DefenceDAOImpl")
+public class DefenceDAOImpl extends BaseDaoImpl<Defence> implements DefenceDAO{
+	private static final Logger log = LoggerFactory.getLogger(DefenceDAOImpl.class);
+	// property constants
+	public static final String STUDENT_ID = "studentId";
+	public static final String TEACHER_ID = "teacherId";
+	public static final String PAPER_ID = "paperId";
+	public static final String DENFENCE_ADDRESS = "denfenceAddress";
+	public static final String DEFENCE_RESULT = "defenceResult";
+	public static final String DEFENCE_CONTENT = "defenceContent";
+	public static final String DEFENCE_AFFIX = "defenceAffix";
+	public static final String THREE_ONE = "threeOne";
+	public static final String DEFENCE_COUNT = "defenceCount";
+	public static final String TEACHER_TYPE = "teacherType";
+	public static final String DEFENCE_ID = "defenceId";
+
+	public DefenceDAOImpl(){
+		super();
+		this.setClazz(Defence.class);
+	}
+
+	public List<Defence> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Defence> findByStudentId(Object studentId) {
+		return findByProperty(STUDENT_ID, studentId);
+	}
+
+	public List<Defence> findByTeacherId(Object teacherId) {
+		return findByProperty(TEACHER_ID, teacherId);
+	}
+
+	public List<Defence> findByPaperId(Object paperId) {
+		return findByProperty(PAPER_ID, paperId);
+	}
+
+	public List<Defence> findByDenfenceAddress(Object denfenceAddress) {
+		return findByProperty(DENFENCE_ADDRESS, denfenceAddress);
+	}
+
+	public List<Defence> findByDefenceResult(Object defenceResult) {
+		return findByProperty(DEFENCE_RESULT, defenceResult);
+	}
+
+	public List<Defence> findByDefenceContent(Object defenceContent) {
+		return findByProperty(DEFENCE_CONTENT, defenceContent);
+	}
+
+	public List<Defence> findByDefenceAffix(Object defenceAffix) {
+		return findByProperty(DEFENCE_AFFIX, defenceAffix);
+	}
+
+	public List<Defence> findByThreeOne(Object threeOne) {
+		return findByProperty(THREE_ONE, threeOne);
+	}
+
+	public List<Defence> findByDefenceCount(Object defenceCount) {
+		return findByProperty(DEFENCE_COUNT, defenceCount);
+	}
+
+	public List<Defence> findByTeacherType(Object teacherType) {
+		return findByProperty(TEACHER_TYPE, teacherType);
+	}
+
+
+	public Defence findByPaperIdandTeacherId(Integer paperId, Integer teacherId) {
+		log.debug("teacherId: {}, paperId: {}", teacherId, paperId);
+		String hql = "from Defence as d where d.paperId = ? and d.teacherId = ?";
+		return find(hql, paperId, teacherId).get(0);
+	}
+
+	public Defence findHasThree_one(Integer studentId) {
+		log.debug("teacherId:" + studentId);
+		String hql = "from Defence as d where d.studentId = ? and d.teacherType = 4";
+		return find(hql, studentId).get(0);
+	}
+
+	@Override
+	public Defence findById(Integer defence_id) {
+		return super.findById(defence_id);
+	}
+}

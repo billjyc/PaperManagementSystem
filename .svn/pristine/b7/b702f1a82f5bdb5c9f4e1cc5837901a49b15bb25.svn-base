@@ -1,0 +1,115 @@
+package nju.software.service;
+
+import java.util.HashMap;
+import java.util.List;
+
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.TeacherEducation;
+import nju.software.entity.enums.TeacherJobTitle;
+import nju.software.entity.enums.TeacherQualification;
+import nju.software.entity.enums.TeacherType;
+
+public interface TeacherService {
+	
+	/**
+	 * 增加一个教师的信息
+	 * @param teacher
+	 * 要增加的教师信息
+	 * @return
+	 * 增加成功返回增加的教师信息，失败返回null
+	 * @throws Exception 
+	 */
+	public Teacher addTeacherInfo(Teacher teacher) throws Exception;
+	
+	/**
+	 * 删除一个教师的信息
+	 * @param teacherId
+	 * 要删除的教师信息主键
+	 * @return
+	 * 成功删除返回true,失败返回false
+	 */
+	public boolean deleteTeacherInfo(int teacherId);
+	public boolean deleteTeacherInfoByNumber(String teacherNumber);
+	/**
+	 * 更新一个教师的信息
+	 * @param teacher
+	 * 要更新的教师信息
+	 * @return
+	 * 更新成功返回更新后的教师信息，失败返回null
+	 */
+	public Teacher updateTeacherInfo(Teacher teacher);
+	
+	/**
+	 * 得到一个学生的指导老师的信息
+	 * @param studentId
+	 * 学生的主键
+	 * @return
+	 * 指导老师的信息
+	 */
+	public Teacher getTeacherByStudentId(int studentId);
+	/**
+	 * 根据教师编号得到教师信息
+	 * @param teacherNumber
+	 * @return
+	 */
+	public Teacher getTeacherByTeacherNumber(String teacherNumber);
+
+	/**
+	 * 获取所有老师的信息
+	 */
+	public List<Teacher> getAllTeachers();
+	
+	/**
+	 * 分段获取老师的信息
+	 */
+	public List<Object> getAllLimit(HashMap<String,Object> params);
+	
+	/**
+	 * 根据主键查找老师
+	 * @param teacherId
+	 * @return
+	 */
+	public Teacher getTeacherById(int teacherId);
+	
+	/**
+	 * 查找校内老师
+	 * @return
+	 */
+	public List<Teacher> getInnerTeachers();
+	
+	/**
+	 * 查找校外老师
+	 * @return
+	 */
+	public List<Teacher> getOuterTeachers();
+
+	/**
+	 * 根据姓名查找老师
+	 * @param teacherId
+	 * @return
+	 */
+	public Teacher getTeacherByTeacherName(String teacherName);
+	
+	public String formatQualification(TeacherQualification qualify);
+	public TeacherQualification formatQualification(String qualify);
+	public String formatClasses(TeacherType type);
+	public TeacherType formatClasses(String classes);
+	public String formatJobTitle(TeacherJobTitle jobTitle);
+	public TeacherJobTitle formatJobTitle(String jobTitle);
+	public String formatEducation(TeacherEducation education);
+	public TeacherEducation formatEducation(String education);
+		
+	/**
+	 * 获取指定职称的教师
+	 * @param jobTitle
+	 * @return
+	 */
+	public List<Teacher> getTeacherByJobTitle(TeacherJobTitle jobTitle);
+	  
+	/**
+	 * 获取指定学历的教师
+	 * @param education
+	 * @return
+	 */
+	public List<Teacher> getTeacherHigherThanEducation(TeacherEducation education);
+}

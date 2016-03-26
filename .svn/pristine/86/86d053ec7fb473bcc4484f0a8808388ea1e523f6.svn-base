@@ -1,0 +1,273 @@
+package nju.software.service.impl;
+
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import nju.software.dao.DefenceDAO;
+import nju.software.dao.JudgeDAO;
+import nju.software.dao.PaperDAO;
+import nju.software.dao.StudentDAO;
+import nju.software.dao.TeacherDAO;
+import nju.software.dao.CourseDAO;
+import nju.software.entity.Course;
+import nju.software.entity.Defence;
+import nju.software.entity.Judge;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.service.AssignService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+
+@Service("assignServiceImpl")
+public class AssignServiceImpl implements AssignService{
+	@Autowired
+	private StudentDAO studentDao;
+	@Autowired
+	private TeacherDAO teacherDao;
+	@Autowired
+	private CourseDAO courseDao;
+	@Autowired
+	private PaperDAO paperDao;
+	@Autowired
+	private JudgeDAO judgeDao;
+	@Autowired
+	private DefenceDAO defenceDao;
+	
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(AssignServiceImpl.class);
+
+	/**
+	 * 启动论文管理流程
+	 */
+	private void startProcess(Map<String, Object> params) {
+		activitiAPIUtils.startProcessInstanceByKey(Constants.PROCESS_DEFINITION_KEY, params);
+	}
+
+
+	/**
+	 * 为一门课程分配学生
+	 * @param courseId 待分配课程Id
+	 * @param studentId 学生Id
+	 * @param actorId 系统操作者Id
+	 */
+	public Course addCourseByOne(int courseId,int studentId,String actorId) {
+		Course course=courseDao.findById(courseId);	//获取课程实例
+		//		course.setStudentId(studentId);	//设置studentId字段，即分配学生
+		courseDao.update(course);	//更新课程信息
+
+		Student student = studentDao.findById(studentId);
+
+		//初始化流程所需参数
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("course",course.getCourseNo());
+		params.put("student", student.getStudentNumber());
+		params.put("courseId",course.getId());
+		params.put("studentId", student.getStudentId());
+		params.put("jwy", actorId);
+		params.put("review", false);
+		params.put("detection", false);
+		params.put("defense", "failed");
+		params.put("reprieve1", "failed");
+		params.put("reprieve2", "failed");
+		params.put("reprieve3", "failed");
+		activitiAPIUtils.setCurrentUser(student.getStudentNumber());
+		//启动流程
+		startProcess(params);
+		return course;
+	}	
+
+
+
+	/**
+	 * 为一位学生分配导师
+	 * @param studentId 待分配学生Id
+	 * @param teacherId 指导老师Id
+	 * @param actorId 系统操作者Id
+	 */
+	public Student addAssignByOne(int studentId, int teacherId, String actorId) {
+		Student student = studentDao.findById(studentId);	//获取学生实例
+		student.setTeacherId(teacherId);	//设置teacherId字段，即分配导师
+		studentDao.update(student);	//更新学生信息
+
+		Teacher teacher = teacherDao.findById(teacherId);
+		
+		LOGGER.debug("当前操作人id：{}", actorId);
+		
+		//初始化流程所需参数
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("student",student.getStudentNumber());
+		params.put("tutor", teacher.getTeacherNumber());
+		params.put("studentId",student.getStudentId());
+		params.put("tutorId", teacher.getTeacherId());
+		params.put("jwy", actorId);
+		params.put("review", false);
+		params.put("detection", false);
+		params.put("defense", "failed");
+		params.put("reprieve", false);
+
+		//设置当前任务执行人为学生本人
+		activitiAPIUtils.setCurrentUser(student.getStudentNumber());
+		//启动流程
+		startProcess(params);
+		return student;
+	}
+
+	public Student addAssignByOne(int studentId, int teacherId, int nominalTeacherId, String userId) {
+		Student student=studentDao.findById(studentId);
+		student.setTeacherId(teacherId);
+		student.setNominalTeacherId(nominalTeacherId);//分配老师id
+		studentDao.update(student);
+
+		Teacher teacher=teacherDao.findById(teacherId);
+
+		//启动流程
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("student",String.valueOf(student.getStudentNumber()));
+		params.put("tutor", String.valueOf(teacher.getTeacherNumber()));
+		params.put("studentId",student.getStudentId());
+		params.put("tutorId", teacher.getTeacherId());
+		params.put("jwy", userId);
+		params.put("review", false);
+		params.put("detection", false);
+		params.put("defense", "failed");
+		params.put("reprieve1", "failed");
+		params.put("reprieve2", "failed");
+		params.put("reprieve3", "failed");
+		activitiAPIUtils.setCurrentUser(student.getStudentNumber());
+		startProcess(params);
+		return student;
+	}
+
+
+	/**
+	 * 为某一批课程分配一位学生
+	 */
+	public void addCourse(List<Integer> courseIdList,int studentId,String userId) {
+		for(int courseId:courseIdList){
+			addCourseByOne(courseId, studentId,userId);
+		}
+	}	
+
+
+
+	/**
+	 * 为某一批学生分配一位导师
+	 */
+	public void addAssign(List<Integer> studentIdList,int teacherId,String userId) {
+		for(int studentId:studentIdList){
+			addAssignByOne(studentId, teacherId,userId);
+		}
+	}
+
+	/**
+	 * 为某个学生分配评审老师
+	 */
+	public void addJudgeByOne(int studentId, int inTeacherId,
+			int outTeacherId,Timestamp judgeDeadline) {
+		List<Paper> paperList = paperDao.findByStudentId(studentId);
+		Paper paper = paperList.get(paperList.size()-1);
+		Integer paperId = paper.getPaperId();
+
+		Judge injudge = new Judge(paperId, inTeacherId, judgeDeadline, "", "","","");
+		Judge outjudge = new Judge(paperId, outTeacherId, judgeDeadline, "", "","","");
+		judgeDao.save(injudge);
+		judgeDao.save(outjudge);
+
+		paper.setPaperState(Constants.JUDGE_READY);
+	}
+
+	/**
+	 * 为某一批学生分配一位内审老师和一位外审老师
+	 */
+	public void addJudge(List<Integer> studentIdList, int inTeacherId,
+			int outTeacherId, Timestamp judgeDeadline) {
+		for(int studentId:studentIdList){
+			addJudgeByOne(studentId,inTeacherId,outTeacherId,judgeDeadline);
+		}
+
+	}
+
+	/**
+	 * 为某个学生安排答辩
+	 */
+	public void addDefenceByOne(Integer studentId, Integer teacher1Id,Integer teacher2Id,
+			Integer teacher3Id,Integer secretaryId ,String defenceAddress, Timestamp defenceTime) {
+		Paper paper=paperDao.findByStudentId(studentId).get(0);
+		Integer paperId=paper.getPaperId();
+		Defence defence1=new Defence(studentId,teacher1Id,paperId,defenceAddress,defenceTime,"","","","",0,1);
+		Defence defence2=new Defence(studentId,teacher2Id,paperId,defenceAddress,defenceTime,"","","","",0,2);
+		Defence defence3=new Defence(studentId,teacher3Id,paperId,defenceAddress,defenceTime,"","","","",0,3);
+		Defence defence4=new Defence(studentId,secretaryId,paperId,defenceAddress,defenceTime,"","","","",0,4);
+		defenceDao.save(defence1);
+		defenceDao.save(defence2);
+		defenceDao.save(defence3);
+		defenceDao.save(defence4);
+		
+		//设置论文状态为 DEFENSE_READY
+		paper.setPaperState(Constants.DEFENSE_READY);
+		paperDao.merge(paper);
+	}
+	/**
+	 * 为一批学生安排答辩
+	 */
+	public void addDefence(List<Integer> studentIdList, Integer teacher1Id,
+			Integer teacher2Id,Integer teacher3Id, Integer secretaryId,
+			String defenceAddress, Timestamp defenceTime) {
+		for(Integer studentId:studentIdList){
+			addDefenceByOne(studentId, teacher1Id, teacher2Id, teacher3Id, secretaryId, defenceAddress, defenceTime);
+		}
+	}
+
+	/**
+	 * 查看已经答辩前定稿的学生
+	 */
+	public List<Student> getReadyDefenceStudent() {
+		String paperState=Constants.DEFENSE_READY;
+		List<Paper> paperlist=paperDao.findByPaperState(paperState);
+		List<Student> studentlist=new ArrayList<Student>();
+		if(!paperlist.isEmpty()){
+			for(Paper paper:paperlist){
+				studentlist.add(studentDao.findById(paper.getStudentId()));
+			}
+			return studentlist;
+		}
+		return null;
+
+	}
+
+	/**
+	 * 查看已经通过答辩的学生
+	 */
+	public List<Student> getSuccessStudent() {
+		String paperState=Constants.DEFENSE_SUCCESS;
+		List<Paper> paperlist=paperDao.findByPaperState(paperState);
+		List<Student> studentlist=new ArrayList<Student>();
+		if(!paperlist.isEmpty()){
+			for(Paper paper:paperlist){
+				studentlist.add(studentDao.findById(paper.getStudentId()));
+			}
+			return studentlist;
+		}
+		return null;
+	}
+
+	/**
+	 * 查看已经通过答辩的论文
+	 */
+	public List<Paper> getSuccessPaper() {
+		String paperState=Constants.DEFENSE_SUCCESS;
+		return paperDao.findByPaperState(paperState);
+	}
+}

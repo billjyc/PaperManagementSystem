@@ -1,0 +1,38 @@
+package nju.software.service;
+
+import java.util.List;
+import nju.software.entity.Judge;
+
+public interface JudgeService {
+	
+	/**
+	 * 添加一个评审任务
+	 * @param judge
+	 * 要添加的评审对象
+	 * @return
+	 * 添加成功返回添加的评审对象，失败返回null
+	 */
+	public Judge addJudge(Judge judge);
+	
+	/**
+	 * 更新评审任务
+	 * @param judge
+	 * 要更新的评审对象
+	 * 
+	 * */
+	 public void updateJudge(Judge judge);
+	 /**
+	  * 查找一个评审对象
+	  * @param  paperId
+	  * 
+	  * @return Judge
+	  */
+	 public List<Judge> findJudgeByPaperId(int paperId);
+	 /**
+	  * 根据教师Id和论文Id获取评审对象
+	  * @param paperId
+	  * @param teacherId
+	  * @return
+	  */
+	 public Judge findJudgeByPaperIdandTeacherId(int paperId,int teacherId);
+}

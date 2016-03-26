@@ -1,0 +1,76 @@
+package test.controller;
+
+import nju.software.controller.LoginController;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;  
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;  
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*; 
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextConfiguration({"classpath*:/spring-hibernate.xml"
+	, "classpath*:/spring-activiti.xml"
+	, "classpath*:/lei-dispather-servlet.xml"
+})
+public class LoginControllerTest extends AbstractTransactionalJUnit4SpringContextTests{
+	@Autowired
+	private LoginController LoginController;
+	
+	private final MockHttpServletRequest request = new MockHttpServletRequest();  
+    private final MockHttpServletResponse response = new MockHttpServletResponse();  
+    
+    @Autowired
+    private WebApplicationContext wac;
+    
+    private MockMvc mockMvc;
+
+	@Before
+	public void setUp() throws Exception {
+		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+	}
+
+	@Test
+	public void testLogin() throws Exception {	
+/*		request.setRequestURI("/login.do");
+		request.setMethod(HttpMethod.POST.name());
+		
+		HttpSession session = request.getSession();*/
+		mockMvc.perform(post("/login.do").param("username", "jwy").param("passwordFake", "jwy"))
+			.andExpect(status().is3xxRedirection()).andDo(print());
+	}
+	
+	@Test
+	public void testLogout() throws Exception {
+		mockMvc.perform(post("/login.do").param("username", "gjd").param("passwordFake", "gjd"))
+		.andDo(print());
+		mockMvc.perform(get("/logout.do"))
+			.andExpect(status().is3xxRedirection())
+			.andDo(print());
+	}
+	
+	@Test
+	public void testGetNotice() throws Exception {
+		mockMvc.perform(post("/login.do").param("username", "jyc").param("passwordFake", "jyc"))
+		.andDo(print());
+		MvcResult result = mockMvc.perform(post("/shownotice.do"))
+		.andExpect(status().isOk())
+		.andDo(print())
+		.andReturn();
+		System.out.println(result.getResponse());
+	}
+
+}

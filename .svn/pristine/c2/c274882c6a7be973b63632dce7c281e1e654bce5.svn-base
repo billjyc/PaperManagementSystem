@@ -1,0 +1,38 @@
+package nju.software.service.activiti;
+
+import org.activiti.engine.identity.User;
+import org.springframework.stereotype.Component;
+
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+
+/**
+ * 维护用户、角色、权限接口
+ * @author billjyc
+ *
+ */
+public interface ActivitiAccountService {
+	public void addStudent(Student student);
+	
+	public void addTeacher(Teacher teacher);
+     
+    /**
+     * 删除用户
+     * @param userId        用户ID
+     * @param synToActiviti     是否同步到Activiti数据库，通过配置文件方式设置，使用属性：account.user.add.syntoactiviti
+     * @throws Exception
+     */
+    public void delete(Long userId, boolean synToActiviti) throws Exception;
+ 
+    /**
+     * 同步用户、角色数据到工作流
+     * @throws Exception
+     */
+    public void synAllUserAndRoleToActiviti() throws Exception;
+ 
+    /**
+     * 删除工作流引擎Activiti的用户、角色以及关系
+     * @throws Exception
+     */
+    public void deleteAllActivitiIdentifyData() throws Exception;
+}

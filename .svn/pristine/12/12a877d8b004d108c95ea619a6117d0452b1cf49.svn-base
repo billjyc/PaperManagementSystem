@@ -1,0 +1,50 @@
+package nju.software.service;
+
+import java.util.List;
+import java.util.Map;
+
+import nju.software.entity.Proposal;
+
+public interface ProposalService {
+	
+	/**
+	 * 添加开题报告
+	 * @param paper ,taskId ,userId
+	 *	 	要添加的论文对象,任务id，执行者id
+	 */
+	public void addProposal(Proposal proposal,long taskId,String actorId);
+	
+	/**
+	 * 更新开题报告
+	 */
+	public void updateProposal(Proposal proposal);
+	
+	/**
+	 * 判定开题报告是否通过
+	 */
+	public void judgeProposal(Proposal proposal, long taskId, Map<String, Object> data, String actorId);
+
+	/**
+	 * 通过student_id取开题报告
+	 */
+	public Proposal getProposalByStudentId(int studentId);
+	
+	/**
+	 * 通过proposal_id取开题报告
+	 */
+	public Proposal getProposalById(int proposalId);
+	
+	/**
+	 * 通过status取开题报告
+	 */
+	public List<Proposal> getProposalByStatus(int status);
+	
+	/**
+	 * 
+	 * @param status
+	 * @param teacherId
+	 * @return 某个老师所属的学生的某个status的开题报告
+	 */
+	public List<Proposal> getProposalByStatus(int status,int teacherId);
+	
+}

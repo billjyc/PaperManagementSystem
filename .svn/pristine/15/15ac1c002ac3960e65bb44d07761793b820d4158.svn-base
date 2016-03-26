@@ -1,0 +1,78 @@
+package nju.software.jsonmodel;
+
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+
+public class BeforeDefenseTask {
+	private Integer studentId;
+	private String studentName;
+	private String studentNumber;
+	private Integer paperId;
+    private String paperTitle;
+    private Integer paperVersion;
+    private String paperState;
+    private long taskId;
+	public Integer getStudentId() {
+		return studentId;
+	}
+	public void setStudentId(Integer studentId) {
+		this.studentId = studentId;
+	}
+	public String getStudentName() {
+		return studentName;
+	}
+	public void setStudentName(String studentName) {
+		this.studentName = studentName;
+	}
+	public String getStudentNumber() {
+		return studentNumber;
+	}
+	public void setStudentNumber(String studentNumber) {
+		this.studentNumber = studentNumber;
+	}
+	public Integer getPaperId() {
+		return paperId;
+	}
+	public void setPaperId(Integer paperId) {
+		this.paperId = paperId;
+	}
+	public String getPaperTitle() {
+		return paperTitle;
+	}
+	public void setPaperTitle(String paperTitle) {
+		this.paperTitle = paperTitle;
+	}
+	public String getPaperState() {
+		return paperState;
+	}
+	public void setPaperState(String paperState) {
+		this.paperState = paperState;
+	}
+    public long getTaskId() {
+		return taskId;
+	}
+	public void setTaskId(long taskId) {
+		this.taskId = taskId;
+	}
+	
+	public static BeforeDefenseTask toBeforeDefenseTask(Student s ,Paper p ,long taskId){
+    	BeforeDefenseTask j = new BeforeDefenseTask();
+    	j.setPaperId(p.getPaperId());
+    	j.setPaperState(p.getPaperState());
+    	j.setPaperTitle(p.getPaperTitle());
+    	j.setStudentId(s.getStudentId());
+    	j.setStudentName(s.getStudentName());
+    	j.setStudentNumber(s.getStudentNumber());
+    	j.setTaskId(taskId);
+    	j.setPaperVersion(p.getPaperVersion());
+    	return j;
+    }
+	public void setPaperVersion(Integer paperVersion) {
+		this.paperVersion = paperVersion;
+	}
+	public Integer getPaperVersion() {
+		return paperVersion;
+	}
+   
+	
+}

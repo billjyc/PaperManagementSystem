@@ -1,0 +1,171 @@
+package nju.software.manager.teacher;
+
+import java.io.File;
+
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+import nju.software.util.enums.PaperState;
+
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TeacherPaperManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	
+	private static Logger logger = LoggerFactory.getLogger(TeacherPaperManager.class);
+	
+	/**
+	 * 教师提交初稿评审后发送会话
+	 * @param paper
+	 * @param checkFile
+	 * @throws Exception 
+	 */
+	public void sendFirstCheckSuggestion(Paper paper, File checkFile) throws Exception {
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher t = teacherService.getTeacherById(s.getTeacherId());
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		
+		if(paper.getPaperState() == PaperState.FIRST_DRAFT_FINALIZED) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的论文初稿";
+			content = "你的论文初稿已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "请等待教务员进行重复率检测";
+		} else if(paper.getPaperState() == PaperState.UNCOMMITED){
+			title = "导师" + t.getTeacherName() + "驳回了你的论文初稿";
+			content = "你的论文初稿已经被导师" + t.getTeacherName() + "驳回，" 
+					+ "请将论文修改后再次上传";
+		} else {
+			return;
+		}
+		
+		logger.debug("teacher name: {}", t.getTeacherName());
+		logger.debug("student name: {}", s.getStudentName());
+		
+		sendSuggestion(t.getTeacherNumber(), s.getStudentNumber(), t.getTeacherName(), 
+				title, content, paper.getPaperId(), checkFile);
+	}
+	
+	/**
+	 * 发送答辩前定稿会话
+	 * @param paper
+	 * @throws Exception
+	 */
+	public void sendBeforeDefenseDecisionSuggestion(Paper paper) {
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher t = teacherService.getTeacherById(s.getTeacherId());
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		
+		if(paper.getPaperState() == PaperState.DEFENSE_READY) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的答辩前论文定稿";
+			content = "你的答辩前论文定稿已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "请等待教务员分配答辩老师";
+		} else {
+			return;
+		}
+		
+		sendSuggestion(t.getTeacherNumber(), s.getStudentNumber(), "导师" + t.getTeacherName(), 
+				title, content, paper.getPaperId(), null);
+	}
+	
+	/**
+	 * 答辩通过后发送会话
+	 * @param paper
+	 * @throws Exception
+	 */
+	public void sendAfterDefenseDecisionSuggestion(Paper paper) {
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher t = teacherService.getTeacherById(s.getTeacherId());
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		
+		if(paper.getPaperState() == PaperState.FINALIZED_AFTER_DEFENSE) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的答辩后论文定稿";
+			content = "你的答辩后论文定稿已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "请等待教务员打印论文";
+		} else {
+			return;
+		}
+		
+		sendSuggestion(t.getTeacherNumber(), s.getStudentNumber(), "导师" + t.getTeacherName(), 
+				title, content, paper.getPaperId(), null);
+	}
+	
+	/**
+	 * 暂缓答辩后论文定稿会话
+	 * @param paper
+	 * @throws Exception
+	 */
+	public void sendAfterReprieveDecisionSuggestion(Paper paper) {
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher t = teacherService.getTeacherById(s.getTeacherId());
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		
+		if(paper.getPaperState() == PaperState.FINALIZED_AFTER_REPRIEVE) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的暂缓答辩后论文定稿";
+			content = "你的暂缓答辩后论文定稿已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "请等待教务员打印论文";
+		} else {
+			return;
+		}
+		
+		sendSuggestion(t.getTeacherNumber(), s.getStudentNumber(), "导师" + t.getTeacherName(), 
+				title, content, paper.getPaperId(), null);
+	}
+	
+	/**
+	 * 老师向学生发送会话
+	 * @param teacherNumber
+	 * @param studentNumber
+	 * @param teacherName
+	 * @param title
+	 * @param content
+	 * @param paperId
+	 * @param file 附件
+	 */
+	private void sendSuggestion(String teacherNumber, String studentNumber, String teacherName, String title, String content, Integer paperId, File file) {
+		Integer senderId = accountService.getAccountByAccountname(teacherNumber).getAccountId();
+		Integer receiverId = accountService.getAccountByAccountname(studentNumber).getAccountId();
+		Suggestion sugg = suggestionService.createSuggestion(title, content, senderId, teacherName, receiverId, paperId);
+		try {
+			suggestionService.sendSuggestion(sugg, file);
+		} catch (Exception e) {
+			logger.error("发送会话失败！", e);
+		}
+	}
+}

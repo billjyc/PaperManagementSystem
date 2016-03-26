@@ -1,0 +1,206 @@
+package nju.software.controller.student;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.Account;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.jsonmodel.JsonTeacher;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.JSONUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 学生信息控制类
+ * @author billjyc
+ * @date 2015-3-21
+ *
+ */
+@Controller
+public class StudentInfoController {
+	private static Logger logger = LoggerFactory.getLogger(StudentInfoController.class);
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private AccountService accountService;
+
+	/**
+	 * 获得用户sessionId事件
+	 * 
+	 * @author wsd
+	 * @param id
+	 *            是学生登录后放在session的studentId
+	 */
+	@RequestMapping(value = "/student/getsessionid.do")
+	@ResponseBody
+	public void getSessionId(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		int id = (Integer) request.getSession().getAttribute("studentId");
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("sessionid", id);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取当前学生信息 展示学生个人信息事件,edit by wsd
+	 * 
+	 * @author wsd
+	 * @param id
+	 *            用户存在session中的ID
+	 * @param jsonstudent
+	 *            获得的学生对象转换为jsonstudent
+	 * @param result_json
+	 *            执行方法体成功与否的判断信息，用于返回前台展示用户提示信息
+	 */
+	@RequestMapping(value = "/student/studentInfo.do")
+	@ResponseBody
+	public void studentInfo(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		Student student = null;
+		String result_json = "";
+		try {
+			student = studentService.getStudentById(studentId);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		// 转换为jsonstudent
+		JsonStudent jsonstudent = new JsonStudent(student);
+
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("student", jsonstudent);
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 更新学生信息
+	 * 
+	 * @author zl
+	 */
+	@RequestMapping(value = "/student/updatestudentInfo.do")
+	@ResponseBody
+	public void updateStudentInfo(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, 
+			@RequestParam("email") String email, @RequestParam("phone") String phone) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+
+		logger.debug("email: {}, phone: {}", email, phone);
+		Student student = null;
+		String result_json = "";
+		try {
+			student = studentService.getStudentById(studentId);
+			student.setStudentEmail(email);
+			student.setStudentPhone(phone);
+			studentService.updateStudentInfo(student);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 导师信息 学生页面获得导师信息事件
+	 * 
+	 * @param studentId
+	 *            是学生登陆后放在session中的记录信息，主键
+	 * @param result_json
+	 *            执行方法体成功与否的判断信息，用于返回前台展示用户提示信息
+	 */
+	@RequestMapping(value = "/student/student_teacher_info.do")
+	@ResponseBody
+	public void studentTeacherInfo(String email, String passwordFake,
+			HttpServletRequest request, HttpServletResponse response,
+			ModelMap model) {
+		int studentId = (Integer) request.getSession()
+				.getAttribute("studentId");
+		JsonTeacher jsonteacher = new JsonTeacher();
+		Teacher teacher = null;
+		String result_json = "";
+		// 获得老师信息块
+
+		try {
+			teacher = teacherService.getTeacherByStudentId(studentId);
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+
+		}
+		// 返回json数据
+		int accountId = accountService.getAccountByAccountname(
+				teacher.getTeacherNumber()).getAccountId();
+		jsonteacher = JsonTeacher.teacher2JsonTeacher(teacher);
+		jsonteacher.setAccountId(accountId);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("teacher", jsonteacher);
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 修改密码
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param oPassword 原始密码
+	 * @param nPassword 新密码
+	 */
+	@RequestMapping(value = "/student/changePassword.do")
+	@ResponseBody
+	public void changePassword(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, 
+			@RequestParam("oPassword") String oPassword, @RequestParam("nPassword") String nPassword){
+
+		int accountId = (Integer) request.getSession()
+				.getAttribute("accountId");
+
+		logger.debug("accountId: {}, oPassword:{}, nPassword: {}", accountId, oPassword, nPassword);
+		Account account = null;
+		try {
+			account = accountService.getAccountByAccountId(accountId);
+
+			if(account.getAccountPassword().equals(oPassword)){
+				account.setAccountPassword(nPassword);
+				accountService.updateAccount(account);	
+			} else{
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}

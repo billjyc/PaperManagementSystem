@@ -1,0 +1,411 @@
+package nju.software.controller;
+
+import java.io.File;
+
+
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.Accessory;
+import nju.software.entity.Account;
+import nju.software.entity.Suggestion;
+import nju.software.entity.SuggestionReply;
+import nju.software.jsonmodel.JsonSuggestion;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.FileOperateUtil;
+import nju.software.util.JSONUtil;
+
+
+import net.sf.json.JSONArray;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+@Controller
+public class SuggestionController {
+	@Autowired
+	SuggestionService suggestionService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+
+	@Autowired
+	private JSONUtil jsonUtil;
+
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	private static Logger logger = LoggerFactory
+			.getLogger(SuggestionController.class);
+
+	/**
+	 * 添加一条会话记录，回复
+	 * 
+	 * @author dinglingjuan
+	 * @param studentStr
+	 *            - sent by ajax
+	 * @param result_json
+	 *            执行方法体成功与否的判断信息，用于返回前台展示用户提示信息
+	 * @throws JSONException
+	 */
+	@RequestMapping(value = "/suggestions/addsuggestion.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void addSuggestion(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String senderName = (String) session.getAttribute("actorName");
+		String suggestionstr = request.getParameter("jsonStr").toString();
+		JSONObject stu_json = JSONObject.fromObject(suggestionstr);
+		JSONArray receiver_list = (JSONArray) stu_json.get("receiver_list");//收件人列表
+		String result_json = "";//返回执行结果
+		// 每个收件人对应一条记录
+		for (int i = 0; i < receiver_list.size(); i++) {
+			//将从页面上获得的数据放到对象中
+			Suggestion sugg = new Suggestion();
+			sugg.setLevel(0);
+			sugg.setPaperId(0);
+			sugg.setReceiverId(receiver_list.getInt(i));
+			sugg.setSuggestContent((String) stu_json.get("suggestion_content"));
+			Timestamp time = new Timestamp(new Date().getTime());
+			sugg.setSuggestTime(time);
+			sugg.setUserId(stu_json.getInt("user_id"));
+			sugg.setSenderName(senderName);
+			sugg.setSuggestTitle((String) stu_json.get("suggest_title"));
+			try {
+				int new_sugg_id = suggestionService.addSuggestion(sugg);// 调用service添加会话
+				JSONArray affix_list = (JSONArray) stu_json.get("affix_list");
+				if(affix_list!=null){
+					for(int j=0;j<affix_list.size();j++){
+						String affix = (String) affix_list.get(i);
+						System.out.println(affix);
+						Accessory a = new Accessory();
+						a.setPath(affix);
+						a.setSuggestionId(new_sugg_id);
+						suggestionService.addAccessory(a);
+					}
+				}//插入附件
+
+
+				Account a=accountService.getAccountByAccountId(receiver_list.getInt(i));
+				String title=sugg.getSuggestTitle();
+				String to="";
+				String c="";
+				int cor_id = stu_json.getInt("cor_suggestion_id");
+				if (cor_id > 0) {//判断是否是回复某个会话
+					SuggestionReply reply = new SuggestionReply();
+					reply.setSuggestionId(cor_id);
+					reply.setReplySuggestionId(new_sugg_id);
+					suggestionService.addSuggestionReply(reply);//调用新会话插入回复
+					Suggestion cor_sugg = suggestionService.getSuggestionBySuggestionId(cor_id);
+					cor_sugg.setLevel(1);//设置会话已经被回复过了
+					suggestionService.updateSuggestion(cor_sugg);//更新被回复的会话
+					a=accountService.getAccountByAccountId(suggestionService.getSuggestionBySuggestionId(cor_id).getReceiverId());
+					title=cor_sugg.getSuggestTitle();
+					c=cor_sugg.getSuggestContent();
+
+				}
+				//发送邮件；
+				/*
+				EmailService emailService=new EmailService();
+
+				System.out.println("<<<<<<<<<<<<<<<<<"+a.getAccountLevel());
+				if(a.getAccountLevel()==3){
+					to=studentService.getStudentById(a.getStudentId()).getStudentEmail();
+				}else{
+					to=teacherService.getTeacherById(a.getTeacherId()).getTeacherEmail();
+				}
+				System.out.println("<<<<<<<<<<<<<<<<"+to);
+				String subject=studentService.getStudentById(a.getStudentId()).getStudentName()+"."+studentService.getStudentById(a.getStudentId()).getStudentGrade()+"年级"+title;
+				String content=c+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				try{
+				emailService.sendMail(to, subject, content);
+				}catch(MessagingException e){
+					e.printStackTrace();
+				}
+
+				 */
+			} catch (Exception e) {
+				logger.error("添加会话失败：", e);
+				result_json = FAIL;
+			}
+		}
+		result_json = SUCCESS;
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 上传附件
+	 * @author dinglingjuan
+	 */
+	@RequestMapping(value = "/suggestions/submitaffix.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void submitAffix(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		String userNumber = (String) session.getAttribute("actorId");
+		String result_json = "";
+		String path = "";
+		File save = FileOperateUtil.Upload(request,
+				getAbsoluteFileDir(userNumber), "", "affix");
+		if (save == null) {
+			result_json = FAIL;
+		}else{
+			result_json = SUCCESS;
+			path = getRelativeFilePath(save.getAbsolutePath());
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("ret_path", path);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	//下载附件
+	@RequestMapping(value = "/suggestions/downloadaffix.do", method = RequestMethod.POST)
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void downloadpaper(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		String path = request.getParameter("path");
+		System.out.println(path);
+		String absolutepath = getAbsoluteFilePath(path);
+		FileOperateUtil.Download(response, absolutepath);
+	}
+	/**
+	 * 获得未读列表
+	 * 
+	 * @author dinglingjuan
+	 * @param response
+	 * @param jsonobj
+	 */
+	@RequestMapping(value = "/suggestions/needreply.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void getNeedReplyList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int receiverId = (Integer) session.getAttribute("accountId");
+		ArrayList<JsonSuggestion> list = new ArrayList<JsonSuggestion>();
+		String result_json = "";
+		try {
+			List<Suggestion> sugg_list = suggestionService.getSuggestionByReceiverIdAndLevel(receiverId, 0);
+			for (Suggestion sugg : sugg_list) {
+				JsonSuggestion json_sugg = JsonSuggestion.suggestion2JsonSuggestion(sugg);
+				list.add(json_sugg);
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			logger.error("get need reply list failed: ", e);
+			result_json = FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(list);
+		System.out.println("list: " + jsonlist);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	/**
+	 * 获得一个会话的详细信息
+	 */
+	@RequestMapping(value = "/suggestions/getsuggestiondetail.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void getSuggestionDetail(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		JsonSuggestion json_sugg = new JsonSuggestion();
+		String result_json = "";
+		int suggestionId = Integer.parseInt(request.getParameter("suggestion_id"));
+		try{
+			Suggestion sugg = suggestionService.getSuggestionBySuggestionId(suggestionId);
+			json_sugg = JsonSuggestion.suggestion2JsonSuggestion(sugg);
+			List<Accessory> affix_list = suggestionService.getAccessoryBySuggestionId(suggestionId);
+			ArrayList<String> path_list = new ArrayList<String>();
+			for(Accessory a:affix_list){
+				path_list.add(a.getPath());
+			}
+			json_sugg.setAffixList(path_list);
+		}catch(Exception e){
+			logger.error("get suggestion detail failed: ", e);
+			result_json = FAIL;
+		}
+		JSONObject jsonobj = new JSONObject();
+		//response.setContentType("text/json; charset=utf-8");//显示中文所需
+		jsonobj.put("sugg", json_sugg);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 已发列表
+	 * 
+	 * @param response
+	 * @param jsonobj
+	 */
+	@RequestMapping(value = "/suggestions/sendlist.do")
+	@ResponseBody
+	public void getSendList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+		HttpSession session = request.getSession();
+		int userId = (Integer) session.getAttribute("accountId");
+		logger.debug("accountId: {}", userId);
+		ArrayList<JsonSuggestion> list = new ArrayList<JsonSuggestion>();
+		String result_json = "";
+		try {
+			List<Suggestion> sugg_list = suggestionService
+					.getSuggestionByUserId(userId);
+			
+			for (Suggestion sugg : sugg_list) {
+				JsonSuggestion json_sugg = JsonSuggestion
+						.suggestion2JsonSuggestion(sugg);
+				list.add(json_sugg);
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			logger.error("get first check list failed: ", e);
+			result_json = FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(list);
+		JSONObject jsonobj = new JSONObject();
+		System.out.println(jsonlist);
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/*		
+
+	public void sendmail(String from, String fpassword, String to,
+			String subject, String content, List<File> attachmentfiles)
+			throws MessagingException {
+		System.out.println(">>>>>>>>>>" + from);
+		System.out.println(">>>>>>>>>>" + getMailHost(from));
+		System.out.println(">>>>>>>>>>" + fpassword);
+		System.out.println(">>>>>>>>>>" + to);
+		System.out.println(">>>>>>>>>>" + subject);
+		System.out.println(">>>>>>>>>>" + content);
+		JavaMailSenderImpl senderImpl = new JavaMailSenderImpl();
+		senderImpl.setHost(getMailHost(from));
+		senderImpl.setUsername(from);
+		senderImpl.setPassword(fpassword);
+		Properties javaMailProp = new Properties();
+		javaMailProp.setProperty("mail.smtp.auth", "true");
+		senderImpl.setJavaMailProperties(javaMailProp);
+		MimeMessage mailMessage = senderImpl.createMimeMessage();
+		MimeMessageHelper messageHelper = new MimeMessageHelper(mailMessage,
+				true, "utf-8");
+
+		messageHelper.setTo(to);
+		messageHelper.setFrom(from);
+		messageHelper.setSubject(subject);
+		messageHelper.setText(content, true);
+
+		if (attachmentfiles != null) {
+			for (int i = 0; i < attachmentfiles.size(); i++) {
+				File tmpfsr = attachmentfiles.get(i);
+				messageHelper.addAttachment(tmpfsr.getName(), tmpfsr);
+			}
+		}
+		senderImpl.send(mailMessage);
+		System.out.println("发送成功！");
+	}
+
+	private  String getMailHost(String email) {
+		if ((email != null) && (email.length() > 0)) {
+			int dot = email.lastIndexOf('@');
+			if ((dot > -1) && (dot < (email.length() - 1))) {
+				return "smtp." + email.substring(dot + 1);
+			}
+		}
+		return null;
+	}
+	 */
+
+	@RequestMapping(value = "/suggestions/getSuggestionMap.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void AllSuggestionMapByUserIdByType(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		HttpSession session = request.getSession();
+		int userId = (Integer) session.getAttribute("accountId");
+		LinkedHashMap<String,LinkedHashMap<String,List<Suggestion>>> lst=suggestionService.getAllSuggestionMapByUserIdByType(userId, "contact");
+		LinkedHashMap<String,LinkedHashMap<String,List<JsonSuggestion>>> result=new LinkedHashMap<String,LinkedHashMap<String,List<JsonSuggestion>>>();
+		Iterator<String> iter=lst.keySet().iterator();
+		String result_json = "";
+		while(iter.hasNext()){
+			String index=iter.next();
+			LinkedHashMap<String,List<Suggestion>> temp=lst.get(index);
+			LinkedHashMap<String,List<JsonSuggestion>> t=new LinkedHashMap<String,List<JsonSuggestion>>();
+			Iterator<String> subiter=temp.keySet().iterator();
+			while(subiter.hasNext()){
+				String subindex=subiter.next();
+				List<Suggestion> sugg_list=temp.get(subindex);
+				ArrayList<JsonSuggestion> list = new ArrayList<JsonSuggestion>();
+				try {
+					for (Suggestion sugg : sugg_list) {
+						JsonSuggestion json_sugg = JsonSuggestion
+								.suggestion2JsonSuggestion(sugg);
+						list.add(json_sugg);
+					}
+
+				} catch (Exception e) {
+					result_json = FAIL;
+				}
+				t.put(subindex, list);	
+			}
+			result.put(index, t);
+			result_json = SUCCESS;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list",result);
+		jsonobj.put("result_json", result_json);
+		System.out.println("**********:"+jsonobj.toString());
+		jsonUtil.sendJson(response, jsonobj);
+	} 
+	private String getAbsoluteFileDir(String id) {
+		String rootdirectory = System.getProperty("web.root");
+		String dir = rootdirectory + getRelativeFileDir(id);
+		File dirf = new File(dir);
+		dirf.mkdirs();
+		return dir;
+	}
+
+	private String getRelativeFileDir(String id) {
+		long time = new Date().getTime();
+		String dir = "document" + File.separator + "suggestion" +File.separator+ id+File.separator+ time;
+		return dir;
+	}
+
+	private String getRelativeFilePath(String absolutepath) {
+		return absolutepath.replace(System.getProperty("web.root"), "");
+	}
+
+	private String getAbsoluteFilePath(String relativepath) {
+		return System.getProperty("web.root") + relativepath;
+	}
+}

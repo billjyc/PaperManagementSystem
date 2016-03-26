@@ -1,0 +1,200 @@
+package nju.software.dao.impl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import nju.software.dao.SuggestionDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Suggestion;
+
+import org.hibernate.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for
+ * Suggestion entities. Transaction control of the save(), update() and delete()
+ * operations can directly support Spring container-managed transactions or they
+ * can be augmented to handle user-managed Spring transactions. Each of these
+ * methods provides additional information for how to configure it for the
+ * desired type of transaction control.
+ * 
+ * @see nju.software.dataobject.Suggestion
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.SuggestionDAOImpl")
+public class SuggestionDAOImpl extends BaseDaoImpl<Suggestion> implements SuggestionDAO{
+	private static final Logger log = LoggerFactory
+			.getLogger(SuggestionDAOImpl.class);
+	// property constants
+	public static final String PAPER_ID = "paperId";
+	public static final String USER_ID = "userId";
+	public static final String SENDER_NAME = "senderName";
+	public static final String RECEIVER_ID = "receiverId";
+	public static final String SUGGEST_CONTENT = "suggestContent";
+	public static final String SUGGEST_TITLE = "suggestTitle";
+	public static final String LEVEL = "level";
+
+	public SuggestionDAOImpl(){
+		super();
+		this.setClazz(Suggestion.class);
+	}
+
+	public Suggestion findById(java.lang.Integer id) {
+		return super.findById(id);
+	}
+
+	public List<Suggestion> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Suggestion> findByPaperId(Object paperId) {
+		return findByProperty(PAPER_ID, paperId);
+	}
+
+	public List<Suggestion> findByUserId(Object userId) {
+		return findByProperty(USER_ID, userId);
+	}
+
+	public List<Suggestion> findBySenderName(Object senderName) {
+		return findByProperty(SENDER_NAME, senderName);
+	}
+
+	public List<Suggestion> findByReceiverId(Object receiverId) {
+		return findByProperty(RECEIVER_ID, receiverId);
+	}
+
+	public List<Suggestion> findBySuggestContent(Object suggestContent) {
+		return findByProperty(SUGGEST_CONTENT, suggestContent);
+	}
+
+	public List<Suggestion> findBySuggestTitle(Object suggestTitle) {
+		return findByProperty(SUGGEST_TITLE, suggestTitle);
+	}
+
+	public List<Suggestion> findByLevel(Object level) {
+		return findByProperty(LEVEL, level);
+	}
+
+	/**
+	 * <account_id,number_name>
+	 */
+	public HashMap<Integer, String> findAllContanctsByUserId(int userId) {
+		HashMap<Integer,String> result=new HashMap<Integer,String>();
+		List<Integer> ids=this.getContanctsIdByUserId(userId);
+		try {
+			for(int i=0;i<ids.size();i++){
+
+				String queryString="SELECT " +
+						"CASE WHEN a.teacher_id " +
+						"THEN (select concat(teacher_number,'_',teacher_name) " +
+						"from teacher as t where t.teacher_id= a.teacher_id) " +
+						"when a.student_id " +
+						"then(select concat(student_number,'_',student_name) " +
+						"from student as t where t.student_id=a.student_id ) " +
+						"else ''  " +
+						"end " +
+						"as number_name from account as a where a.account_id="+ids.get(i);
+
+				Session session = this.getCurrentSession();
+				List<?> list = session.createSQLQuery(queryString).list();
+				String number_name = "";
+				if(!list.isEmpty()) {
+					number_name = (String) list.get(0);
+				}
+				//log.debug("number_name: {}", number_name);
+				result.put(ids.get(i), number_name);
+			}
+		} catch (RuntimeException re) {
+			throw re;
+		}
+		return result;
+	}
+
+	private List<Integer> getContanctsIdByUserId(int userId){
+		List<Integer> result=new ArrayList<Integer>();
+		try {
+			String queryString = "from Suggestion as model where model.userId = "+ userId +" or model.receiverId=" + userId;
+			List<Suggestion> lst = find(queryString);
+			for(int i=0;i<lst.size();i++){
+				int t1=lst.get(i).getReceiverId();
+				int t2=lst.get(i).getUserId();
+				if(!result.contains(t1)&&t1!=userId)
+					result.add(t1);
+				if(!result.contains(t2)&&t2!=userId)
+					result.add(t2);
+			}
+		} catch (RuntimeException re) {
+			throw re;
+		}
+		return result;
+	}
+
+	public List<Suggestion> findBetween2(int userId, int id) {
+		try {
+			String queryString = "from Suggestion " +
+					"where userId = "+ userId + " and receiverId = "+ id +" or userId = "+id+" and receiverId = "+userId+
+					" order by suggestTime asc";		
+			return find(queryString);
+		} catch (RuntimeException re) {
+			log.error("find all failed", re);
+			throw re;
+		}
+	}
+
+	public int count(String propertyName, Object value) {
+		return (int)findCountByProperty(propertyName, value);
+	}
+
+	public int count() {
+		return (int)findCount();
+	}
+
+	public int countNeedReply(Object accountId) {
+		try {
+			String queryString = "select count(s) from Suggestion s " +
+					"where s.receiverId = "+accountId +" and s.suggestionId not in (select reply.suggestionId from SuggestionReply reply)";
+			List<?> list = find(queryString);
+			if(list != null && list.size() == 1){
+				Long count = (Long) list.get(0);
+				//log.debug(accountId+" "+count);
+				return count.intValue();
+			}
+			return 0;
+		} catch (RuntimeException re) {
+			log.error("count by property name failed", re);
+			re.printStackTrace();
+			throw re;
+		}
+	}
+
+	public int countByUser(Object accountId) {
+		try {
+			String queryString = "select count(*) from Suggestion as model where model.receiverId = "+accountId+" or userId ="+accountId;
+			List<?> list = find(queryString);
+			if(list != null && list.size() == 1){
+				Long count = (Long) list.get(0);
+				//log.debug(accountId+" "+count);
+				return count.intValue();
+			}
+			return 0;
+		} catch (RuntimeException re) {
+			log.error("count  failed", re);
+			throw re;
+		}
+	}
+
+	public List<Suggestion> findByReceiverIdByLevel(Object receiverId,
+			Object level) {
+		try {
+			String queryString = "from Suggestion as model where model.receiverId = "+receiverId+" and level = "+level;
+			return find(queryString);
+		} catch (RuntimeException re) {
+			log.error("count failed", re);
+			throw re;
+		}
+	}
+}

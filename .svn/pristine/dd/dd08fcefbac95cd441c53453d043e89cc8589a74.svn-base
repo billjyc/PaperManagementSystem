@@ -1,0 +1,265 @@
+package nju.software.util;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.service.activiti.ActivitiAccountService;
+import nju.software.util.enums.ActivitiGroup;
+
+import org.activiti.engine.FormService;
+import org.activiti.engine.HistoryService;
+import org.activiti.engine.IdentityService;
+import org.activiti.engine.ManagementService;
+import org.activiti.engine.RepositoryService;
+import org.activiti.engine.RuntimeService;
+import org.activiti.engine.TaskService;
+import org.activiti.engine.identity.Group;
+import org.activiti.engine.identity.User;
+import org.activiti.engine.repository.ProcessDefinition;
+import org.activiti.engine.runtime.Execution;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Attachment;
+import org.activiti.engine.task.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * 封装activiti API的工具类
+ * @author jiayicong
+ * @date 2015-3-5
+ *
+ */
+@Component
+public class ActivitiAPIUtils {
+	@Autowired
+	private RepositoryService repositoryService;
+	@Autowired
+	private RuntimeService runtimeService;
+	@Autowired
+	private IdentityService identityService;
+	@Autowired
+	private TaskService taskService;
+	@Autowired
+	private FormService formService;
+	@Autowired
+	private HistoryService historyService;
+	@Autowired
+	private ManagementService managementService;
+	
+	private static Logger logger = LoggerFactory.getLogger(ActivitiAPIUtils.class);
+	
+	@Autowired
+	private ActivitiAccountService activitiAccountService;
+	
+	
+	/**
+	 * 根据流程定义的key启动流程实例
+	 * @param processDefinitionKey	bpmn文件中process标签的“id”属性
+	 * @return
+	 */
+	public ProcessInstance startProcessInstanceByKey(String processDefinitionKey) {
+		logger.debug("启动流程实例----->");
+		logger.debug("process definition key: {}", processDefinitionKey);
+		return runtimeService.startProcessInstanceByKey(processDefinitionKey);
+	}
+	
+	/**
+	 * 根据流程定义的key启动流程实例
+	 * @param processDefinitionKey	bpmn文件中process标签的“id”属性
+	 * @param variables
+	 * @return
+	 */
+	public ProcessInstance startProcessInstanceByKey(String processDefinitionKey, Map<String, Object> variables) {
+		logger.debug("启动流程实例----->");
+		logger.debug("process definition key: {}", processDefinitionKey);
+		return runtimeService.startProcessInstanceByKey(processDefinitionKey, variables);
+	}
+	
+	/**
+	 * 根据流程定义的Id启动流程实例
+	 * @param processDefinitionId
+	 * @return
+	 */
+	public ProcessInstance startProcessInstanceById(String processDefinitionId) {
+		logger.debug("启动流程实例----->");
+		logger.debug("processDefinitionId: {}", processDefinitionId);
+		return runtimeService.startProcessInstanceById(processDefinitionId);
+	}
+	
+	/**
+	 * 根据表单数据启动实例
+	 * @param processDefinitionId
+	 * @param variables
+	 * @return
+	 */
+	public ProcessInstance startProcessByFormData(String processDefinitionKey, Map<String, String> variables) {
+		logger.debug("Submit form data ----->");
+		ProcessDefinition processDefinition = getProcessDefinition(processDefinitionKey);
+		String processDefinitionId = processDefinition.getId();
+		logger.debug("processDefinitionId: {}", processDefinitionId);
+		return formService.submitStartFormData(processDefinitionId, variables);
+	}
+	
+	/**
+	 * 根据key获取processDefinition
+	 * @param processDefinitionKey
+	 * @return
+	 */
+	public ProcessDefinition getProcessDefinition(String processDefinitionKey) {
+		return repositoryService.createProcessDefinitionQuery().processDefinitionKey(processDefinitionKey).singleResult();
+	}
+	
+	/**
+	 * 签收任务
+	 * @param taskId
+	 * @param userId
+	 */
+	public void claimTask(String taskId, String userId) {
+		logger.debug("签收任务----->");
+		logger.debug("taskId: {}, userId: {}", taskId, userId);
+		taskService.claim(taskId, userId);
+	}
+	
+	/**
+	 * 完成任务
+	 * @param taskId
+	 */
+	public void completeTask(String taskId){
+		logger.debug("完成任务----->");
+		logger.debug("taskId: {}", taskId);
+		taskService.complete(taskId);
+	}
+	
+	/**
+	 * 完成任务
+	 * @param taskId
+	 * @param variables
+	 */
+	public void completeTask(String taskId, Map<String, Object> variables) {
+		logger.debug("完成任务----->");
+		logger.debug("taskId: {}", taskId);
+		taskService.complete(taskId, variables);
+	}
+	
+	/**
+	 * 根据用户id获取该用户作为候选人的任务列表
+	 * @param userId
+	 * @return
+	 */
+	public List<Task> getTaskListByUserId(String userId) {
+		logger.debug("getTaskListByUserId: {}", userId);
+		return taskService.createTaskQuery().taskCandidateUser(userId).list();
+	}
+	
+	public List<Task> getTaskListByUserIdAndName(String userId, String taskName) {
+		logger.debug("getTaskListByUserIdAndTaskName: {}, {}", userId, taskName);
+		return taskService.createTaskQuery().taskCandidateUser(userId)
+				.taskName(taskName)
+				.orderByTaskCreateTime().desc().list();
+	}
+	
+	/**
+	 * 获取该用户已经签收或者被分配的任务
+	 * @param userId
+	 * @return
+	 */
+	public List<Task> getAssignedTaskListByUserId(String userId) {
+		logger.debug("getAssignedTaskListByUserId: {}", userId);
+		return taskService.createTaskQuery().taskAssignee(userId)
+				.orderByTaskCreateTime()
+				.desc().list();
+	}
+	
+	/**
+	 * 根据用户id和任务名称获取被分配的任务
+	 * @param userId
+	 * @param taskName
+	 * @return
+	 */
+	public List<Task> getAssignedTaskByNameAndUserId(String userId, String taskName) {
+		logger.debug("userId: {}, taskName: {}", userId, taskName);
+		return taskService.createTaskQuery()
+				.taskAssignee(userId)
+				.taskName(taskName)
+				.orderByTaskCreateTime().desc()
+				.list();
+	}
+	 
+	/**
+	 * 根据组id获取该用户作为候选组的任务列表
+	 * @param groupId
+	 * @return
+	 */
+	public List<Task> getTaskByGroupId(String groupId) {
+		logger.debug("getTaskListByGroupId: {}", groupId);
+		return taskService.createTaskQuery().taskCandidateGroup(groupId).list();
+	}
+	
+	/**
+	 * 提交任务表单数据
+	 * @param taskId
+	 * @param variables
+	 */
+	public void submitTaskFormData(String taskId, Map<String, String> variables) {
+		logger.debug("submit task form data, taskId: {}", taskId);
+		formService.submitTaskFormData(taskId, variables);
+	}
+	
+	/**
+	 * 设置当前操作人
+	 * @param userId
+	 */
+	public void setCurrentUser(String userId){
+		identityService.setAuthenticatedUserId(userId);
+	}
+	
+	/**
+	 * 上传附件
+	 * @param attachmentType
+	 * @param taskId
+	 * @param processInstanceId
+	 * @param attachmentName
+	 * @param attachmentDescription
+	 * @param content
+	 * @return
+	 * @throws IOException 
+	 */
+	public Attachment uploadAttachment(MultipartFile multipartFile, String taskId, String attachmentName,
+			String attachmentDescription) throws IOException {
+		String attachmentType = multipartFile.getContentType() + ";" + FileOperateUtil.getExtensionName(multipartFile.getOriginalFilename());
+		String userId = taskService.createTaskQuery()
+				.taskId(taskId).singleResult().getAssignee();
+		attachmentName += userId;
+		ProcessInstance instance = getProcessInstance(taskId);
+		return taskService.createAttachment(attachmentType, taskId, instance.getId(), attachmentName, attachmentDescription, multipartFile.getInputStream());
+	}
+	
+	/**
+	 * 根据任务id获取流程实例
+	 * @param taskId
+	 * @return
+	 */
+	public ProcessInstance getProcessInstance(String taskId) {
+		Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
+		return runtimeService.createProcessInstanceQuery().processInstanceId(task.getProcessInstanceId())
+				.singleResult();
+	}
+	
+	/**
+	 * 获取流程实例的变量值
+	 * @param processInstanceId
+	 * @param Key
+	 * @return
+	 */
+	public Object getVariable(String processInstanceId, String Key) {
+		return runtimeService.getVariable(processInstanceId, Key);
+	}
+}

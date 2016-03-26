@@ -1,0 +1,4228 @@
+package nju.software.controller;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+
+import nju.software.entity.Account;
+import nju.software.entity.Classes;
+import nju.software.entity.Course;
+import nju.software.entity.Defence;
+import nju.software.entity.Director;
+import nju.software.entity.Fee;
+import nju.software.entity.HeadTeacher;
+import nju.software.entity.Judge;
+import nju.software.entity.Notice;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.StudentCourseInfo;
+import nju.software.entity.StudentScore;
+import nju.software.entity.Teacher;
+import nju.software.entity.TeachingPoint;
+import nju.software.jsonmodel.FinalizedDefenseTask;
+import nju.software.jsonmodel.JsonClasses;
+import nju.software.jsonmodel.JsonCourse;
+import nju.software.jsonmodel.JsonDefenseAssigned;
+import nju.software.jsonmodel.JsonDirector;
+import nju.software.jsonmodel.JsonFee;
+import nju.software.jsonmodel.JsonHeadTeacher;
+import nju.software.jsonmodel.JsonJudgeAssigned;
+import nju.software.jsonmodel.JsonNotice;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.jsonmodel.JsonStudentCourseInfo;
+import nju.software.jsonmodel.JsonTeacher;
+import nju.software.jsonmodel.JsonTeachingPoint;
+import nju.software.jsonmodel.JwCheckPaper;
+import nju.software.service.AccountService;
+import nju.software.service.AssignService;
+import nju.software.service.ClassesService;
+import nju.software.service.CourseService;
+import nju.software.service.DefenceService;
+import nju.software.service.DirectorService;
+import nju.software.service.FeeService;
+import nju.software.service.HeadTeacherService;
+import nju.software.service.JudgeService;
+import nju.software.service.NoticeService;
+import nju.software.service.PaperService;
+import nju.software.service.ReportService;
+import nju.software.service.StudentCourseInfoService;
+import nju.software.service.StudentScoreService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.service.TeachingPointService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.ExcelUtil;
+import nju.software.util.JSONUtil;
+import nju.software.util.JbpmAPIUtil;
+import nju.software.web.vo.PaperVO;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.jbpm.task.query.TaskSummary;
+import org.jbpm.workflow.instance.WorkflowProcessInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
+@Controller
+public class DeanController {
+
+	@Autowired
+	private AssignService assignService;
+	@Autowired
+	private JbpmAPIUtil jbpmAPIUtil;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private CourseService courseService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private FeeService feeService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private JudgeService judgeService;
+	@Autowired
+	private NoticeService noticeService;
+	@Autowired
+	private DefenceService defenceService;
+	@Autowired
+	private StudentScoreService studentScoreService;
+	@Autowired
+	private ReportService reportService;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+
+	@Autowired
+	private StudentCourseInfoService studentCourseInfoService;
+	@Autowired
+	private HeadTeacherService headTeacherService;
+	@Autowired
+	private DirectorService directorService;
+	@Autowired
+	private TeachingPointService teachingPointService;
+	@Autowired
+	private ClassesService classesService;
+	@Autowired
+	private JSONUtil jsonUtil;
+
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+
+
+	private static Logger logger = LoggerFactory.getLogger(DeanController.class);
+
+	/**
+	 * 所有学生列表，分页
+	 * @author Jason
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value="/dean/getallstudents.do")
+	@ResponseBody
+	public void getAllStudents(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("type") String typeS, @RequestParam("page") String pageS, 
+			@RequestParam("rows") String rowsS, @RequestParam("sidx") String sidx, 
+			@RequestParam("sord") String sord, @RequestParam("_search") String search){
+		logger.info("dean gets all students----->");
+
+		Integer type = Integer.parseInt(typeS);
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 9999 : Integer.parseInt(rowsS);
+
+		logger.debug("type: {}, page: {}, limit: {}", type, page, limit);
+		logger.debug("sidx: {}, sord: {}", sidx, sord);
+		logger.debug("search: {}", search);
+
+		List<Student> studentList = null;
+		JSONObject jsonobj = new JSONObject();
+		if(search.equalsIgnoreCase("true")){
+			String searchOper = request.getParameter("searchOper"); 
+			String searchString = request.getParameter("searchString"); 
+			String searchField = request.getParameter("searchField"); 
+			String searchCondition = getSearch(searchField, searchOper, searchString);
+			studentList = studentService.findSearch(searchCondition);
+		}else{
+			HashMap<String,Object> params=new HashMap<String,Object>();
+			params.put("page", page);
+			params.put("limit", limit);
+			params.put("sidx", sidx);
+			params.put("sord", sord);
+			params.put("type", type);
+
+			List<Object> result = studentService.getAllLimit(params);
+			studentList = (List<Student>)result.get(0);
+			HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+			jsonobj.put("page", limits.get("page"));
+			jsonobj.put("total_pages", limits.get("total_pages"));
+			jsonobj.put("records", limits.get("count"));
+		}
+
+		List<JsonStudent> studentlist_j = jsonUtil.converToJsonStudent(studentList);
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		jsonobj.put("list", studentlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 所有课程列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value="/dean/getallcourses.do")
+	@ResponseBody
+	public void getAllCourses(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<Course> result=null;
+		//	System.out.println(result.get(0).getId());
+		String search=request.getParameter("_search");
+		if(search.equalsIgnoreCase("true")){
+			String  searchOper = request.getParameter("searchOper"); 
+			String  searchString = request.getParameter("searchString"); 
+			String  searchField = request.getParameter("searchField"); 
+			String searchCondition=getSearch(searchField,searchOper,searchString);
+			result=courseService.findSearchCourse(searchCondition);
+
+		}else{
+			result=courseService.getAllCourse();
+		}
+
+		List<JsonCourse> courselist_j=jsonUtil.converToJsonCourse(result);
+		JSONArray courselist_jsonobj=JSONArray.fromObject(courselist_j);
+		JSONObject jsonobj=new JSONObject();
+		jsonobj.put("list",courselist_jsonobj );
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 * 所有教学点班级列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value="/dean/getallclasses.do")
+	@ResponseBody
+	public void getAllClasses(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<Classes> result=classesService.getAllClasses();
+		List<JsonClasses> classlist_j=jsonUtil.converToJsonClasses(result);
+		JSONArray classlist_jsonobj=JSONArray.fromObject(classlist_j);
+		JSONObject jsonobj=new JSONObject();
+		jsonobj.put("list",classlist_jsonobj );
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得教学点列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value="/dean/getallteachingpoint.do")
+	@ResponseBody
+	public void getAllTeachingPoint(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<TeachingPoint> result=null;
+		result=teachingPointService.getAllTeachingPoint();
+		List<JsonTeachingPoint> teachinglist_j=jsonUtil.converToJsonTeachingPoint(result);
+		JSONArray teachinglist_jsonobj=JSONArray.fromObject(teachinglist_j);
+		JSONObject jsonobj=new JSONObject();
+		jsonobj.put("list",teachinglist_jsonobj );
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 * 获得班主任列表
+	 * @param request
+	 * @param response
+	 * @param mode
+	 */
+	@RequestMapping(value="/dean/getallheadteachers.do")
+	@ResponseBody
+	public void getAllHeadTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap mode){
+		List<HeadTeacher> result=null;
+		result=headTeacherService.getAllHeadTeacher();
+		List<JsonHeadTeacher> headlist_j=jsonUtil.converToJsonHeadTeacher(result);
+		JSONArray headlist_jsonobj=JSONArray.fromObject(headlist_j);
+		JSONObject jsonobj=new JSONObject();
+		jsonobj.put("list",headlist_jsonobj );
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 * 获得教学点负责人列表
+	 * @param request
+	 * @param response
+	 * @param mode
+	 */
+	@RequestMapping(value="/dean/getalldirector.do")
+	@ResponseBody
+	public void getAllDirector(HttpServletRequest request, HttpServletResponse response, ModelMap mode){
+		List<Director> result=directorService.getAllDirector();
+		List<JsonDirector> directorlist_j=jsonUtil.converToJsonDirector(result);
+		JSONArray directorlist_jsonobj=JSONArray.fromObject(directorlist_j);
+		JSONObject jsonobj=new JSONObject();
+		jsonobj.put("list",directorlist_jsonobj );
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 所有成绩列表 
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value="/dean/getAllTranscript.do")
+	@ResponseBody
+	public void getAllTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<Course> result=courseService.getAllCourse();
+		List<JsonCourse> courselist_j=jsonUtil.converToJsonCourse(result);
+		JSONArray courselist_jsonobj=JSONArray.fromObject(courselist_j);
+		JSONObject jsonobj=new JSONObject();
+		jsonobj.put("list",courselist_jsonobj );
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 所有老师列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/getallteachers.do")
+	@ResponseBody
+	public void getAllTeachers(HttpServletRequest request, HttpServletResponse response, ModelMap model,
+			@RequestParam("page") String pageS, 
+			@RequestParam("rows") String rowsS, @RequestParam("sidx") String sidx, 
+			@RequestParam("sord") String sord){
+		logger.debug("/dean/getallteachers.do");
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 9999 : Integer.parseInt(rowsS);
+
+		logger.debug("page: {}, limit: {}", page, limit);
+		logger.debug("sidx: {}, sord: {}", sidx, sord);
+
+		List<Teacher> teacherList = null;
+		JSONObject jsonobj = new JSONObject();
+
+		HashMap<String,Object> params = new HashMap<String,Object>();
+		params.put("page", page);
+		params.put("limit", limit);
+		params.put("sidx", sidx);
+		params.put("sord", sord);
+
+		List<Object> result = teacherService.getAllLimit(params);
+		teacherList = (List<Teacher>)result.get(0);
+		HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+		jsonobj.put("page", limits.get("page"));
+		jsonobj.put("total_pages", limits.get("total_pages"));
+		jsonobj.put("records", limits.get("count"));
+
+		logger.debug("page: {}", limits.get("page"));
+		logger.debug("total_pages: {}", limits.get("total_pages"));
+		logger.debug("records: {}", limits.get("count"));
+
+		//List<Teacher> result = teacherService.getAllTeachers();
+
+		List<JsonTeacher> teacherlist_j = jsonUtil.converToJsonTeacher(teacherList);
+		JSONArray teacherlist_jsonobj = JSONArray.fromObject(teacherlist_j);
+		jsonobj.put("list", teacherlist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 添加学生账号
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param studentstr
+	 */
+	@RequestMapping(value = "/dean/importstudent.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void importStudent(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("jsonStr")String studentstr) {
+		JSONObject stu_json = JSONObject.fromObject(studentstr);
+
+		Student student = new Student();	//Persistent Object
+		student.setStudentName((String) stu_json.get("name"));
+		student.setStudentNumber((String) stu_json.get("num"));
+		student.setStudentEmail((String) stu_json.get("email"));
+		student.setStudentGrade((String) stu_json.get("grade"));
+		student.setStudentPhone((String) stu_json.get("phone"));
+
+		String result_json = "";
+		try {
+			student = studentService.addStudentInfo(student);
+			logger.debug("student is null? {}" , studentstr == null);
+			Validate.notNull(student);
+			//student = studentService.getStudentByStudentNumber(student.getStudentNumber());	
+			Account studentAccount = new Account();
+			studentAccount.setAccountLevel(Constants.STUDENT);
+			studentAccount.setAccountName(student.getStudentNumber());
+			studentAccount.setAccountPassword(student.getStudentNumber());
+			studentAccount.setStudentId(student.getStudentId());
+
+			result_json = accountService.addAccount(studentAccount) ? SUCCESS : FAIL;
+		} catch (Exception e) {
+			result_json = FAIL;
+			logger.error("添加学生信息失败：", e);
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 待分配课程列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/getallcourse.do")
+	@ResponseBody
+	public void getCousreList(HttpServletRequest request,HttpServletResponse response,ModelMap model){
+
+		List<Course> courseList = null;
+		List<Student> studentList = null;
+		List<JsonCourse> courselist_j = null;
+		List<JsonStudent> studentlist_j = null;
+
+		String result_json = "";
+
+		try{
+			courseList = courseService.getAllCourse();
+			studentList = studentService.getAllStudent();
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		courselist_j = jsonUtil.converToJsonCourse(courseList);
+		studentlist_j = jsonUtil.converToJsonStudent(studentList);
+
+		JSONArray courselist_jsonobj = JSONArray.fromObject(courselist_j);
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("courselist", courselist_jsonobj);
+		jsonobj.put("studentlist", studentlist_jsonobj);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取待分配班级列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/getclassassignlist.do")
+	@ResponseBody
+	public void getClassAssignList(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<Classes> classList = null;
+		List<Student> studentList = null;
+		List<JsonClasses> classlist_j=null;
+		List<JsonStudent> studentlist_j=null;
+		String result_json = "";
+		try{
+			classList=classesService.getAllClasses();
+			System.out.println(classList.get(0).getHeadTeacherName());
+			studentList=studentService.getStudentWithoutClass();
+
+
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		studentlist_j = jsonUtil.converToJsonStudent(studentList);
+		classlist_j = jsonUtil.converToJsonClasses(classList);
+
+		// 前台数据返回块
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		JSONArray classlist_jsonobj = JSONArray.fromObject(classlist_j);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("studentlist", studentlist_jsonobj);
+		jsonobj.put("classlist", classlist_jsonobj);
+
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 * 待分配导师列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/getassignlist.do")
+	@ResponseBody
+	public void getAssignList(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		List<Student> studentList = null;
+		List<Teacher> teacherList = null;
+		List<JsonStudent> studentlist_j = null;
+		List<JsonTeacher> teacherlist_j = null;
+
+		String result_json = "";
+
+		try{
+			studentList = studentService.getAllStudentsWithOutTeacher();
+			teacherList = teacherService.getInnerTeachers();
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("exception", e);
+			result_json = FAIL;
+		}
+		studentlist_j = jsonUtil.converToJsonStudent(studentList);
+		teacherlist_j = jsonUtil.converToJsonTeacher(teacherList);
+
+		// 前台数据返回块
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		JSONArray teacherlist_jsonobj = JSONArray.fromObject(teacherlist_j);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("studentlist", studentlist_jsonobj);
+		jsonobj.put("teacherlist", teacherlist_jsonobj);
+
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+
+	/**
+	 * 课程分配列表
+	 */
+	@RequestMapping(value = "/dean/getCourseAssignList.do")
+	@ResponseBody
+	public void getCourseAssignList(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		List<Student> studentList = null;
+		List<Course> courseList = null;
+		List<StudentCourseInfo> studentCourseInfo = new ArrayList<StudentCourseInfo>();
+		List<JsonStudent> studentlist_j = null;
+		List<JsonCourse> courselist_j = null;
+		List<JsonStudentCourseInfo> studentCourseInfo_j = new ArrayList<JsonStudentCourseInfo>();
+
+		//初始化
+		StudentCourseInfo sci =new StudentCourseInfo();
+		studentCourseInfo.add(sci);
+
+		String result_json = "";
+		try{
+			studentList = studentService.getAllStudent();
+			courseList = courseService.getAllCourse();
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		studentlist_j = jsonUtil.converToJsonStudent(studentList);
+		courselist_j = jsonUtil.converToJsonCourse(courseList);
+
+		// 前台数据返回块
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		JSONArray courselist_jsonobj = JSONArray.fromObject(courselist_j);
+		JSONArray studentCourseInfo_jsonobj = JSONArray.fromObject(studentCourseInfo_j);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("studentlist", studentlist_jsonobj);
+		jsonobj.put("courselist", courselist_jsonobj);
+		jsonobj.put("studentCourseInfolist", studentCourseInfo_jsonobj);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 分配课程
+	 */
+	@RequestMapping(value = "/dean/assigncourse.do")
+	@ResponseBody
+	public void assignCourse(HttpServletRequest request, HttpServletResponse response) {
+		//获取前端导师分配数据并转换为JSONArray对象
+		String postData = request.getParameter("list");
+		JSONArray assignedList = JSONArray.fromObject(postData);
+
+		//获取当前操作者
+		String actorId = request.getSession().getAttribute("actorId").toString();
+		String result_json = "";
+		try {
+			//遍历分配数据，对每一条记录进行分配操作
+			for (int i = 0; i < assignedList.size(); i++){
+				JSONObject record = JSONObject.fromObject(assignedList.get(i));
+
+				//System.out.printf("lala "+record.toString());
+				String courseNo= record.getString("courseNo");
+				String courseName= record.getString("courseName");
+				String studentNo = record.getString("studentNumber");
+				String studentName = record.getString("studentName");
+				Integer date = record.getInt("date");
+				StudentCourseInfo sci=new StudentCourseInfo(studentNo,studentName,courseNo,courseName,date);
+				studentCourseInfoService.addStudentCourseInfo(sci);
+				//assignService.addCourseByOne(courseId , studentId, actorId);	
+
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		//将结果以JSONObject传回前端
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response,jsonobj);
+	}
+	
+	/**
+	 * 获取已分配班级信息
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/classAssignedList.do")
+	public void getClassAssignedList(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		JSONObject jsonobj = new JSONObject();
+		List<Student> studentList=studentService.getStudentWithClass();
+		System.out.println(studentList.get(0).getStudentName());
+		List <JsonStudent> jsonStudentList=jsonUtil.converToJsonStudent(studentList);
+		JSONArray studentList_jsonobj = JSONArray.fromObject(jsonStudentList);
+		jsonobj.put("list", studentList_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取已分配学生的课程列表，分页
+	 * @author cj
+	 * wss
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/studentCourseInfoList.do")
+	public void getStudentCourseInfo(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		Integer type = Integer.parseInt(request.getParameter("type"));
+		String pageS = request.getParameter("page");
+		String rowsS = request.getParameter("rows");
+		String sidx = request.getParameter("sidx");
+		String sord = request.getParameter("sord");
+		String search=request.getParameter("_search");
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 1000 : Integer.parseInt(rowsS);
+		List<StudentCourseInfo> sci=null;
+		JSONObject jsonobj = new JSONObject();
+		if(search.equalsIgnoreCase("true")){
+			String  searchOper = request.getParameter("searchOper"); 
+			String  searchString = request.getParameter("searchString"); 
+			String  searchField = request.getParameter("searchField"); 
+			String searchCondition=getSearch(searchField,searchOper,searchString);
+			sci=studentCourseInfoService.findSearchStudentScore(searchCondition);
+
+		}else{
+			HashMap<String,Object> params=new HashMap<String,Object>();
+			params.put("page", page);
+			params.put("limit", limit);
+			params.put("sidx", sidx);
+			params.put("sord", sord);
+			params.put("type", type);
+
+			List<Object> result = studentCourseInfoService.getStudentAssignedCourse(params);
+			sci = (List<StudentCourseInfo>)result.get(0);
+
+			HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+			jsonobj.put("page", limits.get("page"));
+			jsonobj.put("total_pages", limits.get("total_pages"));
+			jsonobj.put("records", limits.get("count"));
+		}
+
+		List<JsonStudentCourseInfo> sci_j = jsonUtil.converToJsonStudentCourseInfo(sci);
+
+		JSONArray sci_jsonobj = JSONArray.fromObject(sci_j);
+		jsonobj.put("list", sci_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取所有成绩单列表，分页
+	 * @author wss
+	 * 
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/transciptList.do")
+	public void getTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		Integer type = Integer.parseInt(request.getParameter("type"));
+		String pageS = request.getParameter("page");
+		String rowsS = request.getParameter("rows");
+		String sidx = request.getParameter("sidx");
+		String sord = request.getParameter("sord");
+		String search=request.getParameter("_search");
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 1000 : Integer.parseInt(rowsS);
+		List<StudentCourseInfo> sci=null;
+		JSONObject jsonobj = new JSONObject();
+		if(search.equalsIgnoreCase("true")){
+			String  searchOper = request.getParameter("searchOper"); 
+			String  searchString = request.getParameter("searchString"); 
+			String  searchField = request.getParameter("searchField"); 
+			String searchCondition=getSearch(searchField,searchOper,searchString);
+			sci=studentCourseInfoService.findSearchStudentScore(searchCondition);
+
+		}else{
+			HashMap<String,Object> params=new HashMap<String,Object>();
+			params.put("page", page);
+			params.put("limit", limit);
+			params.put("sidx", sidx);
+			params.put("sord", sord);
+			params.put("type", type);
+
+			List<Object> result = studentCourseInfoService.getStudentAssignedCourse(params);
+			sci = (List<StudentCourseInfo>)result.get(0);
+
+			HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+			jsonobj.put("page", limits.get("page"));
+			jsonobj.put("total_pages", limits.get("total_pages"));
+			jsonobj.put("records", limits.get("count"));
+		}
+
+		List<JsonStudentCourseInfo> sci_j = jsonUtil.converToJsonStudentCourseInfo(sci);
+
+		JSONArray sci_jsonobj = JSONArray.fromObject(sci_j);
+		jsonobj.put("list", sci_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取没有审核通过的成绩列表，分页
+	 * @author wss
+	 * wss
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/uncheckedTranscript.do")
+	public void getUncheckedTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String pageS = request.getParameter("page");
+		String rowsS = request.getParameter("rows");
+		String sidx = request.getParameter("sidx");
+		String sord = request.getParameter("sord");
+
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 1000 : Integer.parseInt(rowsS);
+
+		HashMap<String,Object> params=new HashMap<String,Object>();
+		params.put("page", page);
+		params.put("limit", limit);
+		params.put("sidx", sidx);
+		params.put("sord", sord);
+
+
+		List<Object> result = studentCourseInfoService.getUncheckedTranscript(params);
+		List<StudentCourseInfo> studentCourseList = (List<StudentCourseInfo>)result.get(0);
+
+		HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+		List<JsonStudentCourseInfo> courseList_j = jsonUtil.converToJsonStudentCourseInfo(studentCourseList);
+
+		JSONArray courseList_jsonobj = JSONArray.fromObject(courseList_j);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", courseList_jsonobj);
+		jsonobj.put("page", limits.get("page"));
+		jsonobj.put("total_pages", limits.get("total_pages"));
+		jsonobj.put("records", limits.get("count"));
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取审核通过的成绩列表，分页
+	 * @author wss
+	 * wss
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/checkedTranscript.do")
+	public void getCheckedTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String pageS = request.getParameter("page");
+		String rowsS = request.getParameter("rows");
+		String sidx = request.getParameter("sidx");
+		String sord = request.getParameter("sord");
+
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 1000 : Integer.parseInt(rowsS);
+
+		HashMap<String,Object> params=new HashMap<String,Object>();
+		params.put("page", page);
+		params.put("limit", limit);
+		params.put("sidx", sidx);
+		params.put("sord", sord);
+
+		List<Object> result = studentCourseInfoService.getCheckedTranscript(params);
+		List<StudentCourseInfo> studentCourseList = (List<StudentCourseInfo>)result.get(0);
+
+		HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+
+		List<JsonStudentCourseInfo> courseList_j = jsonUtil.converToJsonStudentCourseInfo(studentCourseList);
+
+		JSONArray courseList_jsonobj = JSONArray.fromObject(courseList_j);
+
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", courseList_jsonobj);
+		jsonobj.put("page", limits.get("page"));
+		jsonobj.put("total_pages", limits.get("total_pages"));
+		jsonobj.put("records", limits.get("count"));
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 分配导师
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping(value = "/dean/assignteacher.do")
+	@ResponseBody
+	public void assignTeacher(HttpServletRequest request, HttpServletResponse response, 
+			@RequestParam("list")String postData) {
+		//获取前端导师分配数据并转换为JSONArray对象
+		JSONArray assignedList = JSONArray.fromObject(postData);
+
+		//获取当前操作者
+		String actorId = request.getSession().getAttribute("actorId").toString();
+		logger.debug("当前操作者：{}", actorId);
+		String result_json = "";
+		try {
+			//遍历分配数据，对每一条记录进行分配操作
+			for (int i = 0; i < assignedList.size(); i++){
+				JSONObject record = JSONObject.fromObject(assignedList.get(i));
+				Integer studentId = record.getInt("studentId");
+				Integer teacherId = record.getInt("teacherId");
+				assignService.addAssignByOne(studentId, teacherId, actorId);	
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		//将结果以JSONObject传回前端
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 分配班级
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping(value = "/dean/assignclass.do")
+	@ResponseBody
+	public void assignClass(HttpServletRequest request, HttpServletResponse response){
+		String postData = request.getParameter("list");
+		JSONArray assignedList = JSONArray.fromObject(postData);
+
+		String result_json = "";
+		try {
+			//遍历分配数据，对每一条记录进行分配操作
+			for (int i = 0; i < assignedList.size(); i++){
+				JSONObject record = JSONObject.fromObject(assignedList.get(i));
+
+				//System.out.printf("lala "+record.toString());
+				String no= record.getString("no");
+				String name= record.getString("name");
+				int studentId = Integer.parseInt(record.getString("studentId"));
+				String teachingPointNo=record.getString("teachingPointNo");
+				Student s=studentService.getStudentById(studentId);
+				s.setClassNo(no);
+				s.setClassName(name);
+				s.setTeachingPointNo(teachingPointNo);
+				studentService.updateStudentInfo(s);
+
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		//将结果以JSONObject传回前端
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取已分配导师的学生列表，分页
+	 * @author Jason
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/tutorassignedlist.do")
+	public void getTutorAssigned(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("page") String pageS, @RequestParam("rows") String rowsS, 
+			@RequestParam("sidx") String sidx, @RequestParam("sord") String sord) {
+		
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 1000 : Integer.parseInt(rowsS);
+
+		HashMap<String, Object> params= new HashMap<String, Object>();
+		params.put("page", page);
+		params.put("limit", limit);
+		params.put("sidx", sidx);
+		params.put("sord", sord);
+
+		List<Object> result = studentService.getAllStudentsWithTeacherLimit(params);
+		List<Student> studentList = (List<Student>)result.get(0);
+		HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+		List<JsonStudent> studentList_j = jsonUtil.converToJsonStudent(studentList);
+		for(JsonStudent s : studentList_j){		//设置指导老师姓名
+			String tutorName = teacherService.getTeacherById(s.getTeacherId()).getTeacherName();
+			logger.debug("tutorName: {}", tutorName);
+			s.setTeacherName(tutorName);
+		}
+		JSONArray studentList_jsonobj = JSONArray.fromObject(studentList_j);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", studentList_jsonobj);
+		jsonobj.put("page", limits.get("page"));
+		jsonobj.put("total_pages", limits.get("total_pages"));
+		jsonobj.put("records", limits.get("count"));
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 查看待检队列，分页
+	 */
+	@RequestMapping(value = "/dean/checklist.do")
+	@ResponseBody
+	public void  getCheckList(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		List<JwCheckPaper> checklist = new ArrayList<JwCheckPaper>();
+		List<PaperVO> paperList = new ArrayList<PaperVO>();
+
+		String actorId = (String) request.getSession().getAttribute("actorId");
+		List<Task> taskList = activitiAPIUtils.getTaskListByUserIdAndName(actorId, "Detection");
+		
+		for(Task task : taskList) {
+			//由于该任务没有分配给用户，首先签收该任务
+			activitiAPIUtils.claimTask(task.getId(), actorId);
+			ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+			PaperVO paperVO = null;
+			if (processInstance != null) {
+				int studentId =  (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+				Student student = studentService.getStudentById(studentId);
+				Paper paper = paperService.getPaperByStudentId(studentId);
+				paperVO = convertToPaperVO(student, paper);
+				paperVO.setTaskId(Long.parseLong(task.getId()));
+
+				paperList.add(paperVO);
+				checklist.add(JwCheckPaper.toJwCheckPaper(paper,student,Long.parseLong(task.getId())));
+			}
+		}
+		/*List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);
+
+		for (TaskSummary task : taskSummarys) {
+			if (task.getName().equals("detection")) {
+				WorkflowProcessInstance process = 
+						(WorkflowProcessInstance) jbpmAPIUtil.getKsession().getProcessInstance(task.getProcessInstanceId());
+				PaperVO paperVO = null;
+				if (process != null) {
+					int studentId =  (Integer) process.getVariable("studentId");
+					Student student = studentService.getStudentById(studentId);
+					Paper paper = paperService.getPaperByStudentId(studentId);
+					paperVO = convertToPaperVO(student, paper);
+					paperVO.setTaskId(task.getId());
+
+					paperList.add(paperVO);
+					checklist.add(JwCheckPaper.toJwCheckPaper(paper,student,task.getId()));
+				}
+			}
+		}*/
+
+		JSONArray jsonlist = JSONArray.fromObject(checklist);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/** 
+	 * 判定重复率检测结果
+	 * @author Jason
+	 */
+	@RequestMapping(value = "/dean/deciderepetition.do")
+	@ResponseBody
+	public void  decideRepetition(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, 
+			@RequestParam("paperstr") String paperstr) {
+
+		JSONObject paper_json = JSONObject.fromObject(paperstr);
+		Integer paperId = paper_json.getInt("paperId");	//论文ID主键
+		long taskId = paper_json.getLong("taskId");	//论文任务ID
+		String detection = paper_json.getString("detection");	//论文重复率决议，通过或不通过
+
+		boolean isDetectionPassed =false;
+		Paper paper = paperService.getPaperByPaperId(paperId);
+		if("true".equals(detection)){
+			isDetectionPassed = true;
+			paper.setPaperState(Constants.DETECTION_PASSED);
+		}else{
+			paper.setPaperState(Constants.UNCOMMITTED);
+		}
+		//获取actorId
+		HttpSession session = request.getSession();
+		String actorId = (String) session.getAttribute("actorId");
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("detection", isDetectionPassed);
+
+		String result_json = "";
+		try{
+			paperService.updatePaper(paper);
+			activitiAPIUtils.completeTask(String.valueOf(taskId), data);
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得待评审分配队列
+	 * @author wsd
+	 * */
+	@RequestMapping(value = "/dean/assignjudgelist.do")
+	@ResponseBody
+	public void getJudgeAssignList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		List<JsonStudent> studentList = new ArrayList<JsonStudent>();//待分配评审的学生list
+		List<JsonTeacher> innerJsonList = new ArrayList<JsonTeacher>();//待分配评审的内审老师list
+		List<JsonTeacher> outerJsonList = new ArrayList<JsonTeacher>();//待分配的外审老师list
+
+		//获得分配评审的列表
+		List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);
+		try{
+			for (TaskSummary task : taskSummarys) {
+				if (task.getName().equals("assign review")) {
+					WorkflowProcessInstance process = (WorkflowProcessInstance) jbpmAPIUtil
+							.getKsession().getProcessInstance(
+									task.getProcessInstanceId());
+
+					if (process != null) {
+						int studentId = (Integer) process.getVariable("studentId");
+						Student student = studentService.getStudentById(studentId);
+						studentList.add(new JsonStudent(student));
+					}
+				}
+			}
+			List<Teacher> innerTeacherList = teacherService.getInnerTeachers();
+			List<Teacher> outerTeacherList = teacherService.getOuterTeachers();
+			for(Teacher innerTeacher : innerTeacherList){
+				innerJsonList.add(new JsonTeacher(innerTeacher));
+			}
+			for(Teacher outerTeacher : outerTeacherList){
+				outerJsonList.add(new JsonTeacher(outerTeacher));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		result_json = SUCCESS;
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("studentlist", studentList);
+		jsonobj.put("innerlist", innerJsonList);
+		jsonobj.put("outerlist", outerJsonList);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 提交评审分配
+	 */
+	@RequestMapping(value = "/dean/assignjudge.do")
+	@ResponseBody
+	public void assignJudge(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		String liststr = request.getParameter("list").toString();
+		String time = request.getParameter("time").toString();	//必须为yyyy-mm-dd hh:mm:ss
+		JSONArray list = JSONArray.fromObject(liststr);
+
+		String result_json = "";
+		try{
+			for (int i = 0; i < list.size(); i++){
+				JSONObject record = JSONObject.fromObject(list.get(i));
+				Integer studentId = record.getInt("studentId");
+				String studentNumber = record.getString("studentNumber");
+				Integer innerId = record.getInt("innerId");
+				Integer outerId = record.getInt("outerId");
+
+				Timestamp deadline = Timestamp.valueOf(time); 
+				List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);	
+				for (TaskSummary task : taskSummarys) {
+					if (task.getName().equals("assign review")) {	//找到该教务员的分配评审任务
+						WorkflowProcessInstance process = (WorkflowProcessInstance) jbpmAPIUtil
+								.getKsession().getProcessInstance(
+										task.getProcessInstanceId());	
+						String num = (String) process.getVariable("student");	//属于此流程实例的学生学号
+						if(studentNumber.equals(num)){	
+							assignService.addJudgeByOne(studentId, innerId, outerId, deadline, task.getId(), actorId);
+						}
+					}
+				}
+				//发送提醒邮件
+				/*
+				EmailService emailService=new EmailService();
+				String to1=teacherService.getTeacherById(innerId).getTeacherEmail();
+				String to2=teacherService.getTeacherById(outerId).getTeacherEmail();
+				String subject="评审："+studentService.getStudentById(studentId).getStudentName()+"_"+paperService.getPaperByStudentId(studentId).getPaperTitle();
+				String content1="尊敬的"+teacherService.getTeacherById(innerId).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您评审，并在截止时间之前提交评审意见";
+				String content2="尊敬的"+teacherService.getTeacherById(outerId).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您评审，并在截止时间之前提交评审意见";
+				List<File> attachmentfiles=new ArrayList<File>() ;
+				File f=new File(paperService.getPaperByStudentId(studentId).getPaperAddress());
+				attachmentfiles.add(f);
+				try {
+					emailService.sendMailAttach(to1, subject, content1,attachmentfiles);
+					emailService.sendMailAttach(to2, subject, content2,attachmentfiles);
+				} catch (MessagingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				 */
+				result_json = SUCCESS;
+			}
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取已分配评审的学生列表
+	 */
+	@RequestMapping(value = "/dean/judgeassignedlist.do")
+	public void getJudgeAssigned(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<JsonJudgeAssigned> jsonList = new ArrayList<JsonJudgeAssigned>();
+
+		String result_json = "";
+		try{
+			List<Paper> paperList = paperService.getPapersByState(Constants.JUDGE_READY);
+			for (Paper paper : paperList){
+				//获取内外审老师、学生、论文的信息
+				List<Judge> judgeList = judgeService.findJudgeByPaperId(paper.getPaperId());
+				Teacher t1 = teacherService.getTeacherById(judgeList.get(0).getTeacherId());
+				Teacher t2 = teacherService.getTeacherById(judgeList.get(1).getTeacherId());
+				Teacher inner = null;
+				Teacher outer = null;
+				if(t1.getTeacherClasses().equals(Constants.INNERTEACHER)){
+					inner = t1;
+					outer = t2;
+				}else{
+					inner = t2;
+					outer = t1;
+				}
+				Student student = studentService.getStudentById(paper.getStudentId());
+				jsonList.add(JsonJudgeAssigned.convertPaper(paper,inner,outer,student));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+		JSONArray list = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 *  待答辩分配列表
+	 *  @author Jason
+	 */
+	@RequestMapping(value = "/dean/assigndefenselist.do")
+	@ResponseBody
+	public void getAssignDefenseList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		List<JsonStudent> studentList = new ArrayList<JsonStudent>();
+		List<JsonTeacher> teacherList = new ArrayList<JsonTeacher>();
+
+		List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);
+		try{
+			for (TaskSummary task : taskSummarys) {
+				if (task.getName().equals("assign defense")) {
+					WorkflowProcessInstance process = (WorkflowProcessInstance) jbpmAPIUtil
+							.getKsession().getProcessInstance(
+									task.getProcessInstanceId());
+
+					if (process != null) {
+						int studentId = (Integer) process.getVariable("studentId");
+						Student student = studentService.getStudentById(studentId);
+						studentList.add(new JsonStudent(student));
+					}
+				}
+			}
+			List<Teacher> teachers = teacherService.getAllTeachers();
+			for(Teacher teacher : teachers){
+				teacherList.add(new JsonTeacher(teacher));
+			}
+
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("studentlist", studentList);
+		jsonobj.put("teacherlist", teacherList);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *  提交答辩分配
+	 *  @author Jason
+	 */
+	@RequestMapping(value = "/dean/assigndefense.do")
+	public void assignDefense(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		String liststr = request.getParameter("list").toString();
+		String time = request.getParameter("time").toString();	//必须为yyyy-mm-dd hh:mm:ss
+		String address = request.getParameter("address").toString();
+		JSONArray list = JSONArray.fromObject(liststr);
+
+		String result_json = "";
+		try{
+			for (int i = 0; i < list.size(); i++){
+				JSONObject record = JSONObject.fromObject(list.get(i));
+				Integer studentId = record.getInt("studentId");
+				String studentNumber = record.getString("studentNumber");
+				Integer teacher1Id = record.getInt("teacher1Id");
+				Integer teacher2Id = record.getInt("teacher2Id");
+				Integer teacher3Id = record.getInt("teacher3Id");
+				Integer secretaryId = record.getInt("secretaryId");
+
+				Timestamp defenceTime = Timestamp.valueOf(time); 
+				List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);	
+				for (TaskSummary task : taskSummarys) {
+					if (task.getName().equals("assign defense")) {	//找到该教务员的分配评审任务
+						WorkflowProcessInstance process = (WorkflowProcessInstance) jbpmAPIUtil
+								.getKsession().getProcessInstance(
+										task.getProcessInstanceId());	
+						String num = (String) process.getVariable("student");	//属于此流程实例的学生学号
+						if(studentNumber.equals(num)){	
+							assignService.addDefenceByOne(studentId, teacher1Id, teacher2Id, teacher3Id, 
+									secretaryId, address, defenceTime, task.getId(), actorId);
+						}
+					}
+				}
+
+				//发送提醒邮件；
+				/*
+				EmailService emailService=new EmailService();
+				String to1=teacherService.getTeacherById(teacher1Id).getTeacherEmail();
+				String to2=teacherService.getTeacherById(teacher2Id).getTeacherEmail();
+				String to3=teacherService.getTeacherById(teacher3Id).getTeacherEmail();
+				String to4=teacherService.getTeacherById(secretaryId).getTeacherEmail();
+				String subject="答辩："+studentService.getStudentById(studentId).getStudentName()+"_"+paperService.getPaperByStudentId(studentId).getPaperTitle();
+				String content1="<p>尊敬的"+teacherService.getTeacherById(teacher1Id).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				String content2="<p>尊敬的"+teacherService.getTeacherById(teacher2Id).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				String content3="<p>尊敬的"+teacherService.getTeacherById(teacher3Id).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				String content4="<p>尊敬的"+teacherService.getTeacherById(secretaryId).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+
+				List<File> attachmentfiles=new ArrayList<File>() ;
+				File f=new File(paperService.getPaperByStudentId(studentId).getPaperAddress());
+				attachmentfiles.add(f);
+
+
+				try{
+					emailService.sendMailAttach(to1, subject, content1,attachmentfiles);
+					emailService.sendMailAttach(to2, subject, content2,attachmentfiles);
+					emailService.sendMailAttach(to3, subject, content3,attachmentfiles);
+					emailService.sendMailAttach(to4, subject, content4,attachmentfiles);
+				}catch(MessagingException e){
+
+				}
+
+				 */
+				result_json = SUCCESS;
+			}
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+
+	/**
+	 * 获取已分配答辩的学生列表
+	 */
+	@RequestMapping(value = "/dean/defenseassignedlist.do")
+	public void getDefenseAssigned(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<JsonDefenseAssigned> jsonList = new ArrayList<JsonDefenseAssigned>();
+
+		String result_json = "";
+		try{
+			List<Paper> paperList = paperService.getPapersByState(Constants.DEFENSE_READY);
+			for (Paper paper : paperList){
+				System.out.println(paper.getPaperTitle());
+				List<Defence> defenceList = defenceService.findDefenceByPaperId(paper.getPaperId());
+				Teacher[] teachers = new Teacher[4];
+				for(Defence d : defenceList){
+					int index = d.getTeacherType() - 1;
+					teachers[index] = teacherService.getTeacherById(d.getTeacherId());
+				}
+				Student student = studentService.getStudentById(paper.getStudentId());
+				jsonList.add(new JsonDefenseAssigned(paper, teachers[0],teachers[1],teachers[2],teachers[3], student));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+		JSONArray list = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *  答辩后定稿列表
+	 *  @author Jason
+	 */
+	@RequestMapping(value = "/dean/afterdefencelist.do")
+	public void getAfterDefenceList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		List<FinalizedDefenseTask> list = new ArrayList<FinalizedDefenseTask>();
+
+		List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);
+		try{
+			for (TaskSummary task : taskSummarys) {
+				if (task.getName().equals("print papers")) {
+					WorkflowProcessInstance process = (WorkflowProcessInstance) jbpmAPIUtil
+							.getKsession().getProcessInstance(
+									task.getProcessInstanceId());
+
+					if (process != null) {
+						int studentId = (Integer)process.getVariable("studentId");
+						Paper paper = paperService.getPaperByStudentId(studentId);
+						Student student = studentService.getStudentById(paper.getStudentId());
+						Teacher teacher = teacherService.getTeacherById(student.getTeacherId());
+						list.add(FinalizedDefenseTask.toFinalizedDefenseTask(student, paper, teacher, task.getId()));
+					}
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list);
+		jsonobj.put("result_json", result_json);
+		System.out.println(jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 学位申请
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/applydegree.do")
+	public void applydegree(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+
+	}
+
+	private PaperVO convertToPaperVO(Student student, Paper paper) {
+		PaperVO paperVO = new PaperVO();
+		paperVO.setPaperId(paper.getPaperId());
+		paperVO.setPaperTitle(paper.getPaperTitle());
+		paperVO.setStudentName(student.getStudentName());
+		return paperVO;
+	}
+
+	/**
+	 * 导入学生excel
+	 */
+	@RequestMapping(value = "/dean/importStudentExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importStudentExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		logger.debug("import student excel----->");
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   
+			ExcelUtil excel=new ExcelUtil();
+			List<ArrayList<String>> dataLst = excel.importExcel(request, response, "file");	//调用静态类ExcelUitl导入EXCEL	
+			Iterator<ArrayList<String>> it = dataLst.iterator();
+			it.next();
+			while (it.hasNext()) {
+				ArrayList<String> innerLst = it.next();
+				Student student = new Student();
+				if(!innerLst.get(0).equals("")){
+					student.setStudentNumber(innerLst.get(0));
+					student.setStudentName(innerLst.get(1));
+					student.setStudentGrade(studentService.
+							formatGrade(innerLst.get(2))+"");
+					student.setClassName(innerLst.get(3));
+					student.setDegreeType(studentService.
+							formatDegreeType(innerLst.get(4)));
+					student.setStudyTime(studentService.
+							formatStudyTime(innerLst.get(5)));
+					student.setStudentPhone(innerLst.get(6));
+					student.setStudentPhoneX(innerLst.get(7));
+					student.setStudentEmail(innerLst.get(8));
+
+					try{
+						// Add student
+						studentService.addStudentInfo(student);
+						// Get student id
+						student = studentService.
+								getStudentByStudentNumber(student.getStudentNumber());
+						// Add account
+						Account studentAccount = new Account();
+						studentAccount.setAccountLevel(Constants.STUDENT);
+						studentAccount.setAccountName(student.getStudentNumber());
+						studentAccount.setAccountPassword(student.getStudentNumber());
+						studentAccount.setStudentId(student.getStudentId());
+						if (accountService.addAccount(studentAccount))
+							result = "导入成功";
+					}catch(Exception e){
+						result = "用户名重复，已存在" + innerLst.get(0);
+						e.printStackTrace();
+					}
+				}
+			}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页学生列表";
+			e.printStackTrace();
+		}
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 导出学生excel
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/exportStudentExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportStudentExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb = reportService.exportStudent(); 
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=student.xls");  
+		OutputStream outputStream;
+		try {
+			outputStream = response.getOutputStream();
+			wb.write(outputStream);  
+			outputStream.flush();  
+			outputStream.close();  
+		}catch(IOException e) {
+			e.printStackTrace();
+		}  
+	}
+
+	/*
+	 * 导入教学点负责人excel
+	 */
+
+
+	/**
+	 * 导入老师excel
+	 */
+	@RequestMapping(value = "/dean/importTeacherExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importTeacherExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		String result="";
+		response.setContentType("text/html;charset=UTF-8");
+		ArrayList<String> innerLst;
+		try{
+			List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+			Iterator<ArrayList<String>> it=dataLst.iterator();
+			it.next();
+
+			while(it.hasNext())
+			{  
+				innerLst=it.next();
+				if(innerLst.get(0)!=null){
+					Teacher teacher = new Teacher();
+					teacher.setTeacherName(innerLst.get(1));
+					teacher.setTeacherNumber(innerLst.get(0));
+					teacher.setTeacherClasses(teacherService.formatClasses(innerLst.get(2)));
+					teacher.setTeacherEducation(teacherService.formatEducation(innerLst.get(3)));
+					teacher.setTeacherJobTitle(teacherService.formatJobTitle(innerLst.get(4)));
+					teacher.setTeacherQualification(teacherService.formatQualification(innerLst.get(5)));
+					teacher.setTeacherPhone(innerLst.get(6));
+					teacher.setTeacherEmail(innerLst.get(7));
+
+					try{
+						teacherService.addTeacherInfo(teacher);
+						teacher = teacherService.getTeacherByTeacherNumber(teacher.getTeacherNumber());
+						Account teacherAccount = new Account();
+						teacherAccount.setAccountLevel(Constants.TEACHER);
+						teacherAccount.setAccountName(teacher.getTeacherNumber());
+						teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+						teacherAccount.setTeacherId(teacher.getTeacherId());
+						if (accountService.addAccount(teacherAccount))
+							result = "导入成功";
+					}catch(Exception e) {
+						result = "用户名重复，已存在" + innerLst.get(1);
+						e.printStackTrace();
+					}
+				}}
+
+		}catch (Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页教师列表";
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 导出老师excel
+	 */
+	@RequestMapping(value = "/dean/exportTeacherExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportTeacherExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb =reportService.exportTeacher();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=teacher.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导入评审excel
+	 */
+	@RequestMapping(value = "/dean/importAssignExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importAssignExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model)  {
+		String result = "";
+		response.setContentType("text/html;charset=UTF-8");
+		try {
+			ExcelUtil excel=new ExcelUtil();
+			List<ArrayList<String>> dataLst = excel.importExcel(
+					request, response, "file");
+			int total=excel.getTotalRows();
+
+			Iterator<ArrayList<String>> it = dataLst.iterator();
+			it.next();
+			float i=(float) 0.0;
+			while (it.hasNext()) {
+				i++;
+				String actorId = request.getSession().getAttribute("actorId").toString();
+				ArrayList<String> innerLst = it.next();
+				request.getSession().setAttribute("value", (int)((i/total)*100));
+				request.getSession().setAttribute("name", innerLst.get(1));
+				result = innerLst.get(0)+"不存在";
+				Student student = studentService.getStudentByStudentNumber(innerLst.get(0));
+				Teacher realTeacher = teacherService.getTeacherByTeacherName(innerLst.get(2));
+				if (!innerLst.get(3).equals("")) {
+					Teacher nominalTeacher = teacherService
+							.getTeacherByTeacherName(innerLst.get(3));
+					assignService.addAssignByOne(student.getStudentId(),
+							realTeacher.getTeacherId(),
+							nominalTeacher.getTeacherId(), actorId);
+				} else
+					assignService.addAssignByOne(student.getStudentId(),
+							realTeacher.getTeacherId(), actorId);
+				result = "导入成功";
+			}
+
+		}catch(Exception e) {
+			result =result+"请输入正确的文件";
+			e.printStackTrace();
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 得到搜索条件
+	 * @param col 表中属性
+	 * @param oper 操作符     
+	 * @param val 搜索值
+	 */
+	public String getSearch(String col, String oper, String val){
+		logger.info("col: {}, oper: {}, val: {}", col, oper, val);
+		HashMap<String, String> map=new HashMap<String, String>();
+		map.put("eq","=");
+		map.put("ne","<>");
+		map.put("lt", "<");
+		map.put("le", "<=");
+		map.put("gt",">");
+		map.put("ge", ">=");
+		map.put("bw", "LIKE");
+		map.put("bn", "NOT LIKE");
+		map.put("in", "LIKE");
+		map.put("ni", "NOT LIKE");
+		map.put("ew", "LIKE");
+		map.put("en", "NOT LIKE");
+		map.put("cn", "LIKE");
+		map.put("nc", "NOT LIKE");
+
+		if(col.equals("score")){
+			if(val.equals("优")){
+				val=String.valueOf(1);
+			}
+			if(val.equals("良")){
+				val=String.valueOf(2);
+			}
+			if(val.equals("中")){
+				val=String.valueOf(3);
+			}
+			if(val.equals("及格")){
+				val=String.valueOf(4);
+			}
+		}
+
+		if(col.equals("state")){
+			if(val.equals("已通过")){
+				val=String.valueOf(1);
+			}
+			if(val.equals("未审核")){
+				val=String.valueOf(0);
+			}
+			if(val.equals("驳回")){
+				val=String.valueOf(2);
+			}
+
+		}
+
+		if(oper.equals("bw") || oper.equals("bn") ) {
+			val =val+ "%";
+		}
+
+		if(oper.equals("ew") || oper.equals("en") ) {
+			val = "%"+val;
+		}
+
+		if(oper.equals("cn") || oper.equals("nc")  || oper.equals("in") || oper.equals("ni")) {
+			val = "%"+val+"%";
+		}
+		logger.debug("search condition: {}", "WHERE "+ col + " " + map.get(oper) + " '"+ val + "'");
+		return "WHERE "+ col + " " + map.get(oper) + " '"+ val + "'" ;
+	}
+
+	/*
+	 * 编辑教学点列表
+	 */
+	@RequestMapping(value = "/dean/editteachingpoint.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editTeachingPoint(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			int id=Integer.parseInt(request.getParameter("id"));
+			try{
+				teachingPointService.deleteTeachingPointInfo(id);
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String no=request.getParameter("no");
+			String name=request.getParameter("name");
+			String location=request.getParameter("location");
+			String directorNo=request.getParameter("directorNo");
+			String directorName=request.getParameter("directorName");
+			TeachingPoint tp=new TeachingPoint();
+			tp.setNo(no);
+			tp.setName(name);
+			tp.setLocation(location);
+			tp.setDirectorNo(directorNo);
+			tp.setDirectorName(directorName);
+
+			try{
+				if(oper.equals("edit")){
+					tp.setId(Integer.parseInt(request.getParameter("id")));
+					teachingPointService.updateTeachingPoint(tp);
+				}else if(oper.equals("add")){
+					teachingPointService.addTeachingPoint(tp);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/*
+	 * 编辑课程表
+	 */
+	@RequestMapping(value = "/dean/editcourse.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editCourse(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			int courseId=Integer.parseInt(request.getParameter("courseId"));
+			try{
+				courseService.deleteCourseInfo(courseId);
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String courseNo=request.getParameter("courseNo");
+			String courseName=request.getParameter("courseName");
+			String teacherNo=request.getParameter("teacherNo");
+			String teacherName=request.getParameter("teacherName");
+			Integer date=Integer.valueOf(request.getParameter("date"));
+
+			Course course=new Course();
+			course.setCourseName(courseName);
+			course.setCourseNo(courseNo);
+			course.setDate(date);
+			course.setTeacherNo(teacherNo);
+			course.setTeacherName(teacherName);
+			try{
+				if(oper.equals("edit")){
+					System.out.println(request.getParameter("courseId"));
+					course.setId(Integer.parseInt(request.getParameter("courseId")));
+					courseService.updateCourse(course);
+				}else if(oper.equals("add")){
+					courseService.addCourse(course);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/*
+	 * 编辑教学点班级列表
+	 */
+	@RequestMapping(value = "/dean/editclasses.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editClasses(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			int id=Integer.parseInt(request.getParameter("id"));
+			try{
+				classesService.deleteClass(id);
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String no=request.getParameter("no");
+			Integer graduateNum=Integer.parseInt(request.getParameter("graduateNum"));
+			String headTeacherName=request.getParameter("headTeacherName");
+			String name=request.getParameter("name");
+			Integer size=Integer.parseInt(request.getParameter("size"));
+			String teachingPointNo=request.getParameter("teachingPointNo");
+			String teachingPointName=request.getParameter("teachingPointName");
+			String headTeacherNo=request.getParameter("headTeacherNo");
+			Classes c=new Classes();
+			c.setNo(no);
+			c.setName(name);
+			c.setGraduateNum(graduateNum);
+			c.setHeadTeacherNo(headTeacherNo);
+			c.setHeadTeacherName(headTeacherName);
+			c.setTeachingPointNo(teachingPointNo);
+			c.setTeachingPointName(teachingPointName);
+			c.setSize(size);
+
+			try{
+				if(oper.equals("edit")){
+					c.setId(Integer.parseInt(request.getParameter("id")));
+					classesService.updateClass(c);
+				}else if(oper.equals("add")){
+					classesService.addClass(c);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	/*
+	 * 编辑教学点班主任列表
+	 */
+	@RequestMapping(value = "/dean/editdirector.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editDirector(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String oper=request.getParameter("oper");
+		if(oper != null && oper.equals("del")){
+			int id=Integer.parseInt(request.getParameter("id"));
+			try{
+				String no=directorService.getDirectorById(id).getNo();
+				int accountId=accountService.getAccountByAccountname(no).getAccountId();
+				accountService.deleteAccount(accountId);
+				directorService.deleteDirectorById(id);
+			}catch (Exception e) {
+
+			}
+		}else if(oper != null){
+			String no=request.getParameter("no");
+			String name=request.getParameter("name");
+			int tel=Integer.parseInt(request.getParameter("tel"));
+			String email=request.getParameter("email");
+			Director director=new Director();
+			director.setNo(no);
+			director.setEmail(email);
+			director.setName(name);
+			director.setTel(tel);
+			try{
+				if(oper.equals("edit")){
+					director.setId(Integer.parseInt(request.getParameter("id")));
+					directorService.updateDirector(director);
+
+				}else if(oper.equals("add")){
+					directorService.addDirector(director);
+					director=directorService.getDirectorById(director.getId());
+					Account a=new Account();
+					a.setAccountLevel(Constants.DIRECTOR);
+					a.setAccountName( director.getNo());
+					a.setAccountPassword(director.getNo());
+					accountService.addAccount(a);
+				}
+			}catch(Exception e){
+
+			}
+		}	
+	}
+
+
+	/*
+	 * 编辑班主任列表
+	 */
+	@RequestMapping(value = "/dean/editheadteacher.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editHeadTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String oper=request.getParameter("oper");
+		if(oper != null && oper.equals("del")){
+			int id=Integer.parseInt(request.getParameter("id"));
+			//System.out.println(id);
+			try{
+				String no=headTeacherService.getHeadTeacherById(id).getNo();
+				int accountId=accountService.getAccountByAccountname(no).getAccountId();
+				accountService.deleteAccount(accountId);
+				headTeacherService.deleteHeadTeacher(id);
+			}catch (Exception e) {
+
+			}
+
+		}else if(oper != null){
+			String no=request.getParameter("no");
+			String name=request.getParameter("name");
+			int tel=Integer.parseInt(request.getParameter("tel"));
+			String email=request.getParameter("email");
+			HeadTeacher headTeacher=new HeadTeacher();
+			headTeacher.setNo(no);
+			headTeacher.setName(name);
+			headTeacher.setTel(tel);
+			headTeacher.setEmail(email);
+			try{
+				if(oper.equals("edit")){
+					headTeacher.setId(Integer.parseInt(request.getParameter("id")));
+					headTeacherService.updateHeadTeacher(headTeacher);
+
+				}else if(oper.equals("add")){
+					headTeacherService.addHeadTeacher(headTeacher);
+					headTeacher=headTeacherService.getHeadTeacherById(headTeacher.getId());
+					Account a=new Account();
+					a.setAccountLevel(Constants.HEADTEACHER);
+					a.setAccountName( headTeacher.getNo());
+					a.setAccountPassword(headTeacher.getNo());
+					accountService.addAccount(a);
+
+
+				}
+
+			}catch(Exception e){
+
+			}
+		}
+	}
+
+	/**
+	 * 编辑老师表
+	 * @param request
+	 * @param response
+	 * @param model
+	 * @param oper 操作类型 del,edit,add
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/dean/editteacher.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editTeacher(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("oper") String oper) throws Exception {
+		logger.info("/dean/editteacher.do");
+		logger.debug("oper: {}", oper);
+		if(oper != null && oper.equals("del")){
+			//通过teacherId删除
+			int teacherId = Integer.parseInt(request.getParameter("teacherId"));
+			logger.debug("teacherId: {}", teacherId);
+			try{
+				String teacherNum = teacherService.getTeacherById(teacherId).getTeacherNumber();
+				int accountId = accountService.getAccountByAccountname(teacherNum).getAccountId();
+				accountService.deleteAccount(accountId);
+				teacherService.deleteTeacherInfo(teacherId);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper != null){
+			String teacherNumber= request.getParameter("teacherNumber");
+			String teacherName= request.getParameter("teacherName");
+			int teacherClasses= Integer.parseInt(request.getParameter("teacherClasses"));
+			int teacherEducation = Integer.parseInt(request.getParameter("teacherEducation"));
+			int teacherJobTitle = Integer.parseInt(request.getParameter("teacherJobTitle"));
+			int teacherQualification = Integer.parseInt(request.getParameter("teacherQualification"));
+			String teacherPhone= request.getParameter("teacherPhone");
+			String teacherEmail = request.getParameter("teacherEmail");
+
+			Teacher teacher = new Teacher();
+			teacher.setTeacherClasses(teacherClasses);
+			teacher.setTeacherEducation(teacherEducation);
+			teacher.setTeacherEmail(teacherEmail);
+			teacher.setTeacherJobTitle(teacherJobTitle);
+			teacher.setTeacherName(teacherName);
+			teacher.setTeacherNumber(teacherNumber);
+			teacher.setTeacherPhone(teacherPhone);
+			teacher.setTeacherQualification(teacherQualification);
+
+			try{
+				if(oper.equals("edit")){
+					//更新需要设置teacherId
+					teacher.setTeacherId(Integer.parseInt(request.getParameter("teacherId")));
+					teacherService.updateTeacherInfo(teacher);
+				}else if(oper.equals("add")){
+					teacherService.addTeacherInfo(teacher);
+					teacher = teacherService.getTeacherByTeacherNumber(teacher.getTeacherNumber());
+
+					Account teacherAccount = new Account();
+					teacherAccount.setAccountLevel(Constants.TEACHER);
+					teacherAccount.setAccountName(teacher.getTeacherNumber());
+					teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+					teacherAccount.setTeacherId(teacher.getTeacherId());
+					accountService.addAccount(teacherAccount);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+				Account teacherAccount = new Account();
+				teacherAccount.setAccountLevel(Constants.TEACHER);
+				teacherAccount.setAccountName(teacher.getTeacherNumber());
+				teacherAccount.setAccountPassword(teacher.getTeacherNumber());
+				teacherAccount.setTeacherId(teacher.getTeacherId());
+
+				accountService.addAccount(teacherAccount) ;
+			}
+		} 
+	}
+
+	/**
+	 * 编辑学生表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/editstudent.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void editStudent(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		logger.debug("/dean/editstudent.do");
+		String oper = request.getParameter("oper");	//操作类型 del,edit,add
+		logger.debug("oper: {}", oper);
+
+		if(oper != null && oper.equals("del")){
+			int studentId = Integer.parseInt(request.getParameter("studentId"));
+			logger.debug("student id: {}", studentId);
+			try{
+				String studentNum = studentService.getStudentById(studentId).getStudentNumber();
+				int accountId = accountService.getAccountByAccountname(studentNum).getAccountId();
+				accountService.deleteAccount(accountId);
+				studentService.deleteStudentInfo(studentId);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper != null){
+			String studentNumber= request.getParameter("studentNumber");
+			String studentName= request.getParameter("studentName");
+			String studentGrade= request.getParameter("studentGrade");
+			Integer studentDegreeType = Integer.parseInt(request.getParameter("studentDegreeType"));
+			Integer studentType = Integer.parseInt(request.getParameter("studentType"));
+			String studentPhone1 = request.getParameter("studentPhone1");
+			String studentPhone2 = request.getParameter("studentPhone2");
+			String studentEmail = request.getParameter("studentEmail");
+
+			Student student = new Student();
+			student.setStudentEmail(studentEmail);
+			student.setStudentGrade(studentGrade);
+			student.setStudentName(studentName);
+			student.setStudentNumber(studentNumber);
+			student.setStudentPhone(studentPhone1);
+			student.setStudentPhoneX(studentPhone2);
+			student.setDegreeType(studentDegreeType);
+			student.setStudyTime(studentType);
+
+			try{
+				if(oper.equals("edit")){
+					int studentId = Integer.parseInt(request.getParameter("studentId"));
+					logger.debug("student id: {}", studentId);
+					student.setStudentId(studentId);
+
+					studentService.updateStudentInfo(student);
+				}else if(oper.equals("add")){
+					//验证是否存在该学生号
+					logger.debug("student number: {}", studentNumber);
+					Student s = studentService.getStudentByStudentNumber(studentNumber);
+					Validate.isTrue(s == null);
+
+					studentService.addStudentInfo(student);
+					student = studentService.getStudentByStudentNumber(student.getStudentNumber());	
+					Account studentAccount = new Account();
+					studentAccount.setAccountLevel(Constants.STUDENT);
+					studentAccount.setAccountName(student.getStudentNumber());
+					studentAccount.setAccountPassword(student.getStudentNumber());
+					studentAccount.setStudentId(student.getStudentId());
+					accountService.addAccount(studentAccount);
+				}
+			}catch (IllegalArgumentException ie) {
+				logger.error("该学生号已经存在！", ie);
+			}catch (Exception e) {
+				logger.error("exception", e);
+			}
+		} 
+	}
+
+	/**
+	 * 导入评审费用
+	 */
+	@RequestMapping(value = "/dean/importFeeOFJudgeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importFeeOfJudgeExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		String result="";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		response.setContentType("text/html;charset=UTF-8");
+		try{
+			List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+			Iterator<ArrayList<String>> it=dataLst.iterator();
+			it.next();
+			while(it.hasNext())
+			{ 
+
+				ArrayList<String> innerLst=it.next();
+				Fee fee=new Fee();
+				String studentNumber=innerLst.get(0);
+				int studentID=studentService.getStudentByStudentNumber(studentNumber).getStudentId();
+				fee.setStudentId(studentID);
+				int teacherID=teacherService.getTeacherByTeacherName(innerLst.get(2)).getTeacherId();
+				fee.setTeacherId(teacherID);
+				fee.setAmount(Float.parseFloat(innerLst.get(3)));
+				fee.setGrantType(Constants.GRANT_TYPE.indexOf(innerLst.get(4)));
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("评审费"));
+
+				fee.setGrantTime(Timestamp.valueOf(innerLst.get(5)));
+				feeService.addFee(fee);
+				List<TaskSummary> taskSummarys = jbpmAPIUtil.getAssignedTasks(actorId);	
+				for (TaskSummary task : taskSummarys) {
+					if (task.getName().equals("assign review")) {	//找到该教务员的分配评审任务
+						WorkflowProcessInstance process = (WorkflowProcessInstance) jbpmAPIUtil
+								.getKsession().getProcessInstance(
+										task.getProcessInstanceId());	
+						String num = (String) process.getVariable("student");	//属于此流程实例的学生学号
+						if(studentNumber.equals(num)){	
+							assignService.addJudgeByOne(studentID, teacherID, 0, null, task.getId(), actorId);
+						}else{
+
+							result="学生"+studentNumber+"不能参加评审";
+						}
+					}
+				}
+			}
+			result="导入成功";
+		}catch(Exception e) {
+			if(result!=null)  result="请输入正确的文件,格式依照本页教师列表";
+			e.printStackTrace();
+		}	   
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	//@Jerry.Lu 注释 已用新的方法替代
+	/*@RequestMapping(value = "/dean/importFeeOfDefenseExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importFeeOfDefenseExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+	        String result="";
+	        response.setContentType("text/html;charset=UTF-8");
+	      try{
+	    	  List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+	    	  Iterator<ArrayList<String>> it=dataLst.iterator();
+	    	  it.next();
+	        while(it.hasNext())
+	         { 
+	        	    ArrayList<String> innerLst=it.next();
+
+	        	    int studentID=studentService.getStudentByStudentNumber(innerLst.get(0)).getStudentId();
+	        	    int grantType=Constants.GRANT_TYPE.indexOf(innerLst.get(Constants.DEFENSE_FEE_HEADER.indexOf("发放形式")));
+	        	    Timestamp time=Timestamp.valueOf(innerLst.get(Constants.DEFENSE_FEE_HEADER.indexOf("发放时间")));
+	        	    int DefenseteacherID1=teacherService.getTeacherByTeacherName(innerLst.get(2)).getTeacherId();
+	                int DefenseteacherID2=teacherService.getTeacherByTeacherName(innerLst.get(4)).getTeacherId();
+	                int DefenseteacherID3=teacherService.getTeacherByTeacherName(innerLst.get(6)).getTeacherId();
+	                int DefenseteacherID4=teacherService.getTeacherByTeacherName(innerLst.get(8)).getTeacherId();
+	        	    Fee fee1=new Fee(studentID,DefenseteacherID1,Float.parseFloat(innerLst.get(3)),Constants.FEE_TYPE.indexOf("答辩评委费"),grantType,time);
+	        	    feeService.addFee(fee1);
+	        	    Fee fee2=new Fee(studentID,DefenseteacherID2,Float.parseFloat(innerLst.get(5)),Constants.FEE_TYPE.indexOf("答辩评委费"),grantType,time);
+	        	    feeService.addFee(fee2);
+	        	    Fee fee3=new Fee(studentID,DefenseteacherID3,Float.parseFloat(innerLst.get(7)),Constants.FEE_TYPE.indexOf("答辩评委费"),grantType,time);
+	        	    feeService.addFee(fee3);
+	        	    Fee fee4=new Fee(studentID,DefenseteacherID4,Float.parseFloat(innerLst.get(9)),Constants.FEE_TYPE.indexOf("答辩秘书费"),grantType,time);
+	        	    feeService.addFee(fee4);
+	         }
+
+	     }catch(Exception e) {
+			if(result!=null)  result="请输入正确的文件,格式必须正确";
+	   e.printStackTrace();
+ 	  }	   
+
+	  	JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}*/
+
+	@RequestMapping(value = "/dean/importScoreExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void importScoreExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		String result = "";
+		response.setContentType("text/html;charset=UTF-8");
+		try{
+			List<ArrayList<String>> dataLst = new ExcelUtil().importExcel(request, response, "scorefile");
+			Iterator<ArrayList<String>> it = dataLst.iterator();
+			logger.debug("it.next(): {}", it.next());
+			while(it.hasNext()){ 
+				ArrayList<String> innerLst = it.next();
+				String studentNumber = innerLst.get(0);
+				logger.debug("student number: {}", studentNumber);
+				try{
+					Student student=studentService.getStudentByStudentNumber(studentNumber);
+
+					StudentScore score=new StudentScore();
+					score.setStudentId(student.getStudentId());
+					score.setExcellent(Integer.parseInt(innerLst.get(2)));
+					score.setGood(Integer.parseInt(innerLst.get(3)));
+					score.setMedium(Integer.parseInt(innerLst.get(4)));
+					score.setPass(Integer.parseInt(innerLst.get(5)));
+					studentScoreService.addScore(score);
+				}catch(Exception e) { 
+					result = "不存在" + innerLst.get(0);
+					logger.error(result, e);
+				}
+			}
+			result = "导入成功";   
+		}catch(Exception e) {
+			if(result != null)  result = "请输入正确的文件,格式必须正确";
+			logger.error(result, e);
+		}	   
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	@RequestMapping(value = "/dean/exportThree_OneExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportThreeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		List<Student>  studentlst = new ArrayList<Student>()  ;
+		String liststr = request.getParameter("list").toString();
+		JSONArray list = JSONArray.fromObject(liststr);
+		System.out.println(list);
+		for (int i = 0; i < list.size(); i++){
+			JSONObject record = JSONObject.fromObject(list.get(i));
+			String studentNumber = record.getString("studentNumber");
+			studentlst.add(studentService.getStudentByStudentNumber(studentNumber)) ;
+		}
+
+		HSSFWorkbook wb =reportService.exportThreeAndOne(studentlst); 
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=studentScore.xls");  
+
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+
+			e.printStackTrace();
+		}  
+	}
+
+	@RequestMapping(value = "/dean/editnotice.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editNotice(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String oper = request.getParameter("oper");
+		Integer teacherId = (Integer)request.getSession().getAttribute("teacherId");
+		if(oper != null && oper.equals("del")){
+			String noticeIds = request.getParameter("noticeIds");
+			JSONArray array = JSONArray.fromObject(noticeIds);
+			try{
+				for(int i = 0;i<array.size();i++){
+					Notice notice = noticeService.getNoticeById(array.getInt(i));
+					noticeService.delete(notice);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper != null){
+			Integer noticeLevel= Integer.parseInt(request.getParameter("noticeLevel"));
+			String noticeTheme = request.getParameter("noticeTheme");
+
+			Notice n = new Notice();
+			n.setNoticeLevel(noticeLevel);
+			n.setNoticePublisherId(teacherId);
+			n.setNoticePublisherName(teacherService.getTeacherById(teacherId).getTeacherName());
+			n.setNoticeTheme(noticeTheme);
+			n.setNoticeTime(new Date());
+
+			try{
+				if(oper.equals("edit")){
+					int nid = Integer.parseInt(request.getParameter("noticeId"));
+					n.setNoticeId(nid);
+					n.setNoticeContent(noticeService.getNoticeById(nid).getNoticeContent());
+					noticeService.merge(n);
+				}else if(oper.equals("add")){
+					noticeService.addNotice(n);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		} 
+	}
+
+	@RequestMapping(value = "/dean/editnoticecontent.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editNoticeContent(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String oper = request.getParameter("oper");
+		Integer noticeId = Integer.parseInt(request.getParameter("noticeId"));
+		if(oper != null && oper.equals("edit")){
+			try{
+				String noticeContent= request.getParameter("noticeContent");
+				Notice n = noticeService.getNoticeById(noticeId);
+				n.setNoticeContent(noticeContent);
+				noticeService.merge(n);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		} 
+	}
+
+	@RequestMapping(value = "/dean/getnotice.do")
+	public void getNotice(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		int teacherId = (Integer)request.getSession().getAttribute("teacherId");
+		List<Notice> data = noticeService.getNoticeByPublisherId(teacherId);
+		List<JsonNotice> noticeList = new ArrayList<JsonNotice>();
+		for(Notice n : data){
+			noticeList.add(new JsonNotice(n));
+		}
+		JSONArray listObj = JSONArray.fromObject(noticeList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", listObj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 导入课程excel
+	 * 2014-4-23下午09:25:39
+	 * @author Jay，Wang
+	 */
+	@RequestMapping(value = "/dean/importCourse.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importCourse(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String courseStr = request.getParameter("jsonStr");
+		JSONObject course_json = JSONObject.fromObject(courseStr);
+
+		Course course = new Course();
+
+		course.setCourseNo((String)course_json.getString("courseNo"));
+		course.setCourseName((String)course_json.getString("courseName"));
+		course.setTeacherNo((String)course_json.getString("teacherNo"));
+		course.setTeacherName((String)course_json.getString("teacherName"));
+		course.setDate((Integer.valueOf((String)course_json.getString("date"))));
+
+
+
+		String result_json = "";
+		try {
+			courseService.addCourse(course);
+
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			result_json = FAIL;
+			logger.error("添加课程信息失败：", e);
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/*
+	 * 导入班级信息Excel
+	 */
+	@RequestMapping(value = "/dean/importClassesExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importClassesExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Classes c=new Classes();
+			if(!innerLst.get(0).equals("")){
+				c.setNo(innerLst.get(0));
+				c.setName(innerLst.get(1));
+				c.setGraduateNum(Integer.parseInt(innerLst.get(2)));
+				c.setSize(Integer.parseInt(innerLst.get(3)));
+				c.setHeadTeacherNo(innerLst.get(4));
+				c.setHeadTeacherName(innerLst.get(5));
+				c.setTeachingPointNo(innerLst.get(6));
+				c.setTeachingPointName(innerLst.get(7));
+
+				try{
+					// Add course
+					classesService.addClass(c);
+
+				}catch(Exception e){
+
+					e.printStackTrace();
+				}
+
+			}
+			result = "导入成功";
+		}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页课程列表";
+			e.printStackTrace();
+		}
+
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/*
+	 * 导入教学点Excel
+	 */
+	@RequestMapping(value = "/dean/importTeachingPointExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importTeachingPointExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			TeachingPoint teachingPoint=new TeachingPoint();
+			if(!innerLst.get(0).equals("")){
+				teachingPoint.setNo(innerLst.get(0));
+				teachingPoint.setName(innerLst.get(1));
+				teachingPoint.setLocation(innerLst.get(2));
+				teachingPoint.setDirectorNo(innerLst.get(3));
+				teachingPoint.setDirectorName(innerLst.get(4));
+
+				try{
+					// Add course
+					teachingPointService.addTeachingPoint(teachingPoint);
+
+				}catch(Exception e){
+
+					e.printStackTrace();
+				}
+
+			}
+			result = "导入成功";
+		}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页课程列表";
+			e.printStackTrace();
+		}
+
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/*
+	 * 导入班级分配Excel
+	 */
+	@RequestMapping(value = "/dean/importClassAssignExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importClassAssignExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Student student=new Student();
+			if(!innerLst.get(0).equals("")){
+
+
+				try{
+					student=studentService.getStudentByStudentNumber(innerLst.get(0));
+					if(student.getStudentName().equals(innerLst.get(1))){
+						student.setClassNo(innerLst.get(2));
+						System.out.println(innerLst.get(2));
+						student.setClassName(innerLst.get(3));
+						student.setTeachingPointNo(innerLst.get(4));
+						studentService.updateStudentInfo(student);
+					}
+				}catch(Exception e){
+
+					e.printStackTrace();
+				}
+
+			}
+			result = "导入成功";
+		}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页课程列表";
+			e.printStackTrace();
+		}
+
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 导入课程excel
+	 * 2014-4-24上午09:25:39
+	 * @author Jay，Wang
+	 */
+	@RequestMapping(value = "/dean/importCourseExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importCourseExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Course course = new Course();
+			if(!innerLst.get(0).equals("")){
+				course.setCourseNo(innerLst.get(0));
+
+				course.setCourseName(innerLst.get(1));
+
+				course.setTeacherNo(innerLst.get(2));
+				course.setTeacherName(innerLst.get(3));
+
+
+
+				course.setDate(Integer.valueOf(innerLst.get(4)));
+
+
+				try{
+					// Add course
+					courseService.addCourse(course);
+
+				}catch(Exception e){
+
+					e.printStackTrace();
+				}
+
+			}
+			result = "导入成功";
+		}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页课程列表";
+			e.printStackTrace();
+		}
+
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/*
+	 * 导出班级信息Excel
+	 */
+	@RequestMapping(value = "/dean/exportClassesExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportClassesExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		HSSFWorkbook wb =reportService.exportClasses();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=classes.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		} 
+	}
+	/*
+	 * 导出已分配班级学生列表
+	 */
+	@RequestMapping(value = "/dean/exportClassAssignedExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportClassAssignedExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		HSSFWorkbook wb =reportService.exportAssignedClasses();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=assignedClasses.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		} 
+
+	}
+	/**
+	 * 导出课程excel
+	 */
+	@RequestMapping(value = "/dean/exportCourseExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportCourseExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb =reportService.exportCourse();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=course.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+	/*
+	 * 导出教学点excel
+	 */
+	@RequestMapping(value = "/dean/exportTeachingPointExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportTeachingPointExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		HSSFWorkbook wb =reportService.exportTeachingPoint();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=teachingPoint.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导入选课excel
+	 * 2014-4-25下午06:25:39
+	 * @author Jay，Wang
+	 */
+
+	@RequestMapping(value = "/dean/importStudentCourseInfoExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importStudentCourseInfoExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			StudentCourseInfo sci = new StudentCourseInfo();
+			if(!innerLst.get(0).equals("")){
+				sci.setCourseNo(innerLst.get(0));
+
+				sci.setCourseName(innerLst.get(1));
+
+				sci.setStudentNo(innerLst.get(2));
+				sci.setStudentName(innerLst.get(3));
+
+				sci.setDate(Integer.valueOf(innerLst.get(4)));
+
+
+				try{
+					// Add course
+					studentCourseInfoService.addStudentCourseInfo(sci);
+
+				}catch(Exception e){
+
+					e.printStackTrace();
+				}
+
+			}
+			result = "导入成功";
+		}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页课程列表";
+			e.printStackTrace();
+		}
+
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 导出选课excel
+	 */
+	@RequestMapping(value = "/dean/exportStudentCourseInfoExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportStudentCourseInfoExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb =reportService.exportStudentCourseInfo();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=studentCourseInfo.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+
+
+
+
+	/**
+	 * 导入成绩单excel
+	 * 2014-4-25下午07:25:39
+	 * @author Jay，Wang
+	 */
+
+	@RequestMapping(value = "/dean/importTransciptExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importTranscriptExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			StudentCourseInfo sci = new StudentCourseInfo();
+			if(!innerLst.get(0).equals("")){
+				sci.setCourseNo(innerLst.get(0));
+
+				sci.setCourseName(innerLst.get(1));
+
+				sci.setStudentNo(innerLst.get(2));
+				sci.setStudentName(innerLst.get(3));
+				sci.setScore(Integer.valueOf(innerLst.get(4)));
+
+				sci.setDate(Integer.valueOf(innerLst.get(5)));
+
+
+				try{
+					// Add course
+					studentCourseInfoService.addStudentCourseInfo(sci);
+
+				}catch(Exception e){
+
+					e.printStackTrace();
+				}
+
+			}
+			result = "导入成功";
+		}
+		}catch(Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页成绩列表";
+			e.printStackTrace();
+		}
+
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 导出所有成绩excel
+	 */
+	@RequestMapping(value = "/dean/exportTranscriptExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportTranscriptExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb =reportService.exportTranscript();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=transcript.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导出指定课程成绩单excel
+	 */
+	@RequestMapping(value = "/dean/exportCourseTranscriptExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportCourseTranscriptExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		String courseNo="cs112";
+		HSSFWorkbook wb =reportService.exportTranscriptByCourseNo(courseNo);
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename="+courseNo+" transcript.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+
+	/**
+	 * 导出指定学生成绩单excel
+	 */
+	@RequestMapping(value = "/dean/exportStudentTranscriptExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportStudentTranscriptExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		String transcripstr = request.getParameter("transcripstr").toString();
+		JSONObject paper_json = JSONObject.fromObject(transcripstr);
+		String studentNo = paper_json.getString("studentNo");
+		HSSFWorkbook wb =reportService.exportTranscriptByStudentNo(studentNo);
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename="+studentNo+" transcript.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+		String result=SUCCESS;
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 审核通过所有成绩单
+	 */
+	@RequestMapping(value = "/dean/approveTranscript.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void approveTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		String result="";
+		try{
+			studentCourseInfoService.approveStudentCourseInfo();
+
+			result=SUCCESS;
+		}catch(Exception e){
+
+			e.printStackTrace();
+		} 
+
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 审核通过某个成绩单
+	 */
+	@RequestMapping(value = "/dean/dealWithTranscript.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void dealWithTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String transcripstr = request.getParameter("transcripstr").toString();
+		JSONObject paper_json = JSONObject.fromObject(transcripstr);
+		Integer transcriptId = paper_json.getInt("id");
+		String detection = paper_json.getString("detection");
+		String result="";
+		try{
+			if(detection.equals("true")){
+
+				studentCourseInfoService.approveStudentCourseInfo(transcriptId);
+
+
+
+			}
+			else if(detection.equals("false")){
+				studentCourseInfoService.rejectStudentCourseInfo(transcriptId);
+			}
+			result=SUCCESS;
+		}catch(Exception e){
+
+			e.printStackTrace();
+		} 
+
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+
+	}
+	/*
+	 * 导入班主任excel
+	 */
+	@RequestMapping(value = "/dean/importHeadTeacherExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importHeadTeacherExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		String result="";
+		response.setContentType("text/html;charset=UTF-8");
+		ArrayList<String> innerLst;
+		try{
+			List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+			Iterator<ArrayList<String>> it=dataLst.iterator();
+			it.next();
+
+			while(it.hasNext())
+			{  
+
+				innerLst=it.next();
+				if(innerLst.get(0)!=null){
+					HeadTeacher headTeacher = new HeadTeacher();
+					headTeacher.setNo(innerLst.get(0));
+					headTeacher.setName(innerLst.get(1));
+
+
+
+					headTeacher.setTel(Integer.valueOf(innerLst.get(2)));
+					headTeacher.setEmail(innerLst.get(3));
+
+					try{
+						headTeacherService.addHeadTeacher(headTeacher);
+						headTeacher = headTeacherService.getHeadTeacherById(headTeacher.getId());
+						Account headTeacherAccount = new Account();
+						headTeacherAccount.setAccountLevel(Constants.HEADTEACHER);
+						headTeacherAccount.setAccountName(headTeacher.getNo());
+						headTeacherAccount.setAccountPassword(headTeacher.getNo());
+						headTeacherAccount.setTeacherId(Integer.valueOf(headTeacher.getNo()));
+						if (accountService.addAccount(headTeacherAccount))
+							result = "导入成功";
+					}catch(Exception e) {
+						result = "用户名重复，已存在" + innerLst.get(1);
+						e.printStackTrace();
+					}
+				}}
+
+		}catch (Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页教师列表";
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 导出班主任excel
+	 */
+	@RequestMapping(value = "/dean/exportHeadTeacherExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportHeadTeacherExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb =reportService.exportHeadTeacher();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=headTeacher.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+
+	/*
+	 * 导入教学点负责人excel
+	 */
+	@RequestMapping(value = "/dean/importDirectorExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importDirectorExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		String result="";
+		response.setContentType("text/html;charset=UTF-8");
+		ArrayList<String> innerLst;
+		try{
+			List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+			Iterator<ArrayList<String>> it=dataLst.iterator();
+			it.next();
+
+			while(it.hasNext())
+			{  
+
+				innerLst=it.next();
+				if(innerLst.get(0)!=null){
+					Director director = new Director();
+					director.setNo(innerLst.get(0));
+					director.setName(innerLst.get(1));
+
+
+
+					director.setTel(Integer.valueOf(innerLst.get(2)));
+					director.setEmail(innerLst.get(3));
+
+					try{
+						directorService.addDirector(director);
+						director = directorService.getDirectorById(director.getId());
+						Account directorAccount = new Account();
+						directorAccount.setAccountLevel(Constants.DIRECTOR);
+						directorAccount.setAccountName(director.getName());
+						directorAccount.setAccountPassword(director.getNo());
+						directorAccount.setTeacherId(director.getId());
+						if (accountService.addAccount(directorAccount))
+							result = "导入成功";
+					}catch(Exception e) {
+						result = "信息重复，已存在" + innerLst.get(0);
+						e.printStackTrace();
+					}
+				}}
+
+		}catch (Exception e){
+			if (result != null)
+				result = "请输入正确的文件,格式依照本页教师列表";
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+
+	/**
+	 * 导出教学点负责人excel
+	 */
+	@RequestMapping(value = "/dean/exportDirectorExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportDirectorExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		HSSFWorkbook wb =reportService.exportDirector();
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=director.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e){
+			e.printStackTrace();
+		}  
+	}
+
+
+	/**
+	 * 驳回所有成绩单
+	 */
+	@RequestMapping(value = "/dean/rejectTranscript.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void rejectTranscript(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String result="";
+
+		try{
+			studentCourseInfoService.rejectStudentCourseInfo();
+			result=SUCCESS;
+		}catch(Exception e){
+
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+
+	/**
+	 * 所有费用列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getAllFees.do")
+	@ResponseBody
+	public void getAllFees(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getAllFees();
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 指导费列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getInstructionFees.do")
+	@ResponseBody
+	public void getInstructionFees(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("指导费发放"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 答辩费列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getDefenceFees.do")
+	@ResponseBody
+	public void getDefenceFees(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("答辩费发放"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 评审费列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getJudgeFees.do")
+	@ResponseBody
+	public void getJugdeFees(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("评审费发放"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 二次评审费收取列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getSecondJudgeFeesCharge.do")
+	@ResponseBody
+	public void getSecondJudgeFeesCharge(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("二次评审费收取"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 二次答辩费收取列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getSecondDefenceFeesCharge.do")
+	@ResponseBody
+	public void getSecondDefenceFeesCharge(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("二次答辩费收取"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 二次评审费发放列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getSecondJudgeFeesGrant.do")
+	@ResponseBody
+	public void getSecondJudgeFeesGrant(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("二次评审费发放"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 二次答辩费发放列表
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value="/dean/getSecondDefenceFeesGrant.do")
+	@ResponseBody
+	public void getSecondDefenceFeesGrant(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+
+		List<Fee> fees=feeService.getFeesByFeeType(Constants.FEE_TYPE.indexOf("二次答辩费发放"));
+		List<JsonFee> jsonFees=new ArrayList<JsonFee>();
+		for (int i=0;i<fees.size();i++){
+			JsonFee jFee=new JsonFee(fees.get(i));
+			jFee.setStudentName(studentService.getStudentById(jFee.getStudentId()).getStudentName());
+			jFee.setStudentNum(studentService.getStudentById(jFee.getStudentId()).getStudentNumber());
+			jFee.setTeacherName(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherName());
+			jFee.setTeacherNum(teacherService.getTeacherById(jFee.getTeacherId()).getTeacherNumber());
+			jsonFees.add(jFee);
+		}
+
+		JSONArray feelist_jsonobj = JSONArray.fromObject(jsonFees);	
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", feelist_jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 编辑指导费用
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editInstructionFees.do")
+	@ResponseBody
+	@Transactional(rollbackFor = Exception.class)
+	public void editInstructionFees(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("指导费发放"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * 编辑评审费用
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editJudgeFees.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editJudgeFees(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("评审费发放"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * 编辑答辩费用
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editDefenceFees.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editDefenceFees(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("答辩费发放"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * 编辑二次评审费用收取
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editSecondJudgeFeesCharge.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editSecondJudgeFeesCharge(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			//Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			//fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("二次评审费收取"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * 编辑二次评审费用发放
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editSecondJudgeFeesGrant.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editSecondgJudgeFeesGrant(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("二次评审费发放"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+	/**
+	 * 编辑二次答辩费用收取
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editSecondDefenceFeesCharge.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editSecondDefenceFeesCharge(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			//Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			//fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("二次答辩费收取"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * 编辑二次答辩费用收取
+	 * @author Jerry.Lu
+	 * @throws ParseException 
+	 */
+	@RequestMapping(value = "/dean/editSecondDefenceFeesGrant.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editSecondgDefenceFeesGrant(HttpServletRequest request, HttpServletResponse response, ModelMap model) throws ParseException{
+		String oper=request.getParameter("oper");//获取操作类型
+		if(oper != null&&oper.equals("del")){
+			String idString=request.getParameter("id");
+			int id=Integer.parseInt(idString);
+			try{
+				feeService.delete(id);			
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper!=null){
+			String StudentName=request.getParameter("studentName");
+			String StudnetNum=request.getParameter("studentNum");
+			String teacherName=request.getParameter("teacherName");
+			String teacherNum=request.getParameter("teacherNum");
+			String grantType=request.getParameter("grantType");
+			String feeType=request.getParameter("feeType");
+			String amount=request.getParameter("amount");
+			String time=request.getParameter("grantTime");
+
+			Student student=studentService.getStudentByStudentNumber(StudnetNum);
+			Teacher teacher=teacherService.getTeacherByTeacherNumber(teacherNum);		
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			format.setLenient(false);
+			Timestamp ts = new Timestamp(format.parse(time).getTime());
+
+			Fee fee=new Fee();
+
+			fee.setStudentId(student.getStudentId());
+			fee.setTeacherId(teacher.getTeacherId());
+			fee.setGrantType(Constants.GRANT_TYPE.indexOf(grantType));
+			fee.setGrantTime(ts);
+			fee.setFeeType(Constants.FEE_TYPE.indexOf("二次答辩费发放"));
+			fee.setAmount(Float.valueOf(amount));
+
+			try{
+				if(oper.equals("edit")){
+					fee.setId(Integer.parseInt(request.getParameter("id")));			
+					feeService.update(fee);				
+				}else if(oper.equals("add")){
+					feeService.addFee(fee);
+				}
+
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+	/**
+	 * 导入指导费用excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importInstructionFeeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importInstructionFeeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号
+				Teacher teacher=teacherService.getTeacherByTeacherNumber(innerLst.get(2));//教师编号	
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(6)).getTime());
+				int grant_type=Constants.GRANT_TYPE.indexOf(innerLst.get(5));
+
+				fee.setAmount(Float.valueOf(innerLst.get(4)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("指导费发放"));
+				fee.setStudentId(student.getStudentId());
+				fee.setTeacherId(teacher.getTeacherId());
+				fee.setGrantTime(ts);
+				fee.setGrantType(grant_type);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出指导费用excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportInstructionFeeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporInstructionFeeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportGrantFee(Constants.FEE_TYPE.indexOf("指导费发放")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文指导费.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导入评审费用excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importJudgeFeeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importJudgeFeeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号
+				Teacher teacher=teacherService.getTeacherByTeacherNumber(innerLst.get(2));//教师编号	
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(6)).getTime());
+				int grant_type=Constants.GRANT_TYPE.indexOf(innerLst.get(5));
+
+				fee.setAmount(Float.valueOf(innerLst.get(4)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("评审费发放"));
+				fee.setStudentId(student.getStudentId());
+				fee.setTeacherId(teacher.getTeacherId());
+				fee.setGrantTime(ts);
+				fee.setGrantType(grant_type);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出评审费用excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportJudgeFeeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporJudgeFeeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportGrantFee(Constants.FEE_TYPE.indexOf("评审费发放")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文评审费.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+
+	/**
+	 * 导入答辩费用excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importDefenceFeeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importDefenceFeeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号
+				Teacher teacher=teacherService.getTeacherByTeacherNumber(innerLst.get(2));//教师编号	
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(6)).getTime());
+				int grant_type=Constants.GRANT_TYPE.indexOf(innerLst.get(5));
+
+				fee.setAmount(Float.valueOf(innerLst.get(4)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("答辩费发放"));
+				fee.setStudentId(student.getStudentId());
+				fee.setTeacherId(teacher.getTeacherId());
+				fee.setGrantTime(ts);
+				fee.setGrantType(grant_type);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出答辩费用excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportDefenceFeeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporDefenceFeeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportGrantFee(Constants.FEE_TYPE.indexOf("答辩费发放")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文答辩费.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+
+	/**
+	 * 导入二次评审费用发放excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importSecondeJudgeFeeGrantExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importSecondJudgeFeeGrantExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号
+				Teacher teacher=teacherService.getTeacherByTeacherNumber(innerLst.get(2));//教师编号	
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(6)).getTime());
+				int grant_type=Constants.GRANT_TYPE.indexOf(innerLst.get(5));
+
+				fee.setAmount(Float.valueOf(innerLst.get(4)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("二次评审费发放"));
+				fee.setStudentId(student.getStudentId());
+				fee.setTeacherId(teacher.getTeacherId());
+				fee.setGrantTime(ts);
+				fee.setGrantType(grant_type);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出二次评审费用发放excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportSecondJudgeFeeGrantExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporSecondJudgeFeeGrantExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportGrantFee(Constants.FEE_TYPE.indexOf("二次评审费发放")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文二次评审费发放.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导入二次答辩费用发放excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importSecondDefenceFeeGrantExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importSecondDefenceFeeGrantExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号
+				Teacher teacher=teacherService.getTeacherByTeacherNumber(innerLst.get(2));//教师编号	
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(6)).getTime());
+				int grant_type=Constants.GRANT_TYPE.indexOf(innerLst.get(5));
+
+				fee.setAmount(Float.valueOf(innerLst.get(4)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("二次答辩费发放"));
+				fee.setStudentId(student.getStudentId());
+				fee.setTeacherId(teacher.getTeacherId());
+				fee.setGrantTime(ts);
+				fee.setGrantType(grant_type);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出二次答辩费用发放excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportSecondDefenceFeeGrantExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporSecondDefenceFeeGrantExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportChargeFee(Constants.FEE_TYPE.indexOf("二次答辩费发放")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文二次答辩费发放.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+
+
+	/**
+	 * 导入二次评审费用收取excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importSecondeJudgeFeeChargeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importSecondJudgeFeeChargeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(3)).getTime());
+
+				fee.setAmount(Float.valueOf(innerLst.get(2)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("二次评审费收取"));
+				fee.setStudentId(student.getStudentId());
+				fee.setGrantTime(ts);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出二次评审费用收取excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportSecondJudgeFeeChargeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporSecondJudgeFeeChargeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportGrantFee(Constants.FEE_TYPE.indexOf("二次评审费收取")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文二次评审费收取.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+	/**
+	 * 导入二次答辩费用收取excel
+	 * @author Jerry.Lu
+	 */
+	@RequestMapping(value = "/dean/importSecondDefenceFeeChargeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importSecondDefenceFeeChargeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		response.setContentType("text/html;charset=UTF-8");
+		String result = "";
+		JSONObject jsonobj = new JSONObject();
+		try {   ExcelUtil excel=new ExcelUtil();
+		List<ArrayList<String>> dataLst=excel.
+				importExcel(request, response,"file");//调用静态类ExcelUitl导入EXCEL	
+		Iterator<ArrayList<String>> it = dataLst.iterator();
+		it.next();
+		while (it.hasNext()) {
+
+			ArrayList<String> innerLst = it.next();
+			Fee fee=new Fee();
+			if(!innerLst.get(0).equals("")){
+				Student student=studentService.getStudentByStudentNumber(innerLst.get(0));//学生学号	
+				DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+				format.setLenient(false);
+				Timestamp ts = new Timestamp(format.parse(innerLst.get(3)).getTime());
+
+				fee.setAmount(Float.valueOf(innerLst.get(2)));	
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("二次答辩费收取"));
+				fee.setStudentId(student.getStudentId());
+				fee.setGrantTime(ts);
+				feeService.addFee(fee);
+			}
+		}
+		}
+		catch (Exception e) {
+			e.printStackTrace(); 
+		}
+		result = "导入成功";
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *导出二次答辩费用收取excel
+	 *@author Jerry.Lu
+	 */
+
+	@RequestMapping(value = "/dean/exportSecondDefenceFeeChargeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exporSecondDefenceFeeChargeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+
+		HSSFWorkbook wb =reportService.exportGrantFee(Constants.FEE_TYPE.indexOf("二次答辩费收取")); 
+
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=论文二次答辩费收取.xls");  
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+	}
+
+
+}
+
+

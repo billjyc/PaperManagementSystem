@@ -1,0 +1,232 @@
+package nju.software.manager.student;
+
+import java.io.File;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.List;
+
+import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.Paper;
+import nju.software.entity.Proposal;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.service.AccountService;
+import nju.software.service.PaperService;
+import nju.software.service.ProposalService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.EmailUtil;
+import nju.software.util.FileOperateUtil;
+
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class StudentProposalManager {
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private ProposalService proposalService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	@Autowired
+	private PaperService paperService;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(StudentProposalManager.class);
+	
+	/**
+	 * 开题报告上传后，向导师发送消息
+	 * @param studentId
+	 * @param proposalfile
+	 */
+	private void sendSuggestion(Integer studentId, File proposalfile) {
+		Student sugg_s=studentService.getStudentById(studentId);
+		Teacher sugg_t=teacherService.getTeacherByStudentId(studentId);
+		
+		Validate.notNull(sugg_s);
+		Validate.notNull(sugg_t);
+
+		Suggestion sugg=new Suggestion();
+		sugg.setLevel(0);
+		sugg.setPaperId(0);
+
+		sugg.setReceiverId(accountService.getAccountByAccountname(sugg_t.getTeacherNumber()).getAccountId());
+		sugg.setSuggestContent(sugg_s.getStudentGrade()+"年级"+"学生 "+sugg_s.getStudentName()+"(学号"+sugg_s.getStudentNumber()+")"+"提交开题报告");
+		Timestamp time = new Timestamp(new Date().getTime());
+		sugg.setSuggestTime(time);
+		sugg.setUserId(accountService.getAccountByAccountname(sugg_s.getStudentNumber()).getAccountId());
+		sugg.setSenderName(sugg_s.getStudentName());
+		sugg.setSuggestTitle("学生" + sugg_s.getStudentName() + "提交开题报告");
+
+		try {
+			suggestionService.sendSuggestion(sugg, proposalfile);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 开题报告完成后，向导师发送邮件
+	 * @param studentId
+	 */
+	/*private void sendMailToTeacher(Integer studentId) {
+		Student s = studentService.getStudentById(studentId);
+		Teacher t = teacherService.getTeacherByStudentId(studentId);
+		EmailUtil emailUtil = new EmailUtil();
+		String to = t.getTeacherEmail();
+
+		String subject = s.getStudentGrade() + "年级学生" + s.getStudentName() + "提交开题报告";
+		String content = s.getStudentName() + "提交开题报告" + "<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+		if(!to.isEmpty()){
+			try {
+				emailUtil.sendMail(to, subject, content);
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+	}*/
+	
+	/**
+	 * 提交开题报告
+	 * @param request
+	 * @param actorId
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject submitProposal(HttpServletRequest request, String actorId, Integer studentId) {
+		String result_json = "";
+		Proposal proposal = null;
+		File proposalfile = null;
+		JSONObject jsonobj = new JSONObject();
+
+		FileOperateUtil.getMultipartFile(request, FileOperateUtil.getAbsoluteFileDir(actorId), "Proposal",
+				"submit_proposal_file");
+
+		try {
+			proposalfile = FileOperateUtil
+					.Upload(request, FileOperateUtil.getAbsoluteFileDir(actorId), "Proposal",
+							"submit_proposal_file");
+			Validate.notNull(proposalfile);
+		} catch (Exception e) {
+			LOGGER.error("上传文件为空！", e);
+			result_json = Constants.FAIL;
+			jsonobj.put("result_json", result_json);
+			return jsonobj;
+		}
+		
+		//先在数据库里查询之前该学生又没有提交开题报告
+		proposal = proposalService.getProposalByStudentId(studentId);
+		//如果为空，证明之前没有提交过开题报告，否则，说明之前的开题报告被打回过
+		if(proposal == null){
+			proposal = new Proposal();
+			proposal.setStudentId(studentId);
+			proposal.setProposalAddress(FileOperateUtil.getRelativeFilePath(proposalfile
+					.getAbsolutePath()));
+		} 
+
+		proposal.setStatus(Constants.PROPOSAL_UNCHECKED);
+		try {
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "submit proposal");
+			for(Task task : taskList) {
+				proposalService.saveOrUpdateProposal(proposal);
+				activitiAPIUtils.completeTask(task.getId());
+			}
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = Constants.FAIL;
+		}
+		
+		Paper paper = paperService.getPaperByStudentId(studentId);
+		paper.setPaperState(PaperState.PROPOSAL_UNDER_REVIEW);
+		paperService.updatePaper(paper);
+		
+		//学生向导师发起新的会话
+		sendSuggestion(studentId, proposalfile);
+
+		//向导师发送提醒邮件；
+		//sendMailToTeacher(studentId);
+
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 更新开题报告
+	 * @param request
+	 * @param actorId
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject updateProposal(HttpServletRequest request, String actorId, Integer studentId) {
+		String result_json = "";
+		File proposalfile = null;
+		JSONObject jsonobj = new JSONObject();
+		
+		try {
+			proposalfile = FileOperateUtil
+					.Upload(request, FileOperateUtil.getAbsoluteFileDir(actorId), "Proposal",
+							"update_proposal_file");
+			Validate.notNull(proposalfile);
+		} catch (Exception e) {
+			LOGGER.error("上传开题报告文件为空", e);
+			result_json = Constants.FAIL;
+			jsonobj.put("result_json", result_json);
+			return jsonobj;
+		}
+		
+		Proposal proposal = proposalService.getProposalByStudentId(studentId);
+		proposal.setProposalAddress(FileOperateUtil.getRelativeFilePath(proposalfile
+				.getAbsolutePath()));
+		proposalService.updateProposal(proposal);
+		result_json = Constants.SUCCESS;
+		
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 下载开题报告
+	 * @param response
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject downloadProposal(HttpServletResponse response, Integer studentId) {
+		Proposal proposal = proposalService.getProposalByStudentId(studentId);
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(proposal.getProposalAddress());
+		LOGGER.debug("absolute path: {}", absolutepath);
+
+		String result_json = "";
+		JSONObject jsonobj = new JSONObject();
+		try {
+			FileOperateUtil.Download(response, absolutepath);
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			LOGGER.error("下载开题报告失败！", e);
+			result_json = Constants.FAIL;
+		} finally {
+			jsonobj.put("result_json", result_json);
+		}
+		
+		return jsonobj;
+	}
+}

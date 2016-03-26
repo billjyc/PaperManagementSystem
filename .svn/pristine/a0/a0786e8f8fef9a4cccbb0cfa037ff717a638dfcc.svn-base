@@ -1,0 +1,5 @@
+package nju.software.util.enums;
+
+public enum ActivitiGroup {
+	DEAN, TEACHER, STUDENT, ADMIN, HEADTEACHER, DIRECTOR
+}

@@ -1,0 +1,69 @@
+package nju.software.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import nju.software.dao.InterimReportDAO;
+import nju.software.entity.InterimReport;
+import nju.software.service.InterimReportService;
+import nju.software.util.JbpmAPIUtil;
+
+@Service("interimReportServiceImpl")
+public class InterimReportServiceImpl implements InterimReportService{
+	@Autowired
+	private InterimReportDAO interimReportDao;
+	@Autowired
+	private JbpmAPIUtil jbpmAPIUtil;
+	
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void addInterimReport(InterimReport interimReport, long taskId, String actorId) {
+		interimReportDao.save(interimReport);
+		try {
+			jbpmAPIUtil.completeTask(taskId, null, actorId);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void updateInterimReport(InterimReport interimReport) {
+		interimReportDao.merge(interimReport);
+	}
+
+	public void judgeInterimReport(InterimReport ir,long taskId, Map<String, Object> data, String actorId) {
+		try {
+			interimReportDao.merge(ir);
+			jbpmAPIUtil.completeTask(taskId, data, actorId);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public InterimReport getInterimReportByStudentId(int studentId) {
+		List<InterimReport> interimReports = interimReportDao.findByStudentId(studentId);
+		if (!interimReports.isEmpty()&&interimReports.size()>=1) {
+			return interimReports.get(interimReports.size()-1);
+		} else {
+			return null;
+		}
+	}
+
+	public InterimReport getInterimReportById(int interimReportId) {
+		return interimReportDao.findById(interimReportId);
+	}
+
+	public List<InterimReport> getInterimReportByStatus(int status) {
+		return interimReportDao.findByStatus(status);
+	}
+
+	public List<InterimReport> getInterimReportByStatus(int status, int teacherId) {
+		// TODO Auto-generated method stub
+		return interimReportDao.findByStatus(status,teacherId);
+	}
+
+
+}

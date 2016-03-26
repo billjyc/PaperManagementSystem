@@ -1,0 +1,22 @@
+@CHARSET "UTF-8";
+
+.login_head{height:30px;background:#315479;}
+.login_content{background:url(images/index_bg.png) no-repeat;height:549px;}
+.login_footer{height:56px;background:#315479;text-align:center;color:white;padding:8px 0px;}
+
+.njusoftware{font-size:20px;}
+.side{text-align:center;padding-top:140px;}
+.side-login{margin:0 auto;width:290px;padding:10px 0 0;color:#666;-webkit-border-radius:5px;-moz-border-radius:5px;-o-border-radius:5px;border-radius:5px;}
+.side-login-title{width:268px;padding:0 10px 10px;line-height:22px;font-size:22px;font-weight:bold;text-align:center;color:#333;overflow:hidden;}
+.side-login form{padding:0 10px;}
+.side-login p{margin-top:8px;height:26px;}
+.side-login input{display:inline-block;vertical-align:middle;}
+.side-login-lbl{_display:inline;float:left;margin-right:10px;width:50px;line-height:26px;font-size:12px;text-align:right;cursor:pointer;color:#333;}
+.side-login .s_txt{width:190px;}
+.side-login-rem{float:left;margin-top:7px;padding-right:6px;margin-left:26px;height:14px;line-height:14px;border-right:1px solid #666;}
+.side-login-rem input{_display:inline;float:left;margin:0 6px 0 0;height:14px;}
+.side-login-pwd{_display:inline;float:left;margin-top:5px;margin-left:6px;}
+.side-login-bt{_display:inline;float:right;margin-right:6px;cursor:pointer;background:url(images/3-btn.png) 0 -180px;border:0;}
+.side-login-bt input{width:54px;height:25px;color:#FFF;cursor:pointer;background:0;border:0;}
+.side-login-bt:hover{text-decoration:none;background-position:-59px -180px;}
+.side-login .side-connect{text-align:center;margin:10px 0 0;padding-top:5px;height:30px;line-height:24px;text-indent:5px;color:#666;}

@@ -1,0 +1,868 @@
+package nju.software.controller.dean;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Defence;
+import nju.software.entity.Fee;
+import nju.software.entity.Judge;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Teacher;
+import nju.software.jsonmodel.FinalizedDefenseTask;
+import nju.software.jsonmodel.JsonDefenseAssigned;
+import nju.software.jsonmodel.JsonJudgeAssigned;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.jsonmodel.JsonTeacher;
+import nju.software.jsonmodel.JwCheckPaper;
+import nju.software.manager.dean.DeanPaperManager;
+import nju.software.service.AssignService;
+import nju.software.service.DefenceService;
+import nju.software.service.FeeService;
+import nju.software.service.JudgeService;
+import nju.software.service.PaperService;
+import nju.software.service.ReportService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.ExcelUtil;
+import nju.software.util.JSONUtil;
+import nju.software.util.enums.PaperState;
+import nju.software.web.vo.PaperVO;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教务员论文管理控制类
+ * @author billjyc
+ * @date 2015-3-21
+ */
+@Controller
+public class DeanPaperManagementController {
+	private static Logger logger = LoggerFactory.getLogger(DeanPaperManagementController.class);
+	
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private AssignService assignService;
+	@Autowired
+	private JudgeService judgeService;
+	@Autowired
+	private DefenceService defenceService;
+	@Autowired
+	private FeeService feeService;
+	@Autowired
+	private ReportService reportService;
+	@Autowired
+	private DeanPaperManager deanPaperManager;
+	
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	
+	/**
+	 * 待分配导师列表
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/getassignlist.do")
+	@ResponseBody
+	public void getAssignList(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		List<Student> studentList = null;
+		List<Teacher> teacherList = null;
+		List<JsonStudent> studentlist_j = null;
+		List<JsonTeacher> teacherlist_j = null;
+
+		String result_json = "";
+
+		try{
+			studentList = studentService.getAllStudentsWithOutTeacher();
+			teacherList = teacherService.getInnerTeachers();
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("exception", e);
+			result_json = FAIL;
+		}
+		studentlist_j = jsonUtil.converToJsonStudent(studentList);
+		teacherlist_j = jsonUtil.converToJsonTeacher(teacherList);
+
+		// 前台数据返回块
+		JSONArray studentlist_jsonobj = JSONArray.fromObject(studentlist_j);
+		JSONArray teacherlist_jsonobj = JSONArray.fromObject(teacherlist_j);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("studentlist", studentlist_jsonobj);
+		jsonobj.put("teacherlist", teacherlist_jsonobj);
+
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 分配导师
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping(value = "/dean/assignteacher.do")
+	@ResponseBody
+	public void assignTeacher(HttpServletRequest request, HttpServletResponse response, 
+			@RequestParam("list") String postData) {
+		//获取前端导师分配数据并转换为JSONArray对象
+		JSONArray assignedList = JSONArray.fromObject(postData);
+
+		//获取当前操作者
+		String actorId = request.getSession().getAttribute("actorId").toString();
+		logger.debug("当前操作者：{}", actorId);
+		String result_json = "";
+		try {
+			//遍历分配数据，对每一条记录进行分配操作
+			for (int i = 0; i < assignedList.size(); i++){
+				JSONObject record = JSONObject.fromObject(assignedList.get(i));
+				Integer studentId = record.getInt("studentId");
+				Integer teacherId = record.getInt("teacherId");
+				assignService.addAssignByOne(studentId, teacherId, actorId);	
+				deanPaperManager.sendAssignTutorSuggestion(studentId, teacherId, actorId);
+			}
+			result_json = SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		//将结果以JSONObject传回前端
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 获取已分配导师的学生列表，分页
+	 * @author Jason
+	 */
+	@SuppressWarnings("unchecked")
+	@RequestMapping(value = "/dean/tutorassignedlist.do")
+	public void getTutorAssigned(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("page") String pageS, @RequestParam("rows") String rowsS, 
+			@RequestParam("sidx") String sidx, @RequestParam("sord") String sord) {
+
+		int page = (pageS == null) ? 0 : Integer.parseInt(pageS);
+		int limit = (rowsS == null) ? 1000 : Integer.parseInt(rowsS);
+
+		HashMap<String, Object> params= new HashMap<String, Object>();
+		params.put("page", page);
+		params.put("limit", limit);
+		params.put("sidx", sidx);
+		params.put("sord", sord);
+
+		List<Object> result = studentService.getAllStudentsWithTeacherLimit(params);
+		List<Student> studentList = (List<Student>)result.get(0);
+		HashMap<String,Object> limits = (HashMap<String,Object>)result.get(1);
+
+		List<JsonStudent> studentList_j = jsonUtil.converToJsonStudent(studentList);
+		for(JsonStudent s : studentList_j){		//设置指导老师姓名
+			String tutorName = teacherService.getTeacherById(s.getTeacherId()).getTeacherName();
+			logger.debug("tutorName: {}", tutorName);
+			s.setTeacherName(tutorName);
+		}
+		JSONArray studentList_jsonobj = JSONArray.fromObject(studentList_j);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", studentList_jsonobj);
+		jsonobj.put("page", limits.get("page"));
+		jsonobj.put("total_pages", limits.get("total_pages"));
+		jsonobj.put("records", limits.get("count"));
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 查看待检队列，分页
+	 */
+	@RequestMapping(value = "/dean/checklist.do")
+	@ResponseBody
+	public void  getCheckList(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		List<JwCheckPaper> checklist = new ArrayList<JwCheckPaper>();
+		List<PaperVO> paperList = new ArrayList<PaperVO>();
+
+		String actorId = (String) request.getSession().getAttribute("actorId");
+		List<Task> taskList = activitiAPIUtils.getTaskListByUserIdAndName(actorId, "Detection");
+		for(Task task : taskList) {
+			//由于该任务没有分配给用户，首先签收该任务
+			activitiAPIUtils.claimTask(task.getId(), actorId);
+		}
+		
+		List<Task> taskList2 = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Detection");
+		for(Task task : taskList2) {
+			ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+			PaperVO paperVO = null;
+			if (processInstance != null) {
+				int studentId =  (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+				Student student = studentService.getStudentById(studentId);
+				Paper paper = paperService.getPaperByStudentId(studentId);
+				paperVO = convertToPaperVO(student, paper);
+				paperVO.setTaskId(Long.parseLong(task.getId()));
+
+				paperList.add(paperVO);
+				checklist.add(JwCheckPaper.toJwCheckPaper(paper,student,Long.parseLong(task.getId())));
+			}
+		}
+
+		JSONArray jsonlist = JSONArray.fromObject(checklist);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/** 
+	 * 判定重复率检测结果
+	 * @author Jason
+	 */
+	@RequestMapping(value = "/dean/deciderepetition.do")
+	@ResponseBody
+	public void  decideRepetition(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, 
+			@RequestParam("paperstr") String paperstr) {
+
+		JSONObject paper_json = JSONObject.fromObject(paperstr);
+		Integer paperId = paper_json.getInt("paperId");	//论文ID主键
+		long taskId = paper_json.getLong("taskId");	//论文任务ID
+		String detection = paper_json.getString("detection");	//论文重复率决议，通过或不通过
+
+		boolean isDetectionPassed = false;
+		Paper paper = paperService.getPaperByPaperId(paperId);
+		if("true".equals(detection)){
+			isDetectionPassed = true;
+			paper.setPaperState(PaperState.DETECTION_PASSED);
+		}else{
+			paper.setPaperState(PaperState.UNCOMMITED);
+		}
+		//获取actorId
+		HttpSession session = request.getSession();
+		String actorId = (String) session.getAttribute("actorId");
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("detection", isDetectionPassed);
+
+		String result_json = "";
+		try{
+			paperService.updatePaper(paper);
+			activitiAPIUtils.completeTask(String.valueOf(taskId), data);
+			deanPaperManager.sendAfterDetectionSuggestion(paper, actorId);
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得待评审分配队列
+	 * @author wsd
+	 * */
+	@RequestMapping(value = "/dean/assignjudgelist.do")
+	@ResponseBody
+	public void getJudgeAssignList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		List<JsonStudent> studentList = new ArrayList<JsonStudent>();//待分配评审的学生list
+		List<JsonTeacher> innerJsonList = new ArrayList<JsonTeacher>();//待分配评审的内审老师list
+		List<JsonTeacher> outerJsonList = new ArrayList<JsonTeacher>();//待分配的外审老师list
+
+		//获得分配评审的列表
+		List<Task> taskList = activitiAPIUtils.getTaskListByUserIdAndName(actorId, "Assign Review");
+		for(Task task : taskList) {
+			//由于该任务没有分配给用户，首先签收该任务
+			activitiAPIUtils.claimTask(task.getId(), actorId);
+		}
+		
+		List<Task> taskList2 = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Assign Review");
+		try{
+			for(Task task : taskList2) {
+				ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+
+				if(processInstance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+					Student student = studentService.getStudentById(studentId);
+					studentList.add(new JsonStudent(student));
+				}
+			}
+			List<Teacher> innerTeacherList = teacherService.getInnerTeachers();
+			List<Teacher> outerTeacherList = teacherService.getOuterTeachers();
+			for(Teacher innerTeacher : innerTeacherList){
+				innerJsonList.add(new JsonTeacher(innerTeacher));
+			}
+
+			for(Teacher outerTeacher : outerTeacherList){
+				outerJsonList.add(new JsonTeacher(outerTeacher));
+			}
+			result_json = SUCCESS;
+		} catch(IllegalArgumentException ie) {
+			logger.error("没有“分配评审”的任务！", ie);
+			result_json = FAIL;
+		} catch(Exception e){
+			logger.error("exception!", e);
+			result_json = FAIL;
+		}
+		result_json = SUCCESS;
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("studentlist", studentList);
+		jsonobj.put("innerlist", innerJsonList);
+		jsonobj.put("outerlist", outerJsonList);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 提交评审分配
+	 */
+	@RequestMapping(value = "/dean/assignjudge.do")
+	@ResponseBody
+	public void assignJudge(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("list") String liststr, @RequestParam("time") String time) {
+		String actorId = (String)request.getSession().getAttribute("actorId");
+
+		JSONArray list = JSONArray.fromObject(liststr);
+
+		String result_json = "";
+		try{
+			for (int i = 0; i < list.size(); i++){
+				JSONObject record = JSONObject.fromObject(list.get(i));
+				Integer studentId = record.getInt("studentId");
+				String studentNumber = record.getString("studentNumber");
+				Integer innerId = record.getInt("innerId");
+				Integer outerId = record.getInt("outerId");
+
+				Timestamp deadline = Timestamp.valueOf(time); 
+
+				List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Assign Review");
+				for(Task task : taskList) {
+					ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+					String num = (String) activitiAPIUtils.getVariable(instance.getId(), "student");
+					if(studentNumber.equals(num)){	
+						assignService.addJudgeByOne(studentId, innerId, outerId, deadline);
+
+						Teacher inTeacher = teacherService.getTeacherById(innerId);
+						Teacher outTeacher = teacherService.getTeacherById(outerId);
+
+						Map<String, Object> reviewteachers = new HashMap<String, Object>();
+						reviewteachers.put("reviewteacher1", inTeacher.getTeacherNumber());
+						reviewteachers.put("reviewteacher2", outTeacher.getTeacherNumber());
+						reviewteachers.put("internalReview", null);
+						reviewteachers.put("externalReview", null);
+						activitiAPIUtils.completeTask(task.getId(), reviewteachers);
+
+						//设置论文状态
+						Paper paper = paperService.getPaperByStudentId(studentId);
+						paper.setPaperState(PaperState.JUDGE_READY);
+						paperService.updatePaper(paper);
+						//发送会话
+						deanPaperManager.sendAfterAssignJudgeSuggestion(studentId, innerId, outerId, actorId, paper.getPaperId());
+						break;
+					}
+				}
+				//发送提醒邮件
+				/*
+				EmailService emailService=new EmailService();
+				String to1=teacherService.getTeacherById(innerId).getTeacherEmail();
+				String to2=teacherService.getTeacherById(outerId).getTeacherEmail();
+				String subject="评审："+studentService.getStudentById(studentId).getStudentName()+"_"+paperService.getPaperByStudentId(studentId).getPaperTitle();
+				String content1="尊敬的"+teacherService.getTeacherById(innerId).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您评审，并在截止时间之前提交评审意见";
+				String content2="尊敬的"+teacherService.getTeacherById(outerId).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您评审，并在截止时间之前提交评审意见";
+				List<File> attachmentfiles=new ArrayList<File>() ;
+				File f=new File(paperService.getPaperByStudentId(studentId).getPaperAddress());
+				attachmentfiles.add(f);
+				try {
+					emailService.sendMailAttach(to1, subject, content1,attachmentfiles);
+					emailService.sendMailAttach(to2, subject, content2,attachmentfiles);
+				} catch (MessagingException e) {
+					e.printStackTrace();
+				}
+				 */
+				result_json = SUCCESS;
+			}
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取已分配评审的学生列表
+	 */
+	@RequestMapping(value = "/dean/judgeassignedlist.do")
+	public void getJudgeAssigned(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		logger.info("查看已分配评审列表");
+		List<JsonJudgeAssigned> jsonList = new ArrayList<JsonJudgeAssigned>();
+
+		String result_json = "";
+		try{
+			List<Paper> paperList = paperService.getPapersByState(PaperState.JUDGE_READY);
+			for (Paper paper : paperList){
+				//获取内外审老师、学生、论文的信息
+				List<Judge> judgeList = judgeService.findJudgeByPaperId(paper.getPaperId());
+				Teacher t1 = teacherService.getTeacherById(judgeList.get(0).getTeacherId());
+				Teacher t2 = teacherService.getTeacherById(judgeList.get(1).getTeacherId());
+				Teacher inner = null;
+				Teacher outer = null;
+				if(t1.getTeacherClasses().equals(Constants.INNERTEACHER)){
+					inner = t1;
+					outer = t2;
+				}else{
+					inner = t2;
+					outer = t1;
+				}
+				Student student = studentService.getStudentById(paper.getStudentId());
+				jsonList.add(JsonJudgeAssigned.convertPaper(paper,inner,outer,student));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+		JSONArray list = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *  待答辩分配列表
+	 *  @author Jason
+	 */
+	@RequestMapping(value = "/dean/assigndefenselist.do")
+	@ResponseBody
+	public void getAssignDefenseList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		List<JsonStudent> studentList = new ArrayList<JsonStudent>();
+		List<JsonTeacher> teacherList = new ArrayList<JsonTeacher>();
+
+		List<Task> taskList = activitiAPIUtils.getTaskListByGroupIdAndName("dean", "Assign Defense");
+		for(Task task : taskList) {
+			//由于该任务没有分配给用户，首先签收该任务
+			activitiAPIUtils.claimTask(task.getId(), actorId);
+		}
+		
+		List<Task> taskList2 = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Assign Defense");
+		try{
+			for(Task task : taskList2) {
+				activitiAPIUtils.claimTask(task.getId(), actorId);
+				ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+
+				if(processInstance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(processInstance.getId(), "studentId");
+					Student student = studentService.getStudentById(studentId);
+					studentList.add(new JsonStudent(student));
+				}
+			}
+			List<Teacher> teachers = teacherService.getAllTeachers();
+			for(Teacher teacher : teachers){
+				teacherList.add(new JsonTeacher(teacher));
+			}
+
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonobj.put("studentlist", studentList);
+		jsonobj.put("teacherlist", teacherList);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *  提交答辩分配
+	 *  @author Jason
+	 */
+	@RequestMapping(value = "/dean/assigndefense.do")
+	public void assignDefense(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("list") String liststr, @RequestParam("time") String time,
+			@RequestParam("address") String address) {
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		JSONArray list = JSONArray.fromObject(liststr);
+
+		String result_json = "";
+		try{
+			for (int i = 0; i < list.size(); i++){
+				JSONObject record = JSONObject.fromObject(list.get(i));
+				Integer studentId = record.getInt("studentId");
+				String studentNumber = record.getString("studentNumber");
+				Integer teacher1Id = record.getInt("teacher1Id");
+				Integer teacher2Id = record.getInt("teacher2Id");
+				Integer teacher3Id = record.getInt("teacher3Id");
+				Integer secretaryId = record.getInt("secretaryId");
+
+				Timestamp defenceTime = Timestamp.valueOf(time); 
+
+				List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Assign Defense");
+				for(Task task : taskList) {
+					ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+					//属于此流程实例的学生学号
+					String num = (String) activitiAPIUtils.getVariable(processInstance.getId(), "student");
+					if(studentNumber.equals(num)){	
+						assignService.addDefenceByOne(studentId, teacher1Id, teacher2Id, teacher3Id, 
+								secretaryId, address, defenceTime);
+
+						//添加用户
+						Teacher teacher1 = teacherService.getTeacherById(teacher1Id);
+						Teacher teacher2 = teacherService.getTeacherById(teacher2Id);
+						Teacher teacher3 = teacherService.getTeacherById(teacher3Id);
+						Teacher secretary = teacherService.getTeacherById(secretaryId);
+
+						List<String> teachers = new ArrayList<String>();
+						teachers.add(teacher1.getTeacherNumber());
+						teachers.add(teacher2.getTeacherNumber());
+						teachers.add(teacher3.getTeacherNumber());
+
+						Map<String, Object> defenceteachers = new HashMap<String, Object>();
+
+						defenceteachers.put("defensesecretary",secretary.getTeacherNumber());
+						defenceteachers.put("reprieveApproved", 0);
+						defenceteachers.put("teachers", teachers);
+
+						activitiAPIUtils.completeTask(task.getId(), defenceteachers);
+						
+					}
+				}
+				
+				Paper paper = paperService.getPaperByStudentId(studentId);
+				paper.setPaperState(PaperState.DEFENSE_READY);
+				paperService.updatePaper(paper);
+				//发送提醒邮件；
+				/*
+				EmailService emailService=new EmailService();
+				String to1=teacherService.getTeacherById(teacher1Id).getTeacherEmail();
+				String to2=teacherService.getTeacherById(teacher2Id).getTeacherEmail();
+				String to3=teacherService.getTeacherById(teacher3Id).getTeacherEmail();
+				String to4=teacherService.getTeacherById(secretaryId).getTeacherEmail();
+				String subject="答辩："+studentService.getStudentById(studentId).getStudentName()+"_"+paperService.getPaperByStudentId(studentId).getPaperTitle();
+				String content1="<p>尊敬的"+teacherService.getTeacherById(teacher1Id).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				String content2="<p>尊敬的"+teacherService.getTeacherById(teacher2Id).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				String content3="<p>尊敬的"+teacherService.getTeacherById(teacher3Id).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+				String content4="<p>尊敬的"+teacherService.getTeacherById(secretaryId).getTeacherName()+" 老师，您好！附件是"+studentService.getStudentById(studentId).getStudentName()+"的论文，请您参加该同学的论文答辩，答辩时间为"+defenceTime+"，地点为"+address+"</p>"
+						+"<p><a href='http://localhost:8080/papermanagement'>论文管理系统</a></p>";
+
+				List<File> attachmentfiles=new ArrayList<File>() ;
+				File f=new File(paperService.getPaperByStudentId(studentId).getPaperAddress());
+				attachmentfiles.add(f);
+
+
+				try{
+					emailService.sendMailAttach(to1, subject, content1,attachmentfiles);
+					emailService.sendMailAttach(to2, subject, content2,attachmentfiles);
+					emailService.sendMailAttach(to3, subject, content3,attachmentfiles);
+					emailService.sendMailAttach(to4, subject, content4,attachmentfiles);
+				}catch(MessagingException e){
+
+				}
+
+				 */
+				result_json = SUCCESS;
+			}
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获取已分配答辩的学生列表
+	 */
+	@RequestMapping(value = "/dean/defenseassignedlist.do")
+	public void getDefenseAssigned(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		List<JsonDefenseAssigned> jsonList = new ArrayList<JsonDefenseAssigned>();
+
+		String result_json = "";
+		try{
+			List<Paper> paperList = paperService.getPapersByState(PaperState.DEFENSE_READY);
+			for (Paper paper : paperList){
+				System.out.println(paper.getPaperTitle());
+				List<Defence> defenceList = defenceService.findDefenceByPaperId(paper.getPaperId());
+				Teacher[] teachers = new Teacher[4];
+				for(Defence d : defenceList){
+					int index = d.getTeacherType() - 1;
+					teachers[index] = teacherService.getTeacherById(d.getTeacherId());
+				}
+				Student student = studentService.getStudentById(paper.getStudentId());
+				jsonList.add(new JsonDefenseAssigned(paper, teachers[0],teachers[1],teachers[2],teachers[3], student));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+		JSONArray list = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 *  答辩后定稿列表
+	 *  @author Jason
+	 */
+	@RequestMapping(value = "/dean/afterdefencelist.do")
+	public void getAfterDefenceList(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model){
+		String result_json = "";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		List<FinalizedDefenseTask> list = new ArrayList<FinalizedDefenseTask>();
+
+		List<Task> taskList = activitiAPIUtils.getTaskListByGroupIdAndName("dean", "Print Papers");
+		for(Task task : taskList) {
+			//由于该任务没有分配给用户，首先签收该任务
+			activitiAPIUtils.claimTask(task.getId(), actorId);
+		}
+		
+		List<Task> taskList2 = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Print Papers");
+		try{
+			for(Task task : taskList2) {
+				ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+				if(instance != null) {
+					int studentId = (Integer) activitiAPIUtils.getVariable(instance.getId(), "studentId");
+					Paper paper = paperService.getPaperByStudentId(studentId);
+					Student student = studentService.getStudentById(paper.getStudentId());
+					Teacher teacher = teacherService.getTeacherById(student.getTeacherId());
+					list.add(FinalizedDefenseTask.toFinalizedDefenseTask(student, paper, teacher, Long.parseLong(task.getId())));
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", list);
+		jsonobj.put("result_json", result_json);
+		logger.debug("jsonobj: {}", jsonobj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 学位申请
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = "/dean/applydegree.do")
+	public void applydegree(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model, 
+			@RequestParam("list") String liststr) {
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		JSONArray list = JSONArray.fromObject(liststr);
+
+		String result_json = "";
+
+		for (int i = 0; i < list.size(); i++){
+			JSONObject record = JSONObject.fromObject(list.get(i));
+			Integer studentId = record.getInt("studentId");
+			String studentNumber = record.getString("studentNumber");
+			Integer teacherId = record.getInt("teacherId");
+			String teacherNumber = record.getString("teacherNumber");
+			String paperId = record.getString("paperId");
+			
+			Long taskId = record.getLong("taskId");
+			
+			activitiAPIUtils.completeTask(String.valueOf(taskId));
+
+			result_json = SUCCESS;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	private PaperVO convertToPaperVO(Student student, Paper paper) {
+		PaperVO paperVO = new PaperVO();
+		paperVO.setPaperId(paper.getPaperId());
+		paperVO.setPaperTitle(paper.getPaperTitle());
+		paperVO.setStudentName(student.getStudentName());
+		return paperVO;
+	}
+	
+	/**
+	 * 导入评审excel
+	 */
+	@RequestMapping(value = "/dean/importAssignExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importAssignExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model)  {
+		String result = "";
+		response.setContentType("text/html;charset=UTF-8");
+		try {
+			ExcelUtil excel=new ExcelUtil();
+			List<ArrayList<String>> dataLst = excel.importExcel(
+					request, response, "file");
+			int total=excel.getTotalRows();
+
+			Iterator<ArrayList<String>> it = dataLst.iterator();
+			it.next();
+			float i=(float) 0.0;
+			while (it.hasNext()) {
+				i++;
+				String actorId = request.getSession().getAttribute("actorId").toString();
+				ArrayList<String> innerLst = it.next();
+				request.getSession().setAttribute("value", (int)((i/total)*100));
+				request.getSession().setAttribute("name", innerLst.get(1));
+				result = innerLst.get(0)+"不存在";
+				Student student = studentService.getStudentByStudentNumber(innerLst.get(0));
+				Teacher realTeacher = teacherService.getTeacherByTeacherName(innerLst.get(2));
+				if (!innerLst.get(3).equals("")) {
+					Teacher nominalTeacher = teacherService
+							.getTeacherByTeacherName(innerLst.get(3));
+					assignService.addAssignByOne(student.getStudentId(),
+							realTeacher.getTeacherId(),
+							nominalTeacher.getTeacherId(), actorId);
+				} else
+					assignService.addAssignByOne(student.getStudentId(),
+							realTeacher.getTeacherId(), actorId);
+				result = "导入成功";
+			}
+
+		}catch(Exception e) {
+			result =result+"请输入正确的文件";
+			e.printStackTrace();
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	/**
+	 * 导入评审费用
+	 */
+	@RequestMapping(value = "/dean/importFeeOFJudgeExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void importFeeOfJudgeExcel(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model)  {
+		String result="";
+		String actorId = (String)request.getSession().getAttribute("actorId");
+		response.setContentType("text/html;charset=UTF-8");
+		try{
+			List<ArrayList<String>> dataLst=new ExcelUtil().importExcel(request, response,"file");
+			Iterator<ArrayList<String>> it=dataLst.iterator();
+			it.next();
+			while(it.hasNext())
+			{ 
+				ArrayList<String> innerLst=it.next();
+				Fee fee=new Fee();
+				String studentNumber=innerLst.get(0);
+				int studentID=studentService.getStudentByStudentNumber(studentNumber).getStudentId();
+				fee.setStudentId(studentID);
+				int teacherID=teacherService.getTeacherByTeacherName(innerLst.get(2)).getTeacherId();
+				fee.setTeacherId(teacherID);
+				fee.setAmount(Float.parseFloat(innerLst.get(3)));
+				fee.setGrantType(Constants.GRANT_TYPE.indexOf(innerLst.get(4)));
+				fee.setFeeType(Constants.FEE_TYPE.indexOf("评审费"));
+
+				fee.setGrantTime(Timestamp.valueOf(innerLst.get(5)));
+				feeService.addFee(fee);
+				/*List<Task> taskList = activitiAPIUtils.getTaskListByGroupIdAndName("dean", "Assign Review");
+				for(Task task : taskList) {
+					ProcessInstance processInstance = activitiAPIUtils.getProcessInstance(task.getId());
+					//属于此流程实例的学生学号
+					String num = (String) activitiAPIUtils.getVariable(processInstance.getId(), "student");
+					if(studentNumber.equals(num)){	
+						assignService.addJudgeByOne(studentID, teacherID, 0, null);
+						activitiAPIUtils.completeTask(task.getId());
+					}else{
+						result="学生" + studentNumber + "不能参加评审";
+					}
+				}*/
+			}
+			result="导入成功";
+		}catch(Exception e) {
+			if(result!=null)  result="请输入正确的文件,格式依照本页教师列表";
+			e.printStackTrace();
+		}	   
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result", result);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+	
+	@RequestMapping(value = "/dean/exportThree_OneExcel.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void exportThreeExcel(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		List<Student>  studentlst = new ArrayList<Student>()  ;
+		String liststr = request.getParameter("list").toString();
+		JSONArray list = JSONArray.fromObject(liststr);
+		System.out.println(list);
+		for (int i = 0; i < list.size(); i++){
+			JSONObject record = JSONObject.fromObject(list.get(i));
+			String studentNumber = record.getString("studentNumber");
+			studentlst.add(studentService.getStudentByStudentNumber(studentNumber)) ;
+		}
+
+		HSSFWorkbook wb =reportService.exportThreeAndOne(studentlst); 
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");  
+		response.setHeader("Content-disposition", "attachment;filename=studentScore.xls");  
+
+		OutputStream ouputStream;
+		try {
+			ouputStream = response.getOutputStream();
+			wb.write(ouputStream);  
+			ouputStream.flush();  
+			ouputStream.close();  
+		}catch(IOException e) {
+			e.printStackTrace();
+		}  
+	}
+}

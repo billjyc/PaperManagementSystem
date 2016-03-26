@@ -1,0 +1,176 @@
+<%@ page language="java" import="java.util.*" pageEncoding="utf-8"%>
+<div class="left_bar">
+<!--    	<div class="welcome">欢迎你，教师！</div> -->
+  	<dl class="sidebar">
+  		<dd class="on"><a href="javascript:void(0);" onclick="select(this);"><span class="person_info"></span>指导学生信息<b id="studentInfo"></b></a></dd>
+  		<dd>
+  			<div><a href="javascript:void(0);" onclick="select(this);"><span class="paper_info"></span>论文列表</a></div>
+  			<ul class="sidebar2" id="menu1">
+  				
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待审开题报告<b id="uncheckedProposal"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>已通过开题报告<b id="passedProposal"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待审中期检查<b id="uncheckedInterim"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>已通过中期检查<b id="passedInterim"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>所有论文<b id="allThesis"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待初步定稿<b id="firstCheck"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待答辩前定稿<b id="beforeDefense"></b></a></li>
+				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待暂缓通过后定稿<b id="reprieveList"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待答辩后定稿<b id="defenseFinalized"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>已归档<b id="completePaper"></b></a></li>
+  			</ul>
+  		</dd>
+  		<dd>
+  			<div><a href="javascript:void(0);" onclick="select(this);"><span class="email_info"></span>消息处理</a></div>
+  			<ul class="sidebar2" id="menu2">
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>发起会话</a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>待回复列表<b id="needReply"></b></a></li>
+  				<li><a href="javascript:void(0);" onclick="select(this);"><span class="child_info"></span>已发送列表<b id="sendList"></b></a></li>
+ 			</ul>
+		</dd>
+		<dd><a href="javascript:void(0);" onclick="select(this);"><span class="record_info"></span>交互日志<b id="inbox"></b></a></dd>
+  	</dl>
+  	<!--  
+  	<div>
+  	<header class="nav-header" >
+	   <h3>Status</h3>
+	                    </header>
+		                <table id="chartableStats" class="table-condensed">
+		                    <thead>
+		                        <tr>
+		                            <th scope="col"></th>
+		                            <th scope="col"></th>
+		                        </tr>
+		                    </thead>
+		                    <tbody>
+		                       <tr>
+		                            <th scope="row" style="color: #1751A7"># of state</th>
+		                            <td id="responseState"></td>
+		                        </tr>
+		                        <tr>
+		                            <th scope="row" style="color: #1751A7"># of Callbacks</th>
+		                            <td id="numberOfCallbackInvocations"></td>
+		                        </tr>
+		                        <tr>
+		                            <th scope="row" style="color: #8AA717"># Tweets</th>
+		                            <td id="numberOfTweets"></td>
+		                        </tr>
+		                        <tr>
+		                            <th scope="row" style="color: #A74217"># Errors</th>
+		                            <td id="numberOfErrors"></td>
+		                        </tr>
+		                    </tbody>
+		                </table>
+  	</div>
+  	
+  	-->
+</div>
+<script type="text/javascript">  
+	function select(e){
+		$(".sidebar dd").removeClass('on');
+		$(".sidebar dd div").removeClass('on');
+		$(".sidebar2 li").removeClass('on');
+		$(e).parent().addClass('on');
+		$(e).parent().parent().parent("dd").children("div").addClass('on');
+		var firstchild_parent=$(e).parent().parent("dd").children("ul");
+		if(firstchild_parent)
+		  firstchild_parent.children().first().addClass('on');
+	  }
+	
+	
+    var socket = $.atmosphere;
+
+    function handleAtmosphere( transport ) {
+ //      alert("transport");
+        var asyncHttpStatistics = {
+                transportType: 'N/A',
+                responseState: 'N/A',
+                numberOfCallbackInvocations: 0,
+                numberOfTweets: 0,
+                numberOfErrors: 0               
+            };
+        
+        function refresh(data) {           
+            $('#responseState').html(asyncHttpStatistics.responseState);
+            $('#numberOfCallbackInvocations').html(asyncHttpStatistics.numberOfCallbackInvocations);
+            $('#numberOfTweets').html(asyncHttpStatistics.numberOfTweets);
+            $('#numberOfErrors').html(asyncHttpStatistics.numberOfErrors);
+            $('#studentInfo').html(data.studentInfo);        
+	        $('#uncheckedProposal').html(data.uncheckedProposal);
+	        $('#passedProposal').html(data.passedProposal);
+	        $('#uncheckedInterim').html(data.uncheckedInterim);
+	        $('#passedInterim').html(data.passedInterim);
+	        $('#allThesis').html(data.allThesis);
+	        $('#firstCheck').html(data.firstCheck);
+	        $('#beforeDefense').html(data.beforeDefense);
+	        $('#reprieveList').html(data.reprieveList);
+	        $('#defenseFinalized').html(data.defenseFinalized);	
+	        $('#completePaper').html(data.completePaper);	          
+	        $('#needReply').html(data.needReply);
+	        $('#sendList').html(data.sendList);
+	        $('#inbox').html(data.inbox);
+	       
+        }
+        
+        var request = new $.atmosphere.AtmosphereRequest();
+        request.transport = transport;
+        request.url = "../getMsg.do";
+        request.contentType = "application/json";
+        request.method="POST";
+        request.fallbackTransport = null;
+        
+        request.onMessage = function(response){
+            buildTemplate(response);
+        };
+
+        request.onMessagePublished = function(response){
+
+        };
+
+        request.onOpen = function() { $.atmosphere.log('info', ['socket open']); };
+        request.onError =  function() { $.atmosphere.log('info', ['socket error']); };
+        request.onReconnect =  function() { $.atmosphere.log('info', ['socket reconnect']); };
+
+        var subSocket = socket.subscribe(request);
+        
+        function buildTemplate(response){
+        	asyncHttpStatistics.numberOfCallbackInvocations++;
+            asyncHttpStatistics.transportType = response.transport;
+            asyncHttpStatistics.responseState = response.state;
+
+            $.atmosphere.log('info', ["response.state: " + response.state]);
+            $.atmosphere.log('info', ["response.transport: " + response.transport]);
+            $.atmosphere.log('info', ["response.responseBody: " + response.responseBody]);
+            
+ //           alert(response.state);
+            if(response.state == "messageReceived"){
+            
+         	var data = response.responseBody;
+
+             if (data) {
+
+                 try {	
+                     asyncHttpStatistics.responseState=data;
+                     var result =  $.parseJSON(data);
+                     refresh(result);	
+                     asyncHttpStatistics.numberOfTweets = asyncHttpStatistics.numberOfTweets+1;	
+                 } catch (error) {
+                     asyncHttpStatistics.numberOfErrors++;
+                     console.log("An error ocurred: " + error);
+                 }
+             } else {
+                 console.log("response.responseBody is null - ignoring.");
+             }
+
+         	
+        	}
+        }
+    }
+
+ //   handleAtmosphere("streaming");
+    
+    $(function() {
+        handleAtmosphere('long-polling');
+    });
+	
+	
+</script>

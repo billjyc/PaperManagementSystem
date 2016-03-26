@@ -1,0 +1,182 @@
+package nju.software.manager.dean;
+
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.service.AccountService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DeanPaperManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(DeanPaperManager.class);
+	
+	/**
+	 * 分配导师后向老师和学生发送会话
+	 * @param studentId
+	 * @param teacherId
+	 * @param deanNumber 教务员教师号
+	 */
+	public void sendAssignTutorSuggestion(Integer studentId, Integer teacherId, String deanNumber) {
+		Student s = studentService.getStudentById(studentId);
+		Teacher t = teacherService.getTeacherById(teacherId);
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title_student = "导师分配已完成";
+		String title_teacher = "导师分配已完成";
+		String content_student = "你已被分配到导师" + t.getTeacherName() + "处进行毕业论文工作，" 
+				+ "请提交开题报告。";
+		String content_teacher = "学生" + s.getStudentName() + "(学号" + 
+				s.getStudentNumber() + ")已被分配给你进行毕业论文的指导。";
+		
+		sendSuggestion(s.getStudentNumber(), deanNumber, title_student, content_student, 0);
+		sendSuggestion(t.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+ 	}
+	
+	/**
+	 * 重复率检查后发送会话
+	 * @param paper
+	 */
+	public void sendAfterDetectionSuggestion(Paper paper, String deanNumber) {
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher t = teacherService.getTeacherById(s.getTeacherId());
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title_student = "";
+		String title_teacher = "";
+		String content_student = "";
+		String content_teacher = "";
+		
+		if(paper.getPaperState() == PaperState.DETECTION_PASSED) {
+			title_student = "论文通过重复率检测";
+			title_teacher = "学生" + s.getStudentName() + "的论文通过重复率检测";
+			content_student = "你的论文已经通过重复率检测，请等待教务员分配评审老师";
+			content_teacher = "您的学生" + s.getStudentName() + "（学号" + s.getStudentNumber() + 
+					"）的论文已经通过重复率检测，请等待教务员分配评审老师";
+		} else if (paper.getPaperState() == PaperState.UNCOMMITED){
+			title_student = "论文未通过重复率检测";
+			title_teacher = "学生" + s.getStudentName() + "的论文未通过重复率检测";
+			content_student = "你的论文没有通过重复率检测，请修改论文后重新提交";
+			content_teacher = "您的学生" + s.getStudentName() + "（学号" + s.getStudentNumber() + 
+					"）的论文没有通过重复率检测，请等待学生重新提交论文";
+		} else {
+			return;
+		}
+		
+		sendSuggestion(s.getStudentNumber(), deanNumber, title_student, content_student, 0);
+		sendSuggestion(t.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+	}
+	
+	/**
+	 * 分配评审完成后会话
+	 * @param studentId
+	 * @param innerId	内部教师id
+	 * @param outerId	外部教师id
+	 * @param deanNumber
+	 */
+	public void sendAfterAssignJudgeSuggestion(Integer studentId, Integer innerId, 
+			Integer outerId, String deanNumber, Integer paperId) {
+		Student s = studentService.getStudentById(studentId);
+		Teacher innerTeacher = teacherService.getTeacherById(innerId);
+		Teacher outTeacher = teacherService.getTeacherById(outerId);
+		
+		Validate.notNull(s);
+		Validate.notNull(innerTeacher);
+		Validate.notNull(outTeacher);
+		
+		String title_student = "评审老师分配完成";
+		String title_teacher = "您被分配进行学生" + s.getStudentName() + "的论文评审工作";
+		String content_student = "你的论文已经被分配评审，请耐心等待评审结果";
+		String content_teacher = "您已被分配进行学生" + s.getStudentName() + "的论文评审工作" + 
+				"请尽快完成并给出结果";
+		
+		sendSuggestion(s.getStudentNumber(), deanNumber, title_student, content_student, 0);
+		sendSuggestion(innerTeacher.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+		sendSuggestion(outTeacher.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+	}
+	
+	/**
+	 * 分配答辩后会话
+	 * @param teacher1Id
+	 * @param teacher2Id
+	 * @param teacher3Id
+	 * @param studentId
+	 * @param secretaryId 答辩秘书id
+	 */
+	public void sendAfterAssignDefenseSuggestion(Integer teacher1Id, Integer teacher2Id, Integer teacher3Id, 
+			Integer studentId, Integer secretaryId, String deanNumber) {
+		Student s = studentService.getStudentById(studentId);
+		Teacher teacher1 = teacherService.getTeacherById(teacher1Id);
+		Teacher teacher2 = teacherService.getTeacherById(teacher2Id);
+		Teacher teacher3 = teacherService.getTeacherById(teacher3Id);
+		Teacher secretary = teacherService.getTeacherById(secretaryId);
+		
+		Validate.notNull(s);
+		Validate.notNull(teacher1);
+		Validate.notNull(teacher2);
+		Validate.notNull(teacher3);
+		Validate.notNull(secretary);
+		
+		String title_student = "论文已分配答辩";
+		String title_teacher = "您已被分配参与学生" + s.getStudentName() + "的论文答辩";
+		String content_student = "你的论文已经被分配答辩老师\n"
+				+ "答辩老师：" + teacher1.getTeacherName() + ", " 
+				+ teacher2.getTeacherName() + ", " + teacher3.getTeacherName() + "\n"
+				+ "答辩秘书：" + secretary.getTeacherName();
+		String content_teacher = "您已被分配参与学生" + s.getStudentName() + "的论文答辩工作";
+		
+		sendSuggestion(s.getStudentNumber(), deanNumber, title_student, content_student, 0);
+		sendSuggestion(teacher1.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+		sendSuggestion(teacher2.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+		sendSuggestion(teacher3.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+		sendSuggestion(secretary.getTeacherNumber(), deanNumber, title_teacher, content_teacher, 0);
+	}
+	
+	/**
+	 * 发送会话
+	 * @param studentNumber
+	 * @param teacherNumber
+	 * @param deanNumber
+	 * @param title
+	 * @param content_teacher
+	 * @param content_student
+	 */
+	private void sendSuggestion(String receiverNumber, String deanNumber, 
+			String title, String content, Integer paperId) {
+		Integer senderId = accountService.getAccountByAccountname(deanNumber).getAccountId();
+		Integer receiverId_t = accountService.getAccountByAccountname(receiverNumber).getAccountId();
+		
+		LOGGER.debug("sender id: {}", senderId);
+		LOGGER.debug("teacher account id: {}", receiverId_t);
+		
+		Suggestion sugg = suggestionService.createSuggestion(title, content, senderId, "教务员", receiverId_t, paperId);
+		try {
+			suggestionService.sendSuggestion(sugg, null);
+		} catch (Exception e) {
+			LOGGER.error("发送会话失败！", e);
+		}
+	}
+}

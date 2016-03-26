@@ -1,0 +1,309 @@
+<%@ page language="java" import="java.util.*" pageEncoding="utf-8"%>
+
+<style>
+.list {
+	float: left;
+	margin-left: 30px;
+}
+
+.table_title {
+	width: 100%;
+	text-align: center;
+	color: #526293;
+	font-size: 12px;
+}
+</style>
+
+<script>
+	var rowID=0;
+	var assignedRowID=0;
+	
+	function upload(data) {
+	      $( "#dialog" ).dialog( "open" );
+	         var i=0;
+            var t = setInterval(function() {
+       
+        	     $("#progressbar").progressbar("value", i);
+        	     i=(i+20)%100;
+             }, 300);
+             
+             $("#result").html("正在导入");
+		$.ajaxFileUpload({
+	         url:"./importClassAssignExcel.do",         
+	         secureuri:false,
+	         fileElementId:"file", 
+	         dataType: "json", 
+	         success: function (data, status){
+	        clearInterval(t);
+	        $("#progressbar").progressbar("value", 100);
+	        $("#result").html(data.result);
+            $("#list").trigger('reloadGrid');
+	         },
+	         error: function (data, status, e){      
+	        clearInterval(t);
+	        $("#progressbar").progressbar("value", 100);
+	        $("#result").html(data.result);
+	        
+            $("#list").trigger('reloadGrid');}
+         });};
+         
+       $(function() {
+               $( "#progressbar" ).progressbar({
+           value: 37
+        });
+      });	
+    $(function() {
+          $( "#dialog" ).dialog({
+         autoOpen: false,
+      show: {
+        effect: "blind",
+        duration: 1000
+      },
+      hide: {
+        effect: "explode",
+        duration: 1000
+      }
+    });
+   	});
+  
+	function submit_assign(){
+		var data = $("#assigned_list").getRowData();	//获取已分配列表中数据
+		if(data != ""){
+			var postData = "list=" + JSON.stringify(data);	
+			//将数组post至后台assignteacher.do请求
+			$.post("./assignteacher.do",postData,function(msg){
+				if(msg.result_json == "success"){
+					alert("分配完成！");
+					$("#assigned_list").clearGridData();	//分配完成后清空已分配列表
+				}
+			},"json");
+		}else{
+			alert("没有分配信息！");
+		}
+	}
+	
+	$.post("getassignlist.do",{},function(data){
+		var assignedlist = [];
+	
+		$("#student_list").jqGrid({
+			data: data.studentlist,	
+	     	datatype: 'local',    //从服务器端返回的数据类型，默认xml。可选类型：xml，local，json，jsonnp，script，xmlstring，jsonstring，clientside
+	     	colNames:['ID','学号','学生姓名','年级','攻读学位','类型','联系电话','备用电话','邮件地址'],		//表格的显示字段
+			colModel:[    
+			{name:'studentId',index:'studentId',hidden:true},
+	        {name:'studentNumber',width:150,resizable:false},    //name表格列的名称,index排序时字段的索引,width只能是像素，不能是百分比
+	        {name:'studentName',width:150,resizable:false},    
+	        {name:'studentGrade',hidden:true,viewable:true,editrules:{edithidden:true}},
+			{name:'studentDegreeType',hidden:true,viewable:true,editrules:{edithidden:true}},
+		    {name:'studentType',hidden:true,viewable:true,editrules:{edithidden:true}},
+	        {name:'studentPhone1',hidden:true,viewable:true,editrules:{edithidden:true}},      
+	        {name:'studentPhone2',hidden:true,viewable:true,editrules:{edithidden:true}},      
+	        {name:'studentEmail',hidden:true,viewable:true,editrules:{edithidden:true}}
+	     	],    
+			pgbuttons: false,
+    		pgtext: null,
+    		rowNum: '9999',
+			multiselect: true,
+			viewrecords: true,
+			height:"400px",   
+	     
+	     	loadComplete:function(data){ //完成服务器请求后，回调函数
+			  if(data.length == 0){
+				$("#student_list").append('<tr><td colspan="2">&nbsp;&nbsp;暂无记录！</td></tr>');
+			  }
+		    },
+			
+			ondblClickRow : function(id){
+				$("#student_list").jqGrid('viewGridRow', id, {closeOnEscape:true} );
+			}
+		});
+		
+		$("#teacher_list").jqGrid({
+			data: data.teacherlist,	
+	     	datatype: 'local',    //从服务器端返回的数据类型，默认xml。可选类型：xml，local，json，jsonnp，script，xmlstring，jsonstring，clientside
+	     	colNames:['ID','编号','教师','类别','学历','职称','联系电话','邮件地址'],		//表格的显示字段
+			colModel:[    
+			{name:'teacherId',index:'teacherId',hidden:true},
+	        {name:'teacherNumber',hidden:true,viewable:true,editrules:{edithidden:true}},
+	        {name:'teacherName',width:150,sortable:false,resizable:false},    
+			{name:'teacherClasses',hidden:true,viewable:true,editrules:{edithidden:true}},  
+			{name:'teacherEducation',hidden:true,viewable:true,editrules:{edithidden:true}},
+			{name:'teacherJobTitle',hidden:true,viewable:true,editrules:{edithidden:true}},  
+	        {name:'teacherPhone',hidden:true,viewable:true,editrules:{edithidden:true}},      
+	        {name:'teacherEmail',hidden:true,viewable:true,editrules:{edithidden:true}}
+	     	],    
+			pgbuttons: false,
+    		pgtext: null,
+    		rowNum: '9999',
+			multiselect: false,
+			viewrecords: true,
+			height: "400px",  
+	     	loadComplete:function(data){ //完成服务器请求后，回调函数
+			  if(data.length == 0){
+				$("#teacher_list").append('<tr><td colspan="1">&nbsp;&nbsp;暂无记录！</td></tr>');
+			  }
+		    },
+			
+			ondblClickRow : function(id){
+				$("#teacher_list").jqGrid('viewGridRow', id, {closeOnEscape:true} );
+			},
+			
+			onSelectRow : function(rowId){
+				rowID = rowId;
+				console.log("rowID inselect "+rowID);
+			}
+		});
+		
+		$("#assigned_list").jqGrid({
+			datatype: 'local',
+	     	colNames:['教师ID','教师姓名','学生ID','学号','学生姓名','年级','攻读学位','类型','联系电话','备用电话','邮件地址'],		//表格的显示字段
+			colModel:[    
+			{name:'teacherId',hidden:true},
+			{name:'teacherName'},
+			{name:'studentId',hidden:true},
+	        {name:'studentNumber',width:150,resizable:false},    //name表格列的名称,index排序时字段的索引,width只能是像素，不能是百分比
+	        {name:'studentName',width:150,resizable:false},    
+	        {name:'studentGrade',hidden:true,viewable:true,editrules:{edithidden:true}},
+			{name:'studentDegreeType',hidden:true,viewable:true,editrules:{edithidden:true}},
+		    {name:'studentType',hidden:true,viewable:true,editrules:{edithidden:true}},
+	        {name:'studentPhone1',hidden:true,viewable:true,editrules:{edithidden:true}},      
+	        {name:'studentPhone2',hidden:true,viewable:true,editrules:{edithidden:true}},      
+	        {name:'studentEmail',hidden:true,viewable:true,editrules:{edithidden:true}}
+	     	],    
+			pgbuttons: false,
+    		pgtext: null,
+    		rowNum: '9999',
+    		pager: '#toolBar',
+    	    grouping: true,
+		    groupingView: {
+	        	groupField: ['teacherName'],
+	        	groupColumnShow: false
+	    	},
+			multiselect: false,
+			height: "400px",   
+			ondblClickRow : function(id){
+				$("#assigned_list").jqGrid('viewGridRow', id, {closeOnEscape:true} );
+			},
+	    	onSelectRow : function(rowId){
+	    		assignedRowID = rowId;
+				console.log("assignedRowID in assigned "+assignedRowID);
+			}
+		});
+		
+		$("#assigned_list").navGrid("#toolBar",{edit:false,add:false,del:false,search:false,refresh:false})
+
+		
+		.navButtonAdd("#toolBar",{  
+	   		caption:"导入Excel",   
+	   		buttonicon:"ui-icon-plus",  
+	   		onClickButton: function(e){
+	   			$("#file").click();
+	  		}
+		})
+		
+		.navSeparatorAdd("#toolBar",{
+			sepclass : "ui-separator",
+			sepcontent: ''
+		})
+		
+		
+		.navSeparatorAdd("#toolBar",{
+			sepclass : "ui-separator",
+			sepcontent: ''
+		})
+		
+		
+		.navButtonAdd("#toolBar",{
+		   caption:"提交分配结果", 
+		   buttonicon:"ui-icon-add", 
+		   onClickButton: function(){ 
+		  	 submit_assign();
+		   }	   
+		});
+		
+	},"json");
+	
+	function addAssign(){
+		var assignedlist = [];
+	  	students_rows = $("#student_list").getGridParam('selarrrow');
+	  	console.log("rowID right "+rowID);
+		var teacher = $("#teacher_list").getRowData(rowID);
+		 
+		// 此处必须从student_rows尾部开始取数据，涉及列表删除操作
+		for(var i = students_rows.length - 1; i >= 0; i--){
+			
+			var student = $("#student_list").getRowData(students_rows[i]);
+			student.teacherId = teacher['teacherId'];
+			student.teacherName = teacher['teacherName'];
+			console.log("teacherId="+student.teacherId);
+			if(typeof(student.teacherId) != "undefined"){
+			   assignedlist.push(student);
+			   $("#student_list").delRowData(students_rows[i]);
+			}
+		}
+		console.log("assignedlist[0] teacherId "+assignedlist[0].teacherId);
+		//$("#assigned_list").setGridParam({'data': assignedlist});
+		jQuery("#assigned_list").jqGrid('addRowData',1,assignedlist);
+		// jQuery("#assigned_list").jqGrid('addRowData',0,{teacherId:"1",teacherName:"1",studentId:"1",studentNumber:"1",studentName:"1",studentGrade:"1",studentDegreeType:"1",studentType:"1",studentPhone1:"111",studentPhone2:"111",studentEmail:"nnn@11.com"},"first");
+		console.log("assigned_list records "+$("#assigned_list").getGridParam("records"));
+		//三个列表都取消选择
+		$("#student_list").trigger('reloadGrid');
+		$("#assigned_list").trigger('reloadGrid');
+		$("#teacher_list").trigger('reloadGrid');
+		rowID = 0;
+	};
+	
+	function delAssign(){
+		var deletedlist = [];
+	  	delete_row = jQuery("#assigned_list").getGridParam('selrow');
+	  	console.log("rowID right "+rowID);
+		var delAssign = $("#assigned_list").getRowData(delete_row);
+		if(assignedRowID != 0){//when a certain row of assignedlist is selected
+		   deletedlist.push(delAssign);
+		}
+		$("#assigned_list").delRowData(delete_row);
+		
+		//console.log("assignedlist[0] teacherId "+assignedlist[0].teacherId);
+		//$("#assigned_list").setGridParam({'data': assignedlist});
+		jQuery("#student_list").jqGrid('addRowData',1,deletedlist);
+		// jQuery("#assigned_list").jqGrid('addRowData',0,{teacherId:"1",teacherName:"1",studentId:"1",studentNumber:"1",studentName:"1",studentGrade:"1",studentDegreeType:"1",studentType:"1",studentPhone1:"111",studentPhone2:"111",studentEmail:"nnn@11.com"},"first");
+		//console.log("assigned_list records "+$("#assigned_list").getGridParam("records"));
+		//三个列表都取消选择
+		$("#student_list").trigger('reloadGrid');
+		$("#assigned_list").trigger('reloadGrid');
+		$("#teacher_list").trigger('reloadGrid');
+		rowID = 0;
+		assignedRowID = 0;
+	};
+</script>
+
+<div class="sub_container">
+	<div id="dialog" title="导入数据">
+		<div id="progressbar"></div>
+		<div id="result" style="color: red; font-size: 18px;"></div>
+	</div>
+	<div class="list">
+		<h3 class="table_title">待分配学生</h3>
+		<table id="student_list"></table>
+	</div>
+	<div class="list">
+		<h3 class="table_title">本校教师</h3>
+		<table id="teacher_list"></table>
+	</div>
+	<div class="list" style="margin: 20px 6px 10px 20px">
+		<button type="button" onclick="addAssign()"
+			style="margin-bottom: 50px; margin-top: 200px"> 添加 >>> </button>
+		<br/>
+		<button type="button" onclick="delAssign()" 
+		    style="margin-bottom: 50px"> 移除 <<<  </button>		
+	</div>
+	<div class="list">
+		<h3 class="table_title">已分配情况</h3>
+		<table id="assigned_list"></table>
+		<div id="toolBar"></div>
+	</div>
+
+
+	<input type="file" style="display: none" onchange="upload(this.value)"
+		id="file" name="file" />
+</div>

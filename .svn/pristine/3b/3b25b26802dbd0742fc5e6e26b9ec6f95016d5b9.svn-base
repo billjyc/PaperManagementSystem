@@ -1,0 +1,251 @@
+package nju.software.dao.common.impl;
+
+import java.io.Serializable;
+import java.util.List;
+
+
+
+
+
+
+import nju.software.dao.common.BaseDao;
+
+import org.hibernate.Criteria;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Criterion;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+@Transactional
+@Repository("nju.software.dao.common.impl.BaseDaoImpl")
+public class BaseDaoImpl<T> implements BaseDao<T> {
+	//DAO组件进行持久化操作底层依赖的SessionFactory组件
+	@Autowired
+	private SessionFactory sessionFactory;
+
+	private Class<T> clazz;
+
+	private static Logger logger = LoggerFactory.getLogger(BaseDaoImpl.class);
+
+
+	protected final void setClazz(final Class<T> clazz) {
+		this.clazz = clazz;
+	}
+
+	protected final Session getCurrentSession() {
+		return sessionFactory.getCurrentSession();
+	}
+
+	@SuppressWarnings("unchecked")
+	public T findById(Serializable id) {
+		return (T)getCurrentSession().get(clazz, id);
+	}
+
+	public Serializable save(T entity) {
+		return getCurrentSession().save(entity);
+	}
+
+	public void update(T entity) {
+		getCurrentSession().update(entity);
+	}
+
+	public void delete(T entity) {
+		getCurrentSession().delete(entity);
+	}
+
+	public void delete(Serializable id) {
+		getCurrentSession().createQuery("delete " + clazz.getSimpleName() 
+				+ " en where en.id = ?0")
+				.setParameter("0", id)
+				.executeUpdate();
+	}
+
+	public List<T> findAll() {
+		logger.debug("select en from " + clazz.getSimpleName() + " en");
+		return find("select en from " + clazz.getSimpleName() + " en");
+	}
+
+	public long findCount() {
+		List<?> l = find("select count(*) from " + 
+				clazz.getSimpleName());
+		if(l!=null && l.size() == 1) {
+			return (Long)l.get(0);
+		}
+		return 0;
+	}
+
+
+	/**
+	 * 根据HQL语句查询实体
+	 * @param hql
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	protected List<T> find(String hql){
+		Query query = getCurrentSession().createQuery(hql);
+		return (List<T>)query.list();
+	}
+
+	/**
+	 * 根据带占位符的HQL语句查询实体
+	 * @param hql
+	 * @param params
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	protected List<T> find(String hql, Object... params){
+		logger.debug(hql);
+		//创建查询
+		Query query = getCurrentSession().createQuery(hql);
+		//为包含占位符的HQL语句设置参数
+		for(int i=0, len = params.length; i<len; i++){
+			query.setParameter(i, params[i]);
+		}
+		return (List<T>)query.list();
+	}
+
+	/**
+	 * 使用HQL语句进行分页查询操作
+	 * @param hql 需要查询的HQL语句
+	 * @param pageNo 查询第pageNo页的记录
+	 * @param pageSize 每页需要显示的记录数
+	 * @return 当前页的所有记录
+	 */
+	@SuppressWarnings("unchecked")
+	protected List<T> findByPage(String hql, int pageNo, int pageSize){
+		//创建查询
+		return getCurrentSession().createQuery(hql)
+				//执行分页
+				.setFirstResult((pageNo - 1) * pageSize)
+				.setMaxResults(pageSize)
+				.list();
+	}
+
+	/**
+	 * 使用HQL语句进行分页查询操作
+	 * @param hql 需要查询的HQL语句
+	 * @param pageNo 查询第pageNo页的记录
+	 * @param pageSize 每页需要显示的记录数
+	 * @param params 每页需要显示的记录数
+	 * @return 当前页的所有记录
+	 */
+	@SuppressWarnings("unchecked")
+	protected List<T> findByPage(String hql, int pageNo, int pageSize, Object... params){
+		//创建查询
+		Query query = getCurrentSession().createQuery(hql);
+		//为包含占位符的HQL语句设置参数
+		for(int i=0, len = params.length; i < len; i++){
+			query.setParameter(i+"" , params[i]);
+		}
+		//执行分页，并返回查询结果
+		return query.setFirstResult((pageNo-1) * pageSize)
+				.setMaxResults(pageSize)
+				.list();
+	}
+
+	public void create(T entity) {
+		getCurrentSession().saveOrUpdate(entity);
+	}
+
+	@Override
+	public void merge(T entity) {
+		getCurrentSession().merge(entity);
+	}
+
+	@Override
+	public void clear() {
+		getCurrentSession().clear();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public T load(Serializable id) {
+		return (T) getCurrentSession().get(clazz, id);
+	}
+
+	/**
+	 * 创建Criteria实例
+	 * @return
+	 */
+	public Criteria createCriteria(){
+		return getCurrentSession().createCriteria(clazz);
+	}
+
+	/**
+	 * 根据Criterion条件创建Criteria
+	 *
+	 * @param criterions 数量可变的Criterion
+	 */
+	public Criteria createCriteria(Criterion... criterions) {
+		Criteria criteria = createCriteria();
+		for (Criterion c : criterions) {
+			criteria.add(c);
+		}
+		return criteria;
+	}
+
+	@Override
+	public void flush() {
+		getCurrentSession().flush();
+	}
+
+	/**
+	 * 根据Criteria进行分页查询
+	 * @param criteria
+	 * @param pageNo 查询第pageNo页的记录
+	 * @param pageSize 每页需要显示的记录数
+	 * @return 当前页的所有记录
+	 */
+	@SuppressWarnings("unchecked")
+	protected List<T> findByPage(Criteria criteria, int pageNo, int pageSize) {
+		logger.debug("find by page through criteria...");
+		logger.debug("criteria: {}", criteria);
+		return (List<T>)criteria.setFirstResult((pageNo - 1) * pageSize)
+				.setMaxResults(pageSize).list();
+	}
+
+	/**
+	 * 
+	 * @param criteria
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	protected List<T> find(Criteria criteria) {
+		return (List<T>)criteria.list();
+	}
+
+	/**
+	 * 根据属性查找
+	 * @param propertyName
+	 * @param value
+	 * @return
+	 */
+	protected List<T> findByProperty(String propertyName, Object value) {
+		String hql = "from " + clazz.getSimpleName() + " model where model." + propertyName + " = ?";
+		logger.debug("hql: {}", hql);
+		return find(hql, value);
+	}
+
+	protected long findCountByProperty(String propertyName, Object value) {
+		String hql = "select count(*) from " + clazz.getSimpleName() + " model where model." 
+				+ propertyName + " = ?";
+		logger.debug("hql: {}", hql);
+		List<?> list = find(hql, value);
+		if(list != null && list.size() == 1) {
+			long count = (Long)list.get(0);
+			return count;
+		}else {
+			return 0;
+		}
+	}
+
+}

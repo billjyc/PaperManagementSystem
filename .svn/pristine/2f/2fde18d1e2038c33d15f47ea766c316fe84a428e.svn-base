@@ -1,0 +1,84 @@
+package nju.software.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import nju.software.dao.PaperDAO;
+import nju.software.entity.Paper;
+import nju.software.service.PaperService;
+import nju.software.util.JbpmAPIUtil;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service("paperServiceImpl")
+public class PaperServiceImpl implements PaperService {
+	@Autowired
+	private PaperDAO paperDao;
+	@Autowired
+	private JbpmAPIUtil jbpmAPIUtil;
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void addPaper(Paper paper, long taskId, String actorId) {
+		paperDao.save(paper);
+		try {
+			jbpmAPIUtil.completeTask(taskId, null, actorId);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void updatePaper(Paper paper) {
+		paperDao.merge(paper);
+	}
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void updatePaper(Paper paper,long taskId, Map<String,Object> data, String actorId){
+		try {
+			paperDao.merge(paper);
+			jbpmAPIUtil.completeTask(taskId, data, actorId);
+
+		} catch (InterruptedException e) {
+			
+			e.printStackTrace();
+		}
+	}
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void finalizePaper(Paper paper, int taskId, String userId) {
+		updatePaper(paper);
+		try {
+			jbpmAPIUtil.completeTask(taskId, null, userId);
+		} catch (InterruptedException e) {
+
+			e.printStackTrace();
+		}
+
+	}
+
+	public List<Paper> getPapersByState(String paperState) {
+		return paperDao.findByPaperState(paperState);
+	}
+	
+
+	public Paper getPaperByStudentId(int studentId) {
+		List<Paper> papers = paperDao.findByStudentId(studentId);
+		if (!papers.isEmpty()&&papers.size()>=1) {
+			return papers.get(papers.size()-1);
+		} else {
+			return null;
+		}
+	}
+	
+
+	public Paper getPaperByPaperId(int paperId) {
+		
+		return paperDao.findById(paperId);
+		 
+	}
+
+	public void updatePaper(Paper paper, long taskId, String actorId) {
+		// TODO Auto-generated method stub
+		
+	}
+
+}

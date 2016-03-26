@@ -1,0 +1,712 @@
+package nju.software.service.impl;
+
+import java.util.List;
+
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import nju.software.dao.CourseDAO;
+import nju.software.dao.DefenceDAO;
+import nju.software.dao.DirectorDAO;
+import nju.software.dao.ClassesDAO;
+import nju.software.dao.HeadTeacherDAO;
+import nju.software.dao.StudentCourseInfoDAO;
+import nju.software.dao.StudentDAO;
+import nju.software.dao.StudentScoreDAO;
+import nju.software.dao.TeacherDAO;
+import nju.software.dao.TeachingPointDAO;
+import nju.software.entity.Classes;
+import nju.software.entity.Course;
+import nju.software.entity.Defence;
+import nju.software.entity.Director;
+import nju.software.entity.Fee;
+import nju.software.entity.HeadTeacher;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.StudentCourseInfo;
+import nju.software.entity.StudentScore;
+import nju.software.entity.Teacher;
+import nju.software.entity.TeachingPoint;
+import nju.software.service.CourseService;
+import nju.software.service.DefenceService;
+import nju.software.service.FeeService;
+import nju.software.service.PaperService;
+import nju.software.service.ReportService;
+import nju.software.service.StudentService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+import nju.software.util.ExcelUtil;
+@Service("ReportServiceImpl")
+public class ReportServiceImpl implements ReportService {
+	@Autowired
+	private StudentDAO studentDAO;
+	@Autowired
+	private DefenceDAO defenceDao;
+	@Autowired
+	private TeacherDAO teacherDao;
+	@Autowired
+	private StudentScoreDAO scoreDao;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private FeeService feeService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private DefenceService defenceService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private CourseDAO courseDao;
+	@Autowired
+	private StudentCourseInfoDAO studentCourseInfoDao;
+	@Autowired
+	private HeadTeacherDAO headTeacherDao;
+	@Autowired
+	private DirectorDAO directorDao;
+	@Autowired
+	private TeachingPointDAO teachingPointDAO;
+	@Autowired
+	private ClassesDAO classesDAO;
+	
+	
+	public HSSFWorkbook exportThreeAndOne(List<Student> list) {
+		 
+		  HSSFWorkbook wb=new ExcelUtil().getThree_one();
+		  HSSFSheet sheet = wb.getSheet("三个一"); 
+		  HSSFCellStyle style = wb.createCellStyle(); 
+		  style.setAlignment(CellStyle.ALIGN_CENTER);
+		  style.setWrapText(true);
+		  HSSFFont font = wb.createFont();
+	      font.setFontName("黑体");
+	      font.setFontHeightInPoints((short) 10);//设置字体大小 
+	      style.setFont(font);
+		  for (int i = 0; i < list.size(); i++) {  
+		     HSSFRow  row= sheet.createRow(i+3); 
+		     row.setRowStyle(style);
+		     row.setHeight((short) 500);
+             Student student = list.get(i);  
+             int studentId=student.getStudentId();
+             Defence defence=defenceDao.findHasThree_one(studentId);
+             int teacherId=student.getTeacherId();
+             Teacher teacher=teacherDao.findById(teacherId);
+             Paper paper=paperService.getPaperByStudentId(studentId);//?一个人有几个论文
+             //StudentScore score=scoreDao.findByStudentId(studentId).get(0);
+             String[] data=                              //准备好需要写入的数据
+           	 {teacher.getTeacherName(),
+              student.getStudentName(),
+              studentService.formatDegreeType(student.getDegreeType()),
+              paper.getPaperTitle(),
+           	  //score.getExcellent()+"",
+           	 // score.getGood()+"",
+           	  //score.getMedium()+"",
+           	 // score.getPass()+"", 
+           	  defence.getThreeOne(),
+           	  defence.getDefenceResult(),
+           	  defence.getDefenceTime().toString()
+             };
+             for(int j=0;j<data.length;j++){
+           	     HSSFCell cell=row.createCell(j);
+           	     cell.setCellValue(data[j]);
+           	     cell.setCellStyle(style);
+             }
+          
+         }  
+        return wb;  
+	}
+	public HSSFWorkbook exportStudent(){
+		 List<Student> list=studentDAO.findAll();
+		  
+		         HSSFWorkbook wb = new HSSFWorkbook();  
+		         HSSFSheet sheet = wb.createSheet("学生");  
+		         HSSFRow row = sheet.createRow(0);  
+		         HSSFCellStyle style = wb.createCellStyle();  
+		         style.setAlignment(CellStyle.ALIGN_CENTER);  
+		
+		         
+		          for (int i = 0; i < Constants.STUDENT_HEADER.size(); i++) {  
+		              HSSFCell cell = row.createCell(i);
+		             
+		               cell.setCellValue(Constants.STUDENT_HEADER.get(i));  
+		              cell.setCellStyle(style);  
+		              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+		        }  
+		             sheet.setColumnWidth(8, Constants.EXCEL_COLUMN_WITH2);
+		         for (int i = 0; i < list.size(); i++) {  
+		            row = sheet.createRow(i+1);  
+		             Student student = list.get(i);  
+		             row.createCell(0).setCellValue(student.getStudentNumber());  
+		             row.createCell(1).setCellValue(student.getStudentName());  
+		             row.createCell(2).setCellValue(studentService.formatGrade(Integer.parseInt(student.getStudentGrade())));  
+		             row.createCell(3).setCellValue(student.getClassName());
+		             row.createCell(4).setCellValue(studentService.formatDegreeType(student.getDegreeType()));
+		             row.createCell(5).setCellValue(studentService.formatStudyTime(student.getStudyTime()));
+		             row.createCell(6).setCellValue(student.getStudentPhone());
+		             row.createCell(7).setCellValue(student.getStudentPhoneX());
+		             row.createCell(8).setCellValue(student.getStudentEmail());
+		          }  
+		         return wb;  
+		  }
+	public HSSFWorkbook exportTeacher() {
+		 List<Teacher> list=teacherDao.findAll();
+	
+		  
+		         HSSFWorkbook wb = new HSSFWorkbook();  
+		         HSSFSheet sheet = wb.createSheet("学生");  
+		         HSSFRow row = sheet.createRow(0);  
+		         HSSFCellStyle style = wb.createCellStyle();  
+		         style.setAlignment(CellStyle.ALIGN_CENTER);  
+		
+		         
+		          for (int i = 0; i < Constants.TEACHER_HEADER.size(); i++) {  
+		              HSSFCell cell = row.createCell(i);
+		             
+		               cell.setCellValue(Constants.TEACHER_HEADER.get(i));  
+		              cell.setCellStyle(style);  
+		              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+		        }  
+		             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+		         for (int i = 0; i < list.size(); i++) {  
+		            row = sheet.createRow(i+1);  
+		            Teacher teacher = list.get(i);  
+		             row.createCell(0).setCellValue(teacher.getTeacherNumber());  
+		             row.createCell(1).setCellValue(teacher.getTeacherName());  
+		             row.createCell(2).setCellValue(teacherService.formatClasses(teacher.getTeacherClasses()));  
+		             row.createCell(3).setCellValue(teacherService.formatEducation(teacher.getTeacherEducation()));
+		             row.createCell(4).setCellValue(teacherService.formatJobTitle(teacher.getTeacherJobTitle()));
+		             row.createCell(5).setCellValue(teacherService.formatQualification(teacher.getTeacherQualification()));
+		             row.createCell(6).setCellValue(teacher.getTeacherPhone());
+		             row.createCell(7).setCellValue(teacher.getTeacherEmail());
+		          }  
+		         return wb;  
+	}
+	public HSSFWorkbook exportCourse() {
+		 List<Course> list=courseDao.findAll();
+		 System.out.println(list.get(0).getCourseNo());
+			
+		  
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("课程");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+         
+          for (int i = 0; i < Constants.COURSE_HEADER.size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.COURSE_HEADER.get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            Course course = list.get(i);  
+             row.createCell(0).setCellValue(course.getCourseNo());  
+             row.createCell(1).setCellValue(course.getCourseName());  
+             row.createCell(2).setCellValue(course.getTeacherNo());  
+             row.createCell(3).setCellValue(course.getTeacherName());  
+             row.createCell(4).setCellValue(course.getDate());  
+          }  
+         return wb;  
+	}
+	public HSSFWorkbook exportTranscript() {
+		 List<StudentCourseInfo> list=studentCourseInfoDao.findAll();
+			
+		  
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("成绩单");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+         
+          for (int i = 0; i < Constants.TRANSCRIPT_HEADER.size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.TRANSCRIPT_HEADER.get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            StudentCourseInfo sci = list.get(i);  
+            row.createCell(0).setCellValue(sci.getStudentNo());  
+            row.createCell(1).setCellValue(sci.getStudentName()); 
+             row.createCell(2).setCellValue(sci.getCourseNo());  
+             row.createCell(3).setCellValue(sci.getCourseName());  
+             row.createCell(4).setCellValue(sci.getScore());  
+             row.createCell(5).setCellValue(sci.getDate());  
+          }  
+         return wb;  
+	}
+	public HSSFWorkbook exportStudentCourseInfo() {
+		 List<StudentCourseInfo> list=studentCourseInfoDao.findAll();
+			
+		  
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("选课信息");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+         
+          for (int i = 0; i < Constants.STUDENT_COURSE_INFO_HEADER .size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.STUDENT_COURSE_INFO_HEADER .get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            StudentCourseInfo sci = list.get(i);  
+            row.createCell(0).setCellValue(sci.getStudentNo());  
+            row.createCell(1).setCellValue(sci.getStudentName()); 
+             row.createCell(2).setCellValue(sci.getCourseNo());  
+             row.createCell(3).setCellValue(sci.getCourseName());  
+  
+             row.createCell(4).setCellValue(sci.getDate());  
+          }  
+         return wb;  
+	}
+	
+	
+	public HSSFWorkbook exportTranscriptByStudentNo(String studentNo) {
+		 List<StudentCourseInfo> list=studentCourseInfoDao.findByStudentNo(studentNo);
+			
+		  
+		 Student s=studentDAO.findByStudentNumber(studentNo).get(0);
+		 
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet(s.getStudentNumber()+" "+ s.getStudentName()+ " 成绩单");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+         
+          for (int i = 0; i < Constants.STUDENT_TRANSCRIPT_HEADER.size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.STUDENT_TRANSCRIPT_HEADER.get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            StudentCourseInfo sci = list.get(i);  
+             row.createCell(0).setCellValue(sci.getCourseNo());  
+             row.createCell(1).setCellValue(sci.getCourseName());  
+             row.createCell(2).setCellValue(sci.getScore());  
+             row.createCell(3).setCellValue(sci.getDate());  
+          }  
+         return wb;  
+         
+	}
+	public HSSFWorkbook exportTranscriptByCourseNo(String courseNo) {
+		
+		 List<StudentCourseInfo> list=studentCourseInfoDao.findByCourseNo(courseNo);
+			
+		  
+		Course course=courseDao.findByNo(courseNo).get(0);
+		 
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet(course.getDate()+" "+course.getCourseNo()+" "+ course.getCourseName()+ " 成绩单");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+         
+          for (int i = 0; i < Constants.COURSE_TRANSCRIPT_HEADER.size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.COURSE_TRANSCRIPT_HEADER.get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            StudentCourseInfo sci = list.get(i);  
+             row.createCell(0).setCellValue(sci.getStudentNo());  
+             row.createCell(1).setCellValue(sci.getStudentName());  
+             row.createCell(2).setCellValue(sci.getScore());  
+
+          }  
+         return wb;  
+	}
+
+	public HSSFWorkbook exportHeadTeacher() {
+		 List<HeadTeacher> list=headTeacherDao.findAll();
+			
+		  
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("班主任信息");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+
+         
+          for (int i = 0; i < Constants.HEAD_TEACHER_HEADER .size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.HEAD_TEACHER_HEADER .get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            HeadTeacher headTeacher = list.get(i);  
+            row.createCell(0).setCellValue(headTeacher.getNo());  
+            row.createCell(1).setCellValue(headTeacher.getName()); 
+             row.createCell(2).setCellValue(headTeacher.getTel());  
+             row.createCell(3).setCellValue(headTeacher.getEmail());  
+ 
+          }  
+         return wb;  
+	}
+	public HSSFWorkbook exportDirector() {
+		 List<Director> list=directorDao.findAll();
+			
+		  
+         HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("教学点负责人信息");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+         
+          for (int i = 0; i < Constants.DIRECTOR_HEADER .size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.DIRECTOR_HEADER .get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            Director director = list.get(i);  
+            row.createCell(0).setCellValue(director.getNo());  
+            row.createCell(1).setCellValue(director.getName()); 
+             row.createCell(2).setCellValue(director.getTel());  
+             row.createCell(3).setCellValue(director.getEmail());  
+ 
+          }  
+         return wb;  
+	}
+	public HSSFWorkbook exportTeachingPoint() {
+		List<TeachingPoint> list=teachingPointDAO.findAll();
+		 HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("教学点信息");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+         for (int i = 0; i < Constants.TEACHINGPOINT_HEADER .size(); i++) {  
+             HSSFCell cell = row.createCell(i);
+            
+              cell.setCellValue(Constants.TEACHINGPOINT_HEADER .get(i));  
+             cell.setCellStyle(style);  
+             sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+       }  
+            sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+        for (int i = 0; i < list.size(); i++) {  
+           row = sheet.createRow(i+1);  
+          TeachingPoint teachingPoint = list.get(i);  
+           row.createCell(0).setCellValue(teachingPoint.getNo());  
+           row.createCell(1).setCellValue(teachingPoint.getName()); 
+            row.createCell(2).setCellValue(teachingPoint.getLocation());  
+            row.createCell(3).setCellValue(teachingPoint.getDirectorNo());  
+            row.createCell(4).setCellValue(teachingPoint.getDirectorName());  
+
+         }  
+        return wb;  
+	}
+	public HSSFWorkbook exportClasses() {
+		List<Classes> list=classesDAO.findAll();
+		 HSSFWorkbook wb = new HSSFWorkbook();  
+        HSSFSheet sheet = wb.createSheet("班级信息列表");  
+        HSSFRow row = sheet.createRow(0);  
+        HSSFCellStyle style = wb.createCellStyle();  
+        style.setAlignment(CellStyle.ALIGN_CENTER);  
+        for (int i = 0; i < Constants.CLASS_HEADER.size(); i++) {  
+            HSSFCell cell = row.createCell(i);
+           
+             cell.setCellValue(Constants.CLASS_HEADER .get(i));  
+            cell.setCellStyle(style);  
+            sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+      }  
+           sheet.setColumnWidth(8, Constants.EXCEL_COLUMN_WITH2);
+       for (int i = 0; i < list.size(); i++) {  
+          row = sheet.createRow(i+1);  
+        Classes c = list.get(i);  
+          row.createCell(0).setCellValue(c.getNo());  
+          row.createCell(1).setCellValue(c.getName()); 
+           row.createCell(2).setCellValue(c.getGraduateNum());  
+           row.createCell(3).setCellValue(c.getSize());  
+           row.createCell(4).setCellValue(c.getHeadTeacherNo());  
+           row.createCell(5).setCellValue(c.getHeadTeacherName());  
+           row.createCell(6).setCellValue(c.getTeachingPointNo());  
+           row.createCell(7).setCellValue(c.getTeachingPointName()); 
+           row.createCell(8).setCellValue(c.getOpenDate().toString()); 
+        }  
+       return wb;  
+	}
+	public HSSFWorkbook exportAssignedClasses() {
+		List<Student> list=studentDAO.findAllWithClass();
+		 HSSFWorkbook wb = new HSSFWorkbook();  
+	        HSSFSheet sheet = wb.createSheet("已分配班级信息列表");  
+	        HSSFRow row = sheet.createRow(0);  
+	        HSSFCellStyle style = wb.createCellStyle();  
+	        style.setAlignment(CellStyle.ALIGN_CENTER);  
+	        for (int i = 0; i < Constants.CLASS_ASSIGNED_HEADER.size(); i++) {  
+	            HSSFCell cell = row.createCell(i);
+	           
+	             cell.setCellValue(Constants.CLASS_ASSIGNED_HEADER .get(i));  
+	            cell.setCellStyle(style);  
+	            sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+	      }  
+	           sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+	       for (int i = 0; i < list.size(); i++) {  
+	          row = sheet.createRow(i+1);  
+	       Student s = list.get(i);  
+	          row.createCell(0).setCellValue(s.getStudentNumber());  
+	          row.createCell(1).setCellValue(s.getStudentName()); 
+	           row.createCell(2).setCellValue(s.getClassNo());  
+	           row.createCell(3).setCellValue(s.getClassName());  
+	           row.createCell(4).setCellValue(s.getTeachingPointNo());  
+	          
+
+	        }  
+	       return wb;  
+	}
+	
+	
+	public HSSFWorkbook exportChargeFee(int index) {
+			List<Fee> list=feeService.getFeesByFeeType(index);		
+		 	HSSFWorkbook wb = new HSSFWorkbook();  
+	        HSSFSheet sheet = wb.createSheet("费用列表");  
+	        HSSFRow row = sheet.createRow(0);  
+	        HSSFCellStyle style = wb.createCellStyle();  
+	        style.setAlignment(CellStyle.ALIGN_CENTER);  
+	        for (int i = 0; i < Constants.GRANT_FEE_HEADER.size(); i++) {  
+	            HSSFCell cell = row.createCell(i);
+	           
+	            cell.setCellValue(Constants.GRANT_FEE_HEADER .get(i));  
+	            cell.setCellStyle(style);  
+	            sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+	      }  
+	           sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+	       for (int i = 0; i < list.size(); i++) {  
+	          row = sheet.createRow(i+1);  
+	          Fee fee = list.get(i);
+	          Student s=studentService.getStudentById(fee.getStudentId());	          
+	          row.createCell(0).setCellValue(s.getStudentNumber());  
+	          row.createCell(1).setCellValue(s.getStudentName()); 
+	          row.createCell(2).setCellValue(fee.getAmount()); 
+	          row.createCell(3).setCellValue(fee.getGrantTime().toString()); 	          
+	        }  
+	       return wb;  
+	}
+		
+	
+	public HSSFWorkbook exportGrantFee(int index) {
+		List<Fee> list=feeService.getFeesByFeeType(index);		
+	 	HSSFWorkbook wb = new HSSFWorkbook();  
+        HSSFSheet sheet = wb.createSheet("费用列表");  
+        HSSFRow row = sheet.createRow(0);  
+        HSSFCellStyle style = wb.createCellStyle();  
+        style.setAlignment(CellStyle.ALIGN_CENTER);  
+        for (int i = 0; i < Constants.GRANT_FEE_HEADER.size(); i++) {  
+            HSSFCell cell = row.createCell(i);
+           
+            cell.setCellValue(Constants.GRANT_FEE_HEADER .get(i));  
+            cell.setCellStyle(style);  
+            sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+      }  
+           sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+       for (int i = 0; i < list.size(); i++) {  
+          row = sheet.createRow(i+1);  
+          Fee fee = list.get(i);
+          Student s=studentService.getStudentById(fee.getStudentId());
+          Teacher t=teacherService.getTeacherById(fee.getTeacherId());	          
+          row.createCell(0).setCellValue(s.getStudentNumber());  
+          row.createCell(1).setCellValue(s.getStudentName()); 
+          row.createCell(2).setCellValue(t.getTeacherNumber());  
+          row.createCell(3).setCellValue(t.getTeacherNumber());  
+          row.createCell(4).setCellValue(fee.getAmount()); 
+          row.createCell(5).setCellValue(Constants.GRANT_TYPE.get(fee.getGrantType())); 
+          row.createCell(6).setCellValue(fee.getGrantTime().toString()); 	          
+        }  
+       return wb;  
+	}
+	public HSSFWorkbook exportStudent(List<Student> list) {
+		HSSFWorkbook wb = new HSSFWorkbook();  
+        HSSFSheet sheet = wb.createSheet("学生");  
+        HSSFRow row = sheet.createRow(0);  
+        HSSFCellStyle style = wb.createCellStyle();  
+        style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+        
+         for (int i = 0; i < Constants.STUDENT_HEADER.size(); i++) {  
+             HSSFCell cell = row.createCell(i);
+            
+              cell.setCellValue(Constants.STUDENT_HEADER.get(i));  
+             cell.setCellStyle(style);  
+             sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+       }  
+            sheet.setColumnWidth(8, Constants.EXCEL_COLUMN_WITH2);
+        for (int i = 0; i < list.size(); i++) {  
+           row = sheet.createRow(i+1);  
+            Student student = list.get(i);  
+            row.createCell(0).setCellValue(student.getStudentNumber());  
+            row.createCell(1).setCellValue(student.getStudentName());  
+            row.createCell(2).setCellValue(studentService.formatGrade(Integer.parseInt(student.getStudentGrade())));  
+            row.createCell(3).setCellValue(student.getClassName());
+            row.createCell(4).setCellValue(studentService.formatDegreeType(student.getDegreeType()));
+            row.createCell(5).setCellValue(studentService.formatStudyTime(student.getStudyTime()));
+            row.createCell(6).setCellValue(student.getStudentPhone());
+            row.createCell(7).setCellValue(student.getStudentPhoneX());
+            row.createCell(8).setCellValue(student.getStudentEmail());
+         }  
+        return wb;  
+	}
+	public HSSFWorkbook exportHeadTeacher(List<HeadTeacher> list) {
+		 HSSFWorkbook wb = new HSSFWorkbook();  
+         HSSFSheet sheet = wb.createSheet("班主任信息");  
+         HSSFRow row = sheet.createRow(0);  
+         HSSFCellStyle style = wb.createCellStyle();  
+         style.setAlignment(CellStyle.ALIGN_CENTER);  
+
+
+         
+          for (int i = 0; i < Constants.HEAD_TEACHER_HEADER .size(); i++) {  
+              HSSFCell cell = row.createCell(i);
+             
+               cell.setCellValue(Constants.HEAD_TEACHER_HEADER .get(i));  
+              cell.setCellStyle(style);  
+              sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+        }  
+             sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+         for (int i = 0; i < list.size(); i++) {  
+            row = sheet.createRow(i+1);  
+            HeadTeacher headTeacher = list.get(i);  
+            row.createCell(0).setCellValue(headTeacher.getNo());  
+            row.createCell(1).setCellValue(headTeacher.getName()); 
+             row.createCell(2).setCellValue(headTeacher.getTel());  
+             row.createCell(3).setCellValue(headTeacher.getEmail());  
+ 
+          }  
+         return wb; 
+	}
+	public HSSFWorkbook exportClasses(List<Classes> list) {
+		 HSSFWorkbook wb = new HSSFWorkbook();  
+	        HSSFSheet sheet = wb.createSheet("班级信息列表");  
+	        HSSFRow row = sheet.createRow(0);  
+	        HSSFCellStyle style = wb.createCellStyle();  
+	        style.setAlignment(CellStyle.ALIGN_CENTER);  
+	        for (int i = 0; i < Constants.CLASS_HEADER.size(); i++) {  
+	            HSSFCell cell = row.createCell(i);
+	           
+	             cell.setCellValue(Constants.CLASS_HEADER .get(i));  
+	            cell.setCellStyle(style);  
+	            sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1); 
+	      }  
+	           sheet.setColumnWidth(8, Constants.EXCEL_COLUMN_WITH2);
+	       for (int i = 0; i < list.size(); i++) {  
+	          row = sheet.createRow(i+1);  
+	        Classes c = list.get(i);  
+	          row.createCell(0).setCellValue(c.getNo());  
+	          row.createCell(1).setCellValue(c.getName()); 
+	           row.createCell(2).setCellValue(c.getGraduateNum());  
+	           row.createCell(3).setCellValue(c.getSize());  
+	           row.createCell(4).setCellValue(c.getHeadTeacherNo());  
+	           row.createCell(5).setCellValue(c.getHeadTeacherName());  
+	           row.createCell(6).setCellValue(c.getTeachingPointNo());  
+	           row.createCell(7).setCellValue(c.getTeachingPointName()); 
+	           row.createCell(8).setCellValue(c.getOpenDate().toString()); 
+	        }  
+	       return wb;  
+	}
+	
+
+	public HSSFWorkbook exportDefenceFeeDoc(int studentId) {
+		HSSFWorkbook wb = new HSSFWorkbook();  
+        HSSFSheet sheet = wb.createSheet("答辩费用领款表");  
+        
+        //第一行
+        HSSFRow row = sheet.createRow(0);  
+        HSSFCellStyle style = wb.createCellStyle();  
+        style.setAlignment(CellStyle.ALIGN_CENTER);  
+        
+        for (int i=0;i<3;i++){
+        HSSFCell cell=row.createCell(i);
+        cell.setCellStyle(style);
+        sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1);        
+        }
+        
+        HSSFCell cell = row.createCell(3);       
+        cell.setCellValue("答辩费用领款表");  
+        cell.setCellStyle(style);  
+        sheet.setColumnWidth(3,Constants.EXCEL_COLUMN_WITH1); 
+        
+        for (int i=4;i<7;i++){
+        HSSFCell cell2=row.createCell(i);
+        cell2.setCellStyle(style);
+        sheet.setColumnWidth(i,Constants.EXCEL_COLUMN_WITH1);        
+        }       
+      
+        sheet.setColumnWidth(7, Constants.EXCEL_COLUMN_WITH2);
+        
+        List<Defence> defenceList=defenceService.findDefenceByStudentId(studentId);
+        
+        Defence defence=defenceList.get(0);
+         //第二行
+          row = sheet.createRow(1);   
+          row.createCell(0).setCellValue("");  
+          row.createCell(1).setCellValue(""); 
+           row.createCell(2).setCellValue("");  
+           row.createCell(3).setCellValue("地点");  
+           row.createCell(4).setCellValue(defence.getDenfenceAddress());  
+           row.createCell(5).setCellValue("时间");  
+           row.createCell(6).setCellValue(defence.getDefenceTime().toString());  
+        
+           //第三行
+           row = sheet.createRow(1);   
+           row.createCell(0).setCellValue("答辩人学号");  
+           row.createCell(1).setCellValue("答辩人姓名");            
+           row.createCell(2).setCellValue(teacherService.getTeacherById(defence.getTeacherId()).getTeacherName());  
+           row.createCell(3).setCellValue(teacherService.getTeacherById(defenceList.get(1).getTeacherId()).getTeacherName());
+           row.createCell(4).setCellValue(teacherService.getTeacherById(defenceList.get(2).getTeacherId()).getTeacherName());
+           row.createCell(5).setCellValue(teacherService.getTeacherById(defenceList.get(3).getTeacherId()).getTeacherName());  
+           row.createCell(6).setCellValue("教务员");     
+            
+           //第四行
+           row = sheet.createRow(2);
+           row.createCell(0).setCellValue(studentService.getStudentById(studentId).getStudentNumber());  
+           row.createCell(1).setCellValue(studentService.getStudentById(studentId).getStudentName());
+           
+           row.createCell(2).setCellValue("");  
+           row.createCell(3).setCellValue("地点");  
+           row.createCell(4).setCellValue(defence.getDenfenceAddress());  
+           row.createCell(5).setCellValue("时间");  
+           row.createCell(6).setCellValue(defence.getDefenceTime().toString()); 
+           
+           
+       return wb;  
+	}
+
+}

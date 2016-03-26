@@ -1,0 +1,78 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.JudgeDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Judge;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for Judge
+ * entities. Transaction control of the save(), update() and delete() operations
+ * can directly support Spring container-managed transactions or they can be
+ * augmented to handle user-managed Spring transactions. Each of these methods
+ * provides additional information for how to configure it for the desired type
+ * of transaction control.
+ * 
+ * @see nju.software.dataobject.Judge
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.JudgeDAOImpl")
+public class JudgeDAOImpl extends BaseDaoImpl<Judge> implements JudgeDAO{
+	private static final Logger log = LoggerFactory.getLogger(JudgeDAOImpl.class);
+	// property constants
+	public static final String PAPER_ID = "paperId";
+	public static final String TEACHER_ID = "teacherId";
+	public static final String JUDGE_RESULT = "judgeResult";
+	public static final String JUDGE_CONTENT_TEACHER = "judgeContentTeacher";
+	public static final String JUDGE_CONTENT_STUDENT = "judgeContentStudent";
+	public static final String JUDGE_AFFIX = "judgeAffix";
+	public static final String JUDGE_ID = "judgeId";
+
+	public JudgeDAOImpl(){
+		super();
+		this.setClazz(Judge.class);
+	}
+
+	public Judge findById(java.lang.Integer id) {
+		return super.findById(id);
+	}
+
+	public List<Judge> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Judge> findByPaperId(Object paperId) {
+		return findByProperty(PAPER_ID, paperId);
+	}
+
+	public List<Judge> findByTeacherId(Object teacherId) {
+		return findByProperty(TEACHER_ID, teacherId);
+	}
+
+	public List<Judge> findByJudgeResult(Object judgeResult) {
+		return findByProperty(JUDGE_RESULT, judgeResult);
+	}
+
+	public List<Judge> findByJudgeContentTeacher(Object judgeContentTeacher) {
+		return findByProperty(JUDGE_CONTENT_TEACHER, judgeContentTeacher);
+	}
+
+	public List<Judge> findByJudgeContentStudent(Object judgeContentStudent) {
+		return findByProperty(JUDGE_CONTENT_STUDENT, judgeContentStudent);
+	}
+
+	public List<Judge> findByJudgeAffix(Object judgeAffix) {
+		return findByProperty(JUDGE_AFFIX, judgeAffix);
+	}
+
+	public Judge findByPaperIdandTeacherId(int paperId, int teacherId) {
+		String hql = "from Judge as j where j.paperId = ? and j.teacherId = ?";
+		return find(hql, paperId, teacherId).get(0);
+	}
+}

@@ -1,0 +1,178 @@
+package nju.software.controller.teacher;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.InterimReport;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.jsonmodel.InterimReportTask;
+import nju.software.jsonmodel.JsonInterimReport;
+import nju.software.manager.teacher.TeacherInterimReportManager;
+import nju.software.service.InterimReportService;
+import nju.software.service.PaperService;
+import nju.software.service.StudentService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.JSONUtil;
+import nju.software.util.enums.PaperState;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教师中期报告控制类
+ * @author billjyc
+ * @date 2015-3-21
+ */
+@Controller
+public class TeacherInterimReportController {
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+
+	private static Logger logger = LoggerFactory.getLogger(TeacherInterimReportController.class);
+	private final static String SUCCESS = "success";
+	private final static String FAIL = "fail";
+	
+	@Autowired
+	private InterimReportService interimReportService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private TeacherInterimReportManager teacherInterimReportManager;
+	
+	/**
+	 * 获得待审中期报告
+	 */
+	@RequestMapping(value = "/tutor/getuncheckedinterim.do")
+	@ResponseBody
+	public void getUncheckedInterim(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		String actorNo = (String) request.getSession().getAttribute("actorNo");
+		List<InterimReportTask> interimReportTask = new ArrayList<InterimReportTask>();
+
+		String result_json = "";
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Interim Report Finalize");
+			for(Task task : taskList) {
+				ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+				logger.debug("process instance id: {}", instance.getId());
+
+				if(instance != null) {
+					int studentId = (Integer) (activitiAPIUtils.getVariable(instance.getId(), "studentId"));
+					Student student = studentService.getStudentById(studentId);
+					InterimReport ir = interimReportService.getInterimReportByStudentId(studentId);
+					if(ir.getStatus() == Constants.INTERIM_REPORT_UNCHECKED) {
+						interimReportTask.add(new InterimReportTask(ir, student, Long.parseLong(task.getId())));
+					}
+				}
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			result_json = FAIL;
+			e.printStackTrace();
+		}
+
+		JSONArray jsonlist = JSONArray.fromObject(interimReportTask);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 获得已通过中期报告
+	 */
+	@RequestMapping(value = "/tutor/getpassedinterim.do")
+	@ResponseBody
+	public void getPassedInterim(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		int teacherId = (Integer) request.getSession().getAttribute("teacherId");
+		List<JsonInterimReport> jsonList = new ArrayList<JsonInterimReport>();
+		String result_json = "";
+		try{
+			List<InterimReport> irList = interimReportService.getInterimReportByStatus(Constants.INTERIM_REPORT_PASSED, teacherId);
+			logger.debug("interim report list size: {}", irList.size());
+			for(InterimReport ir : irList){
+				Student s = studentService.getStudentById(ir.getStudentId());
+				jsonList.add(new JsonInterimReport(ir, s));
+			}
+			result_json = SUCCESS;
+		}catch(Exception e){
+			logger.error("get first check list failed: ",e);
+			result_json = FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+	/**
+	 * 判定中期报告是否通过
+	 */
+	@RequestMapping(value="/tutor/judgeinterim.do")
+	@ResponseBody
+	public void judgeInterim(HttpServletRequest request, HttpServletResponse response, ModelMap model, 
+			@RequestParam("jsonstr") String judgestr){
+		int teacherId = (Integer) request.getSession().getAttribute("teacherId");
+
+		JSONObject judge_json = JSONObject.fromObject(judgestr);
+		Integer interimReportId = judge_json.getInt("interimReportId");
+		long taskId = judge_json.getLong("taskId");
+		boolean result = judge_json.getInt("result") == Constants.INTERIM_REPORT_PASSED ? true : false ; 
+		logger.debug("interim report id: {}, taskId: {}, result: {}", interimReportId, taskId, result);
+
+		String result_json = "";
+		try{
+			InterimReport ir = interimReportService.getInterimReportById(interimReportId);
+			Validate.notNull(ir);
+			Paper paper = paperService.getPaperByStudentId(ir.getStudentId());
+			Validate.notNull(paper);
+			
+			if(result) {
+				ir.setStatus(Constants.INTERIM_REPORT_PASSED);
+				paper.setPaperState(PaperState.UNCOMMITED);
+			} else {
+				ir.setStatus(Constants.INTERIM_REPORT_FAILED);
+				paper.setPaperState(PaperState.INTERIM_REPORT_UNSUBMITED);
+			}
+
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put("isPassed", result);
+			interimReportService.updateInterimReport(ir);
+			paperService.updatePaper(paper);
+
+			activitiAPIUtils.completeTask(String.valueOf(taskId), data);
+			teacherInterimReportManager.sendSuggestion(teacherId, ir);
+			result_json = SUCCESS;
+		}catch(Exception e){
+			e.printStackTrace();
+			result_json = FAIL;
+		}
+
+		JSONObject jsonobj =  new JSONObject();
+		jsonobj.put("result_json", result_json);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+
+}

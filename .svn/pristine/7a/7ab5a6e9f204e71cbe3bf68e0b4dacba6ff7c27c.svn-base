@@ -1,0 +1,213 @@
+package nju.software.manager.teacher;
+
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.mail.MessagingException;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.InterimReport;
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.jsonmodel.InterimReportTask;
+import nju.software.jsonmodel.JsonInterimReport;
+import nju.software.service.AccountService;
+import nju.software.service.InterimReportService;
+import nju.software.service.PaperService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.EmailUtil;
+
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TeacherInterimReportManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired 
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	@Autowired
+	private InterimReportService interimReportService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private EmailUtil emailUtil;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TeacherInterimReportManager.class);
+	
+	private void sendSuggestion(Integer teacherId, InterimReport interimReport) {
+		Student s = studentService.getStudentById(interimReport.getStudentId());
+		Teacher t = teacherService.getTeacherById(teacherId);
+		
+		Validate.notNull(s);
+		Validate.notNull(t);
+		
+		String title = "";
+		String content = "";
+		if(interimReport.getStatus() == Constants.INTERIM_REPORT_PASSED) {
+			title = "导师" + t.getTeacherName() + "批准通过了你的中期报告";
+			content = "你的中期报告已经被导师" + t.getTeacherName() + "批准通过，" 
+					+ "完成论文后，请上传";
+		} else if(interimReport.getStatus() == Constants.INTERIM_REPORT_FAILED) {
+			title = "导师" + t.getTeacherName() + "驳回了你的中期报告";
+			content = "你的中期报告已经被导师" + t.getTeacherName() + "驳回，" 
+					+ "请修改后再次上传，交由导师检查";
+		} else {
+			return;
+		}
+		
+		Suggestion suggestion = new Suggestion();
+		suggestion.setLevel(0);
+		suggestion.setPaperId(0);
+		
+		Integer receiverId = accountService.getAccountByAccountname(s.getStudentNumber()).getAccountId();
+		suggestion.setReceiverId(receiverId);
+		Timestamp time = new Timestamp(new Date().getTime());
+		suggestion.setSuggestTime(time);
+		Integer senderId = accountService.getAccountByAccountname(t.getTeacherNumber()).getAccountId();
+		suggestion.setUserId(senderId);
+		suggestion.setSenderName("导师" + t.getTeacherName());
+		
+		suggestion.setSuggestTitle(title);
+		suggestion.setSuggestContent(content);
+		
+		try {
+			suggestionService.sendSuggestion(suggestion, null);
+		} catch (Exception e) {
+			LOGGER.error("发送会话失败！", e);
+		}
+		
+		try {
+			emailUtil.sendMail(s.getStudentEmail(), title, content);
+		} catch (MessagingException e) {
+			LOGGER.error("发送邮件失败！", e);
+		}
+	}
+	
+	/**
+	 * 获得待审中期报告
+	 * @param actorNo
+	 * @return
+	 */
+	public JSONObject getUncheckedInterim(String actorNo) {
+		List<InterimReportTask> interimReportTask = new ArrayList<InterimReportTask>();
+
+		String result_json = "";
+		try{
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorNo, "Interim Report Finalize");
+			for(Task task : taskList) {
+				ProcessInstance instance = activitiAPIUtils.getProcessInstance(task.getId());
+				LOGGER.debug("process instance id: {}", instance.getId());
+
+				if(instance != null) {
+					int studentId = (Integer) (activitiAPIUtils.getVariable(instance.getId(), "studentId"));
+					Student student = studentService.getStudentById(studentId);
+					InterimReport ir = interimReportService.getInterimReportByStudentId(studentId);
+					if(ir.getStatus() == Constants.INTERIM_REPORT_UNCHECKED) {
+						interimReportTask.add(new InterimReportTask(ir, student, Long.parseLong(task.getId())));
+					}
+				}
+			}
+			result_json = Constants.SUCCESS;
+		}catch(Exception e){
+			result_json = Constants.FAIL;
+			LOGGER.error("获取待审中期报告失败！", e);
+		}
+
+		JSONArray jsonlist = JSONArray.fromObject(interimReportTask);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 获取已通过中期报告
+	 * @param teacherId
+	 * @return
+	 */
+	public JSONObject getPassedInterimReport(Integer teacherId) {
+		List<JsonInterimReport> jsonList = new ArrayList<JsonInterimReport>();
+		String result_json = "";
+		try{
+			List<InterimReport> irList = interimReportService.getInterimReportByStatus(Constants.INTERIM_REPORT_PASSED, teacherId);
+			LOGGER.debug("interim report list size: {}", irList.size());
+			for(InterimReport ir : irList){
+				Student s = studentService.getStudentById(ir.getStudentId());
+				jsonList.add(new JsonInterimReport(ir, s));
+			}
+			result_json = Constants.SUCCESS;
+		}catch(Exception e){
+			LOGGER.error("获取已通过中期报告失败！",e);
+			result_json = Constants.FAIL;
+		}
+		JSONArray jsonlist = JSONArray.fromObject(jsonList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", jsonlist);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	public JSONObject judgeInterim(String judgestr, Integer teacherId) {
+		JSONObject judge_json = JSONObject.fromObject(judgestr);
+		Integer interimReportId = judge_json.getInt("interimReportId");
+		long taskId = judge_json.getLong("taskId");
+		boolean result = judge_json.getInt("result") == Constants.INTERIM_REPORT_PASSED ? true : false ; 
+		LOGGER.debug("interim report id: {}, taskId: {}, result: {}", interimReportId, taskId, result);
+
+		String result_json = "";
+		try{
+			InterimReport ir = interimReportService.getInterimReportById(interimReportId);
+			Validate.notNull(ir);
+			Paper paper = paperService.getPaperByStudentId(ir.getStudentId());
+			Validate.notNull(paper);
+			
+			if(result) {
+				ir.setStatus(Constants.INTERIM_REPORT_PASSED);
+				paper.setPaperState(PaperState.UNCOMMITED);
+			} else {
+				ir.setStatus(Constants.INTERIM_REPORT_FAILED);
+				paper.setPaperState(PaperState.INTERIM_REPORT_UNSUBMITED);
+			}
+
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put("isPassed", result);
+			interimReportService.updateInterimReport(ir);
+			paperService.updatePaper(paper);
+
+			activitiAPIUtils.completeTask(String.valueOf(taskId), data);
+			sendSuggestion(teacherId, ir);
+			result_json = Constants.SUCCESS;
+		}catch(Exception e){
+			LOGGER.error("提交评审结果失败！", e);
+			result_json = Constants.FAIL;
+		}
+
+		JSONObject jsonobj =  new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+}

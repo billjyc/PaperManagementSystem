@@ -1,0 +1,87 @@
+package nju.software.jsonmodel;
+
+import java.sql.Timestamp;
+
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+
+public class TeacherJudgeTask {
+//教师需要评审的任务信息
+	private Integer studentId;
+	private String studentName;
+	private String studentNumber;
+	private Integer paperId;
+    private String paperTitle;
+    private String paperState;
+    private Integer paperVersion;
+    private Timestamp judgeDeadline;
+    private long taskId;
+	public Integer getStudentId() {
+		return studentId;
+	}
+	public void setStudentId(Integer studentId) {
+		this.studentId = studentId;
+	}
+	public String getStudentName() {
+		return studentName;
+	}
+	public void setStudentName(String studentName) {
+		this.studentName = studentName;
+	}
+	public String getStudentNumber() {
+		return studentNumber;
+	}
+	public void setStudentNumber(String studentNumber) {
+		this.studentNumber = studentNumber;
+	}
+	public Integer getPaperId() {
+		return paperId;
+	}
+	public void setPaperId(Integer paperId) {
+		this.paperId = paperId;
+	}
+	public String getPaperTitle() {
+		return paperTitle;
+	}
+	public void setPaperTitle(String paperTitle) {
+		this.paperTitle = paperTitle;
+	}
+	public String getPaperState() {
+		return paperState;
+	}
+	public void setPaperState(String paperState) {
+		this.paperState = paperState;
+	}
+	public Timestamp getJudgeDeadline() {
+		return judgeDeadline;
+	}
+	public void setJudgeDeadline(Timestamp judgeDeadline) {
+		this.judgeDeadline = judgeDeadline;
+	}
+    public long getTaskId() {
+		return taskId;
+	}
+	public void setTaskId(long taskId) {
+		this.taskId = taskId;
+	}
+	
+	public static TeacherJudgeTask toTeacherJudgeTask(Student s ,Paper p , Timestamp t ,long taskId){
+    	TeacherJudgeTask j = new TeacherJudgeTask();
+    	j.setJudgeDeadline(t);
+    	j.setPaperId(p.getPaperId());
+    	j.setPaperState(p.getPaperState());
+    	j.setPaperTitle(p.getPaperTitle());
+    	j.setStudentId(s.getStudentId());
+    	j.setStudentName(s.getStudentName());
+    	j.setPaperVersion(p.getPaperVersion());
+    	j.setStudentNumber(s.getStudentNumber());
+    	j.setTaskId(taskId);
+    	return j;
+    }
+	public void setPaperVersion(Integer paperVersion) {
+		this.paperVersion = paperVersion;
+	}
+	public Integer getPaperVersion() {
+		return paperVersion;
+	}
+}

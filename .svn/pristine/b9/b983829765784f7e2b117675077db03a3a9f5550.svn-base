@@ -1,0 +1,96 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.ProposalDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Proposal;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for
+ * Proposal entities. Transaction control of the save(), update() and delete()
+ * operations can directly support Spring container-managed transactions or they
+ * can be augmented to handle user-managed Spring transactions. Each of these
+ * methods provides additional information for how to configure it for the
+ * desired type of transaction control.
+ * 
+ * @see nju.software.dataobject.Proposal
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.ProposalDAOImpl")
+public class ProposalDAOImpl extends BaseDaoImpl<Proposal> implements ProposalDAO{
+	private static final Logger log = LoggerFactory
+			.getLogger(ProposalDAOImpl.class);
+	// property constants
+	public static final String PROPOSAL_ADDRESS = "proposalAddress";
+	public static final String STUDENT_ID = "studentId";
+	public static final String STATUS = "status";
+	
+	public ProposalDAOImpl(){
+		super();
+		this.setClazz(Proposal.class);
+	}
+
+	public Proposal findById(java.lang.Integer id) {
+		return super.findById(id);
+	}
+
+	public List<Proposal> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Proposal> findByProposalAddress(Object proposalAddress) {
+		return findByProperty(PROPOSAL_ADDRESS, proposalAddress);
+	}
+
+	public List<Proposal> findByStudentId(Object studentId) {
+		return findByProperty(STUDENT_ID, studentId);
+	}
+
+	public List<Proposal> findByStatus(Object status) {
+		return findByProperty(STATUS, status);
+	}
+
+
+	public int count(String propertyName, Object value) {
+		String hql = "select count(*) from Proposal as p where p."
+				+ propertyName + "= ?";
+		List<?> list = find(hql, value);
+		int count = (int)list.get(0);
+		return count;
+	}
+
+	public int countByTeacher(Object teacherId) {
+		String hql ="select count(proposal) from Proposal proposal, Student student " +
+				"where student.studentId = proposal.studentId "+
+				"and student.teacherId = ?"	;
+		List<?> list = find(hql, teacherId);
+		int count = (int)list.get(0);
+		return count;
+	}
+
+	public int count() {
+		return (int) findCount();
+	}
+	
+	public int countByTeacherAndStatus(Object teacherId, Object status) {
+		String hql ="select count(proposal) from Proposal proposal,Student student " +
+				"where student.studentId = proposal.studentId "+
+				"and student.teacherId = ? and proposal.status = ?";		
+		List<?> list = find(hql, teacherId, status);
+		int count = (int)list.get(0);
+		return count;
+	}
+
+	public List<Proposal> findByStatus(int status, int teacherId) {
+		String hql = "select proposal from Proposal proposal, Student student " +
+				"where student.studentId = proposal.studentId " +
+				"and student.teacherId = ? and proposal.status = ?";
+		return find(hql, teacherId, status);
+	}
+}

@@ -1,0 +1,166 @@
+package nju.software.util;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.Classes;
+import nju.software.entity.Course;
+import nju.software.entity.Director;
+import nju.software.entity.HeadTeacher;
+import nju.software.entity.Student;
+import nju.software.entity.StudentCourseInfo;
+import nju.software.entity.Teacher;
+import nju.software.entity.TeachingPoint;
+import nju.software.jsonmodel.JsonClasses;
+import nju.software.jsonmodel.JsonCourse;
+import nju.software.jsonmodel.JsonDirector;
+import nju.software.jsonmodel.JsonHeadTeacher;
+import nju.software.jsonmodel.JsonStudent;
+import nju.software.jsonmodel.JsonStudentCourseInfo;
+import nju.software.jsonmodel.JsonTeacher;
+import nju.software.jsonmodel.JsonTeachingPoint;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+@Component
+public class JSONUtil {
+	private static final Logger LOGGER = LoggerFactory.getLogger(JSONUtil.class);
+	
+	/**
+	 * 封装返回Json数据的方法
+	 * @param response
+	 * @param jsonobj
+	 */
+	public void sendJson(HttpServletResponse response, JSONObject jsonobj){
+		try {
+			PrintWriter out = response.getWriter();
+			out.print(jsonobj);
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param studentList
+	 * @return
+	 */
+	public List<JsonStudent> converToJsonStudent(List<Student> studentList) {
+		List<JsonStudent> jsonStudentList = new ArrayList<JsonStudent>();
+		for (Student student : studentList) {
+			JsonStudent jsonStudent = new JsonStudent(student);
+			jsonStudentList.add(jsonStudent);
+		}
+		return jsonStudentList;
+	}
+	
+	/**
+	 * 
+	 * @param studentCourseList
+	 * @return
+	 */
+	public List<JsonStudentCourseInfo> converToJsonStudentCourseInfo(
+			List<StudentCourseInfo> studentCourseList) {
+		 List<JsonStudentCourseInfo> jsonStudentCourseList = new ArrayList<JsonStudentCourseInfo>();
+		 for(StudentCourseInfo studentCourseInfo:studentCourseList){
+			 LOGGER.debug("student number: {}", studentCourseInfo.getStudentNo());
+			
+			 JsonStudentCourseInfo jsonStudentCourseInfo=new JsonStudentCourseInfo( studentCourseInfo);
+			 jsonStudentCourseList.add(jsonStudentCourseInfo);
+		 }
+		 return jsonStudentCourseList;
+	}
+	
+	/**
+	 * 
+	 * @param headlist
+	 * @return
+	 */
+	public List<JsonHeadTeacher> converToJsonHeadTeacher(List<HeadTeacher> headlist){
+		 List<JsonHeadTeacher> jsonheadlist=new ArrayList<JsonHeadTeacher>();
+		 for(HeadTeacher head:headlist){
+			 JsonHeadTeacher jsonhead=new JsonHeadTeacher(head);
+			 jsonheadlist.add(jsonhead);
+		 }
+		return jsonheadlist;
+	}
+	
+	/**
+	 * 
+	 * @param classList
+	 * @return
+	 */
+	public List<JsonClasses> converToJsonClasses(List<Classes> classList){
+		List<JsonClasses> jsonclasslist=new ArrayList<JsonClasses>();
+		for(Classes c:classList){
+			JsonClasses jsonclass=new JsonClasses(c);
+			jsonclasslist.add(jsonclass);
+		}
+		return jsonclasslist;
+	}
+	
+	/**
+	 * 
+	 * @param teacherList
+	 * @return
+	 */
+	public List<JsonTeacher> converToJsonTeacher(List<Teacher> teacherList) {
+		List<JsonTeacher> jsonTeahcerList = new ArrayList<JsonTeacher>();
+		for (Teacher teacher : teacherList) {
+			JsonTeacher jsonTeacher = new JsonTeacher(teacher);
+			jsonTeahcerList.add(jsonTeacher);
+		}
+		return jsonTeahcerList;
+	}
+
+	/**
+	 * 
+	 * @param teachingList
+	 * @return
+	 */
+	public List<JsonTeachingPoint> converToJsonTeachingPoint(List<TeachingPoint> teachingList){
+		List<JsonTeachingPoint> jsonTeachingList=new ArrayList<JsonTeachingPoint>();
+		for(TeachingPoint teaching: teachingList){
+			JsonTeachingPoint jsonTeaching=new JsonTeachingPoint(teaching);
+			jsonTeachingList.add(jsonTeaching);
+		}
+		return jsonTeachingList;
+	}
+	
+	/**
+	 * 
+	 * @param courseList
+	 * @return
+	 */
+	public List<JsonCourse> converToJsonCourse(List<Course> courseList) {
+		List<JsonCourse> jsonCourseList = new ArrayList<JsonCourse>();
+		for (Course course : courseList) {
+			JsonCourse jsonCourse = new JsonCourse(course);
+			jsonCourseList.add(jsonCourse);
+		}
+		return jsonCourseList;
+	}	
+	
+	/**
+	 * 
+	 * @param directorList
+	 * @return
+	 */
+	public List<JsonDirector> converToJsonDirector(List<Director> directorList){
+		List<JsonDirector> jsonDirectorList=new ArrayList<JsonDirector>();
+		for(Director director:directorList){
+			JsonDirector jsonDirector=new JsonDirector(director);
+			jsonDirectorList.add(jsonDirector);
+		}
+		return jsonDirectorList;
+	}
+}

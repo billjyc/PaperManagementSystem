@@ -1,0 +1,26 @@
+package nju.software.listener;
+
+import java.io.Serializable;
+
+import org.activiti.engine.delegate.DelegateTask;
+import org.activiti.engine.delegate.TaskListener;
+
+/**
+ * 暂缓答辩后的评审监听器实现类
+ * @author soft
+ *
+ */
+public class ReprieveCompleteListener implements TaskListener, Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1420568544191581357L;
+
+	@Override
+	public void notify(DelegateTask delegateTask) {
+		// TODO Auto-generated method stub
+		
+	}
+
+}

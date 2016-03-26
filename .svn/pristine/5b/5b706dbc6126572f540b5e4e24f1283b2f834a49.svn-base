@@ -1,0 +1,55 @@
+<%@ page language="java" import="java.util.*" pageEncoding="utf-8"%>
+<script  type="text/javascript">
+	
+	jQuery("#list").jqGrid({	//review_list为页面中需要显示内容的table的id
+		url:'reviewedlist.do',	//生成json数据的url源
+     	datatype: 'json',    //从服务器端返回的数据类型，默认xml。可选类型：xml，local，json，jsonnp，script，xmlstring，jsonstring，clientside
+     	mtype: 'POST',
+     	colNames:['学号','姓名','论文标题','论文版本号','操作'],		//表格的显示字段
+		colModel:[    
+        {name:'studentNumber',index:'studentNumber', width:150,align:"center",resizable:false,sorttype:"string"},    //name表格列的名称,index排序时字段的索引,width只能是像素，不能是百分比
+        {name:'studentName',index:'studentName', width:150,sorttype:"string",resizable:false},        
+        {name:'paperTitle',index:'paperTitle',width:380,resizable:false},          
+        {name:'paperVersion',index:'paperVersion', width:100,align:"center",resizable:false},
+        {name:'opt',index:'opt',width:180,resizable:false,sortable:false,align:"center"}    
+     	],    
+		rowNum: 9999,	//在grid上显示记录条数，也就是pageSize，这个参数是要被传递到后台
+    	pager: '#datapager',	//datapager为显示页码的div
+           
+		multiselect: false,	//是否可多选，多选的话前面有多选框    
+		sortname: 'studentNumber',    //默认的排序列。可以是列名称或者是一个数字，这个参数会被提交到后台
+		viewrecords: true,	//是否显示记录总数
+		sortorder: "desc", 
+		height:"400px",   
+		jsonReader: {    //jsonReader来跟服务器端返回的数据做对应
+			root: "list",  //包含实际数据的数组
+     		userdata : "list",
+        	repeatitems : false    
+     	},
+     	
+     	loadComplete:function(data){ //完成服务器请求后，回调函数
+		  if(data.list.length==0){ //如果没有记录返回，追加提示信息           
+			$("#list").append('<tr><td colspan="5">&nbsp;&nbsp;暂无记录！</td></tr>');
+		  }else{ //否则，删除提示
+			var ids = jQuery("#list").jqGrid('getDataIDs');
+		    for(var i=0;i < ids.length;i++){
+		        var cl = ids[i];
+				decide = "<input style='height:22px;width:100px;margin-right:10px;' type='button' value='提交评审意见' onclick=\"showReview("+jQuery("#review_list").getGridParam('userData')[cl-1].paperId+","+jQuery("#review_list").getGridParam('userData')[cl-1].taskId+");\"  />"; 		
+				jQuery("#list").jqGrid('setRowData',cl,{opt:decide});
+		    }
+			
+		  }
+	    }
+		
+		});
+                
+      jQuery("#review_list").jqGrid('navGrid','#datapaper',{edit:false,add:false,del:false});
+</script>
+ <div class="center">
+   <div class="table_container">
+       <div class="title"><h2>已评审列表</h2></div>
+       <div class="opt"></div>
+	   <table id="list"></table>
+	   <div id="datapager"></div>
+   </div>
+ </div>

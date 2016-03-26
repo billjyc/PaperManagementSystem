@@ -1,0 +1,68 @@
+package nju.software.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import nju.software.dao.ProposalDAO;
+import nju.software.entity.Proposal;
+import nju.software.service.ProposalService;
+import nju.software.util.JbpmAPIUtil;
+
+@Service("proposalServiceImpl")
+public class ProposalServiceImpl implements ProposalService{
+	@Autowired
+	private ProposalDAO proposalDao;
+	@Autowired
+	private JbpmAPIUtil jbpmAPIUtil;
+	
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void addProposal(Proposal proposal, long taskId, String actorId) {
+		try {
+			proposalDao.save(proposal);
+			jbpmAPIUtil.completeTask(taskId, null, actorId);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void updateProposal(Proposal proposal) {
+		proposalDao.merge(proposal);
+	}
+
+	public void judgeProposal(Proposal proposal,long taskId, Map<String, Object> data, String actorId) {
+		try {
+			proposalDao.merge(proposal);
+			jbpmAPIUtil.completeTask(taskId, data, actorId);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public Proposal getProposalByStudentId(int studentId) {
+		List<Proposal> proposals = proposalDao.findByStudentId(studentId);
+		if (!proposals.isEmpty()&&proposals.size()>=1) {
+			return proposals.get(proposals.size()-1);
+		} else {
+			return null;
+		}
+	}
+
+	public Proposal getProposalById(int proposalId) {
+		return proposalDao.findById(proposalId);
+	}
+
+	public List<Proposal> getProposalByStatus(int status) {
+		return proposalDao.findByStatus(status);
+	}
+
+	public List<Proposal> getProposalByStatus(int status, int teacherId) {
+		// TODO Auto-generated method stub
+		return proposalDao.findByStatus(status,teacherId);
+	}
+
+}

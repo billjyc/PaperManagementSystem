@@ -1,0 +1,217 @@
+﻿<script type="text/javascript" src="../js/ajaxfileupload.js"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+		$(".detailinfo_table tr:even").addClass("detailinfo_table_even");
+		$(".detailinfo_table tr:odd").addClass("detailinfo_table_odd");
+	});
+	
+	GetpaperStatus = function() {
+		$.post("./getpaperstatus.do", null, function(data) {
+			var papers = data.paperstatus;
+			if (papers != "uncommitted") {
+				$(".submit").hide();
+				$(".update").show();
+				getpaperInfo();
+			} else {
+				$(".submit").show();
+				$(".update").hide();
+				$("#current_phase").text("uncommitted");
+			}
+		}, "json");
+	};
+	GetpaperStatus();
+	
+	function getpaperInfo() {
+		$.post("./getpaper.do", null, function(data) {
+			var paper = data.paper;
+			$("#paper_title").val(paper.paperTitle);
+			$("#current_phase").text(paper.paperStatement); 
+			var oldname = new String(paper.paperAddress);
+			var newname = paper.paperTitle
+					+ oldname.substring(oldname.lastIndexOf("."));
+			$("#paper_download").text(newname);
+		}, "json");
+	}
+	function setPaperTitle() {
+
+	}
+
+	submit_paper = function() {
+		if ($("input[name='submit_file']").val() == "") {
+			alert("请选择文件！");
+			return;
+		}
+		if ($("input[id='paper_title']").val() == "") {
+			alert("请填写论文标题！");
+			return;
+		}
+		var title = $("#paper_title").val();
+		var affix = $(".submit #affix1").val();
+		
+		$.ajaxFileUpload({
+			url : "./submitpaper.do",
+			secureuri : false,
+			fileElementId : "submit_file",
+			dataType : "json",
+			data : {
+				"title" : title ,
+				"affix" : affix
+			},
+			success : function(data, status)
+			{
+				GetpaperStatus();
+			},
+			error : function(data, status, e)
+			{
+				GetpaperStatus();
+			}
+		});
+	};
+
+	function update_paper() {
+		if ($("input[name='update_file']").val() == "") {
+			alert("请选择文件！");
+			return;
+		}
+		var title = $("#paper_title").val();
+		var affix = $(".update #affix1").val();
+		$.ajaxFileUpload({
+			url : "./updatepaper.do",
+			secureuri : false,
+			fileElementId : "update_file",
+			dataType : "json",
+			data : {
+				title : title,
+				affix : affix
+			},
+			success : function(data, status) //相当于java中try语句块的用法
+			{
+				GetpaperStatus();
+			},
+			error : function(data, status, e) //相当于java中catch语句块的用法
+			{
+				GetpaperStatus();
+			}
+		});
+	}
+
+	function changePaperName() {
+		var title = $("#paper_title").val();
+		$.post("./updatepapername.do", {
+			title : title
+		}, function(date) {
+			GetpaperStatus();
+		}, "json");
+	}
+
+	function downloadpaper() {
+		var url = "./downloadpaper.do";
+		var method='post';
+		jQuery(
+				'<form action="' + url + '" method="' + (method || 'post')
+						+ '"></form>').appendTo('body').submit()
+				.remove();
+	}
+
+	/*
+	 submit_paper = function(){
+	
+
+	 $.ajaxFileUpload(
+	 {
+	 url:"./uploadpaper.do",            //需要链接到服务器地址
+	 secureuri:false,
+	 fileElementId:"upload_file",                        //文件选择框的id属性
+	 dataType: "json",                                     //服务器返回的格式，可以是json
+	 success: function (data, status)            //相当于java中try语句块的用法
+	 { 
+	 alert(data);
+	 },
+	 error: function (data, status, e)            //相当于java中catch语句块的用法
+	 {
+	 alert(data);
+	 }
+	 }
+	
+	 );
+	
+	 var paperObj = {
+	 "title" : $("#upload_file").val(),
+	 "affix" : $("#affix1").val()
+	 };
+	 var paperStr = "paperstr=" + JSON.stringify(paperObj);
+	 $.post("./submitpaper.do", paperStr ,function(msg) {
+	 if(msg.result_json == "success"){
+	 alert("上传成功");
+	 }else{
+	 alert("上传失败");
+	 }
+	 },"json");
+	
+	 };
+	 */
+</script>
+
+<div class="paper_state">
+	<table class="info_table">
+		<tbody>
+			<tr align="center">
+				<th>论文状态</th>
+			</tr>
+			<tr>
+				<td>
+					<table class="detailinfo_table">
+						<tbody>
+							<tr>
+								<td class="info_mark">论文题目:</td>
+								<td class="info_content"><input type="text"
+									id="paper_title" /><a href="javascript:void(0)"
+									onclick="changePaperName()">更改</a></td>
+							</tr>
+							<tr>
+								<td class="info_mark">当前阶段:</td>
+								<td id="current_phase" class="info_content"></td>
+							</tr>
+							<tr class="submit">
+								<td class="info_mark">上传论文:</td>
+								<td class="info_content"><input id="submit_file"
+									name="submit_file" type="file" value="" /></td>
+							</tr>
+							<tr class="submit">
+								<td class="info_mark">文件附言:</td>
+								<td class="info_content"><textarea id="affix1" rows="4"
+										cols="40">无</textarea> <input type="button" id="submit_button"
+									onclick="submit_paper()" value="上传" />
+								</td>
+							</tr>
+							<tr class="update">
+								<td class="info_mark">论文:</td>
+								<td class="info_content"><a href="javascript:void(0)"
+									id="paper_download" onclick="downloadpaper()"></a>
+								</td>
+							</tr>
+							<tr class="update">
+								<td class="info_mark">导师评语:</td>
+								<td class="info_content"><textarea id="affix2" rows="4"
+										disabled="disabled" cols="40">无</textarea>
+								</td>
+							</tr>
+							<tr class="update">
+								<td class="info_mark">更新论文:</td>
+								<td class="info_content"><input id="update_file"
+									name="update_file" type="file" value="" /></td>
+							</tr>
+							<tr class="update">
+								<td class="info_mark">文件附言:</td>
+								<td class="info_content"><textarea id="affix1" rows="4"
+										cols="40">无</textarea> <input type="button" id="update_button"
+									onclick="update_paper()" value="更新" />
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

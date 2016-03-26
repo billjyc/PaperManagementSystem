@@ -1,0 +1,71 @@
+package nju.software.dao.impl;
+
+import java.util.List;
+
+import nju.software.dao.FeeDAO;
+import nju.software.dao.common.impl.BaseDaoImpl;
+import nju.software.entity.Fee;
+
+import org.hibernate.LockMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.stereotype.Repository;
+
+/**
+ * A data access object (DAO) providing persistence and search support for Fee
+ * entities. Transaction control of the save(), update() and delete() operations
+ * can directly support Spring container-managed transactions or they can be
+ * augmented to handle user-managed Spring transactions. Each of these methods
+ * provides additional information for how to configure it for the desired type
+ * of transaction control.
+ * 
+ * @see nju.software.dataobject.Fee
+ * @author MyEclipse Persistence Tools
+ */
+
+@Repository("nju.software.dao.impl.FeeDAOImpl")
+public class FeeDAOImpl extends BaseDaoImpl<Fee> implements FeeDAO{
+	private static final Logger log = LoggerFactory.getLogger(FeeDAOImpl.class);
+	// property constants
+	public static final String STUDENT_ID = "studentId";
+	public static final String TEACHER_ID = "teacherId";
+	public static final String AMOUNT = "amount";
+	public static final String FEE_TYPE = "feeType";
+	public static final String GRANT_TYPE = "grantType";
+	public static final String ID = "id";
+	
+	public FeeDAOImpl(){
+		super();
+		this.setClazz(Fee.class);
+	}
+
+	public Fee findById(java.lang.Integer id) {
+		return super.findById(id);
+	}
+
+	public List<Fee> findByProperty(String propertyName, Object value) {
+		return super.findByProperty(propertyName, value);
+	}
+
+	public List<Fee> findByStudentId(Object studentId) {
+		return findByProperty(STUDENT_ID, studentId);
+	}
+
+	public List<Fee> findByTeacherId(Object teacherId) {
+		return findByProperty(TEACHER_ID, teacherId);
+	}
+
+	public List<Fee> findByAmount(Object amount) {
+		return findByProperty(AMOUNT, amount);
+	}
+
+	public List<Fee> findByFeeType(Object feeType) {
+		return findByProperty(FEE_TYPE, feeType);
+	}
+
+	public List<Fee> findByGrantType(Object grantType) {
+		return findByProperty(GRANT_TYPE, grantType);
+	}
+}

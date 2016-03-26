@@ -1,0 +1,67 @@
+package nju.software.service;
+
+import java.util.List;
+import java.util.Map;
+
+import nju.software.entity.Paper;
+
+public interface PaperService {
+	
+	/**
+	 * 添加一个论文
+	 * @param paper ,taskId ,userId
+	 * 要添加的论文对象,任务id，执行者id
+	 * @return
+	 * 
+	 */
+	public void addPaper(Paper paper,long taskId,String actorId);
+	
+	/**
+	 * 不影响流程的更新一个论文的信息
+	 * @param paper
+	 * 要更新的论文信息
+	 * @return
+	 *  
+	 */
+	public void updatePaper(Paper paper);
+	/**
+	 * 完成流程中一个任务，并更新一个论文的信息
+	 * @param paper
+	 * 要更新的论文信息
+	 * @return
+	 *  
+	 */
+
+	public void updatePaper(Paper paper,long taskId,Map<String, Object>data,String actorId);
+
+	
+	/**
+	 * 定稿
+	 * @param paper
+	 * @param taskId
+	 * @param userId
+	 */
+	public void finalizePaper(Paper paper, int taskId, String userId);
+	
+	/**
+	 * 通过状态获取论文列表
+	 */
+	public List<Paper> getPapersByState(String paperState);
+	
+	/**
+	 * 返回指定Student Id的论文
+	 * @param studentId
+	 * 学生id
+	 * @return  Paper
+	 * 该学生的论文
+	 */
+	public Paper getPaperByStudentId(int studentId);
+	
+	/**
+	 * 返回指定paper Id的论文
+	 * @param paperId
+	 * @return
+	 */
+	public Paper getPaperByPaperId(int paperId);
+	
+}

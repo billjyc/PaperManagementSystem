@@ -1,0 +1,117 @@
+package nju.software.controller.dean;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import nju.software.entity.Notice;
+import nju.software.jsonmodel.JsonNotice;
+import nju.software.service.NoticeService;
+import nju.software.service.TeacherService;
+import nju.software.util.JSONUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+/**
+ * 教务员通知管理控制类
+ * @author billjyc
+ *
+ */
+@Controller
+public class DeanNoticeController {
+	private static Logger logger = LoggerFactory.getLogger(DeanNoticeController.class);
+	
+	@Autowired
+	private JSONUtil jsonUtil;
+	@Autowired
+	private NoticeService noticeService;
+	@Autowired
+	private TeacherService teacherService;
+	
+	@RequestMapping(value = "/dean/editnotice.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editNotice(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String oper = request.getParameter("oper");
+		Integer teacherId = (Integer)request.getSession().getAttribute("teacherId");
+		if(oper != null && oper.equals("del")){
+			String noticeIds = request.getParameter("noticeIds");
+			JSONArray array = JSONArray.fromObject(noticeIds);
+			try{
+				for(int i = 0;i<array.size();i++){
+					Notice notice = noticeService.getNoticeById(array.getInt(i));
+					noticeService.delete(notice);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}else if(oper != null){
+			Integer noticeLevel= Integer.parseInt(request.getParameter("noticeLevel"));
+			String noticeTheme = request.getParameter("noticeTheme");
+
+			Notice n = new Notice();
+			n.setNoticeLevel(noticeLevel);
+			n.setNoticePublisherId(teacherId);
+			n.setNoticePublisherName(teacherService.getTeacherById(teacherId).getTeacherName());
+			n.setNoticeTheme(noticeTheme);
+			n.setNoticeTime(new Date());
+
+			try{
+				if(oper.equals("edit")){
+					int nid = Integer.parseInt(request.getParameter("noticeId"));
+					n.setNoticeId(nid);
+					n.setNoticeContent(noticeService.getNoticeById(nid).getNoticeContent());
+					noticeService.merge(n);
+				}else if(oper.equals("add")){
+					noticeService.addNotice(n);
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		} 
+	}
+
+	@RequestMapping(value = "/dean/editnoticecontent.do")
+	@ResponseBody
+	@Transactional(rollbackFor=Exception.class)
+	public void editNoticeContent(HttpServletRequest request, HttpServletResponse response, ModelMap model) {
+		String oper = request.getParameter("oper");
+		Integer noticeId = Integer.parseInt(request.getParameter("noticeId"));
+		if(oper != null && oper.equals("edit")){
+			try{
+				String noticeContent= request.getParameter("noticeContent");
+				Notice n = noticeService.getNoticeById(noticeId);
+				n.setNoticeContent(noticeContent);
+				noticeService.merge(n);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		} 
+	}
+
+	@RequestMapping(value = "/dean/getnotice.do")
+	public void getNotice(HttpServletRequest request, HttpServletResponse response, ModelMap model){
+		int teacherId = (Integer)request.getSession().getAttribute("teacherId");
+		List<Notice> data = noticeService.getNoticeByPublisherId(teacherId);
+		List<JsonNotice> noticeList = new ArrayList<JsonNotice>();
+		for(Notice n : data){
+			noticeList.add(new JsonNotice(n));
+		}
+		JSONArray listObj = JSONArray.fromObject(noticeList);
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("list", listObj);
+		jsonUtil.sendJson(response, jsonobj);
+	}
+}

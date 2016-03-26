@@ -1,0 +1,406 @@
+package nju.software.manager.student;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.List;
+
+import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import nju.software.entity.InterimReport;
+import nju.software.entity.Paper;
+import nju.software.entity.Proposal;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.entity.enums.PaperState;
+import nju.software.jsonmodel.JsonPaper;
+import nju.software.service.AccountService;
+import nju.software.service.InterimReportService;
+import nju.software.service.PaperService;
+import nju.software.service.ProposalService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.ActivitiAPIUtils;
+import nju.software.util.Constants;
+import nju.software.util.EmailUtil;
+import nju.software.util.FileOperateUtil;
+
+import org.activiti.engine.task.Task;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
+@Component
+public class StudentPaperManager {
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private PaperService paperService;
+	@Autowired
+	private ProposalService proposalService;
+	@Autowired
+	private InterimReportService interimReportService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private ActivitiAPIUtils activitiAPIUtils;
+	
+	private static Logger logger = LoggerFactory.getLogger(StudentPaperManager.class);
+	
+	private void sendSuggestion(Integer studentId, File paperFile, Paper paper) {
+		Student sugg_s=studentService.getStudentById(studentId);
+		Teacher sugg_t=teacherService.getTeacherByStudentId(studentId);
+		
+		Validate.notNull(sugg_s);
+		Validate.notNull(sugg_t);
+
+		Suggestion sugg=new Suggestion();
+		sugg.setLevel(0);
+		sugg.setPaperId(paper.getPaperId());//设置论文paperId
+		logger.debug("paper id: {}", paper.getPaperId());
+		sugg.setReceiverId(accountService.getAccountByAccountname(sugg_t.getTeacherNumber()).getAccountId());
+		sugg.setSuggestContent(sugg_s.getStudentGrade()+"年级"+"学生 "+sugg_s.getStudentName()+"(学号"+sugg_s.getStudentNumber()+")"+"提交论文");
+		Timestamp time = new Timestamp(new Date().getTime());
+		sugg.setSuggestTime(time);
+		sugg.setUserId(accountService.getAccountByAccountname(sugg_s.getStudentNumber()).getAccountId());
+		sugg.setSenderName(sugg_s.getStudentName());
+		sugg.setSuggestTitle("学生"+sugg_s.getStudentName()+"提交论文");
+
+		try {
+			suggestionService.sendSuggestion(sugg, paperFile);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		//向导师发送邮件
+		//sendEmail(sugg_t, sugg_s, paper.getPaperAffix1());
+	}
+	
+	private void sendEmail(Teacher t, Student s, String paperaffix) {
+		EmailUtil emailUtil = new EmailUtil();
+        String to = t.getTeacherEmail();
+		String subject = s.getStudentGrade() + "年级学生" + s.getStudentName() + "提交中期检查";
+		String content="<p>" + paperaffix + "</p>";
+		if(to !=null){
+			try {
+				emailUtil.sendMail(to, subject, content);
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	/**
+	 * 提交开题报告和中期报告页面获取论文状态
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject getPaperStatus(Integer studentId) {
+		PaperState paperState = PaperState.TUTOR_UNASSIGNED;
+		String result_json = "";
+		Paper paper = null;
+		// 获得学生论文状态
+		try {
+			paper = paperService.getPaperByStudentId(studentId);
+			//Validate.notNull(paper);
+			
+			if (paper != null) {
+				paperState = paper.getPaperState();
+			} else {
+				paperState = PaperState.TUTOR_UNASSIGNED;
+			}
+			
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			logger.error("exception", e);
+			result_json = Constants.FAIL;
+		}
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("paperstatus", paperState);
+		jsonobj.put("paper_status_CHN", paperState.getStatus());
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 获取论文进度
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject getPaperProcess(Integer studentId) {
+		logger.debug("student id: {}", studentId);
+		String proposalfilename = "";
+		String interimReportfilename = "";
+		PaperState currentphase = PaperState.TUTOR_UNASSIGNED;
+
+		String result_json = "";
+		try {
+			Proposal proposal = proposalService
+					.getProposalByStudentId(studentId);
+			if (proposal != null) {
+				proposalfilename = FileOperateUtil.getFileName(proposal
+						.getProposalAddress());
+			}
+
+			InterimReport interimReport = interimReportService
+					.getInterimReportByStudentId(studentId);
+			if (interimReport != null) {
+				interimReportfilename = FileOperateUtil
+						.getFileName(interimReport.getAddress());
+			}
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			logger.error("exception", e);
+			result_json = Constants.FAIL;
+		}
+
+		Paper paper = paperService.getPaperByStudentId(studentId);
+		if(paper != null) {
+			currentphase = paper.getPaperState();
+		}
+
+		logger.debug("current phase: {}", currentphase);
+		// 返回json数据
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("currentphase", currentphase);
+		jsonobj.put("current_phase_CHN", currentphase.getStatus());
+		jsonobj.put("proposalfile", proposalfilename);
+		jsonobj.put("interimreportfile", interimReportfilename);
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 上传论文
+	 * @param file
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject uploadPaper(MultipartFile file, Integer studentId) {
+		String result_json = "";
+		String filename = file.getOriginalFilename();
+		String dir = "E:\\upload\\thesis\\" + studentId;
+		File save = new File(dir, filename);
+
+		try {
+			save.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (save.exists() == false) {
+			save.mkdirs();
+		}
+
+		try {
+			file.transferTo(save);
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = Constants.FAIL;
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 提交论文
+	 * @param request
+	 * @param papertitle 论文题目
+	 * @param actorId 当前操作者编号
+	 * @param studentId 
+	 * @param paperaffix 论文附言（学生）
+	 * @return
+	 */
+	public JSONObject submitPaper(HttpServletRequest request, String papertitle, String actorId,  
+			Integer studentId, String paperaffix) {
+		Paper paper = null;
+		String result_json = "";
+		File save = null;
+		// 上传文件
+		try{
+			save = FileOperateUtil.Upload(request,
+					FileOperateUtil.getAbsoluteFileDir(actorId), papertitle, "submit_file");
+			Validate.notNull(save);
+		}catch(Exception e) {
+			logger.error("上传文件为空！", e);
+			result_json = Constants.FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			return jsonobj;
+		}
+		
+		paper = paperService.getPaperByStudentId(studentId);
+		if (paper == null) {
+			paper = new Paper();
+			paper.setStudentId(studentId);
+			paper.setPaperVersion(new Integer(0));
+		}
+		paper.setPaperTitle(papertitle);
+		paper.setPaperAddress(FileOperateUtil.getRelativeFilePath(save.getAbsolutePath()));
+		//paper.setPaperState(Constants.DRAFT_COMPLETED);
+		paper.setPaperState(PaperState.FIRST_DRAFT_COMPLETED);
+		paper.setPaperVersion(paper.getPaperVersion().intValue() + 1);
+		paper.setPaperAffix1(paperaffix);// 学生的附言，放affix1 还是affix2要注意
+
+		try {
+			List<Task> taskList = activitiAPIUtils.getAssignedTaskByNameAndUserId(actorId, "Submit Papers");
+			for(Task task : taskList) {
+				paperService.saveOrUpdatePaper(paper);
+				activitiAPIUtils.completeTask(task.getId());
+			}
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			logger.error("exception", e);
+			result_json = Constants.FAIL;
+		}
+
+		//向导师发起会话
+		sendSuggestion(studentId, save, paper);
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 获取论文信息
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject getPaper(Integer studentId) {
+		String result_json = "";
+		JsonPaper jsonpaper = null;
+
+		// 获得paper
+		Paper paper = null;
+		try {
+			paper = paperService.getPaperByStudentId(studentId);
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = Constants.FAIL;
+		}
+		
+		if(paper != null){
+			jsonpaper = JsonPaper.paper2JsonPaper(paper,
+				studentService.getStudentById(studentId));
+		}
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("paper", jsonpaper);
+		jsonobj.put("paperstatus", jsonpaper.getPaperStatement().getStatus());
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 更新论文
+	 * @param request
+	 * @param papertitle
+	 * @param paperaffix1
+	 * @param actorId
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject updatePaper(HttpServletRequest request, String papertitle, 
+			String paperaffix1, String actorId, Integer studentId) {
+		String result_json = "";
+		logger.debug("paper title: {}", papertitle);
+		logger.debug("paperaffix1: {}", paperaffix1);
+		File save = null;
+
+		// 更新论文操作
+		try {
+			save = FileOperateUtil.Upload(request,
+					FileOperateUtil.getAbsoluteFileDir(actorId), papertitle, "update_file");
+			Validate.notNull(save);
+		} catch (Exception e) {
+			logger.error("上传的文件为空！", e);
+			result_json = Constants.FAIL;
+			JSONObject jsonobj = new JSONObject();
+			jsonobj.put("result_json", result_json);
+			return jsonobj;
+		}
+		
+		try {
+			// 更新到数据库
+			Paper opaper = paperService.getPaperByStudentId(studentId);
+			opaper.setPaperAddress(FileOperateUtil.getRelativeFilePath(save.getAbsolutePath()));
+			opaper.setPaperTitle(papertitle);
+			opaper.setPaperAffix1(paperaffix1);
+			opaper.setPaperVersion(opaper.getPaperVersion().intValue() + 1);
+			paperService.updatePaper(opaper);
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			logger.error("更新论文失败！", e);
+			result_json = Constants.FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	public JSONObject updatePaperName(String papertitle, Integer studentId) {
+		String result_json = "";
+		logger.debug("update paper name: {}", papertitle);
+		try {
+			// 更新到数据库
+			Paper opaper = paperService.getPaperByStudentId(studentId);
+			Validate.notNull(opaper);
+			opaper.setPaperTitle(papertitle);
+			opaper.setPaperVersion(opaper.getPaperVersion().intValue() + 1);
+			paperService.updatePaper(opaper);
+			
+			result_json = Constants.SUCCESS;
+		}catch(NullPointerException ne) {
+			logger.error("该学生还没有上传论文！", ne);
+			result_json = Constants.FAIL;
+		}catch (Exception e) {
+			e.printStackTrace();
+			result_json = Constants.FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+	
+	/**
+	 * 下载论文
+	 * @param response
+	 * @param studentId
+	 * @return
+	 */
+	public JSONObject downloadPaper(HttpServletResponse response, Integer studentId) {
+		Paper paper = paperService.getPaperByStudentId(studentId);
+		String absolutepath = FileOperateUtil.getAbsoluteFilePath(paper.getPaperAddress());
+
+		FileOperateUtil.Download(response, absolutepath);
+
+		String result_json = "";
+		try {
+			result_json = Constants.SUCCESS;
+		} catch (Exception e) {
+			e.printStackTrace();
+			result_json = Constants.FAIL;
+		}
+
+		JSONObject jsonobj = new JSONObject();
+		jsonobj.put("result_json", result_json);
+		return jsonobj;
+	}
+}

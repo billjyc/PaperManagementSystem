@@ -1,0 +1,128 @@
+package nju.software.manager.teacher;
+
+import java.io.File;
+
+import nju.software.entity.Paper;
+import nju.software.entity.Student;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.service.AccountService;
+import nju.software.service.PaperService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+import nju.software.util.Constants;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TeacherDefenseManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private PaperService paperService;
+	
+	private static Logger logger = LoggerFactory.getLogger(TeacherDefenseManager.class);
+	
+	/**
+	 * 答辩秘书发送答辩结果会话
+	 * @param secretTeacherNumber
+	 * @param paper
+	 * @param file
+	 */
+	public void sendDefenseSuggestion(String secretTeacherNumber, Paper paper, File file) {
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher tutor = teacherService.getTeacherById(s.getTeacherId());
+		Teacher secretary = teacherService.getTeacherByTeacherNumber(secretTeacherNumber);
+		
+		String title_s = "";
+		String title_t = "";
+		String content_s = "";
+		String content_t = "";
+		
+		if(paper.getPaperState() == Constants.DEFENSE_SUCCESS) {
+			title_s = "论文已通过答辩";
+			title_t = "您指导的学生" + s.getStudentName() + "的论文已通过答辩";
+			content_s = "你的论文已经通过答辩，已经交由导师进行答辩后的定稿工作";
+			content_t = "您指导的学生" + s.getStudentName() + "的论文已经通过答辩，"
+					+ "请进行答辩后的定稿工作";
+		} else if (paper.getPaperState() == Constants.REPRIEVE) {
+			title_s = "论文答辩暂缓通过";
+			title_t = "您指导的学生" + s.getStudentName() + "的论文被暂缓通过";
+			content_s = "你的论文答辩被暂缓通过，请准备再次进行答辩";
+			content_t = "您指导的学生" + s.getStudentName() + "的论文答辩暂缓通过，"
+					+ "需要再次进行答辩";
+		} else if (paper.getPaperState() == Constants.DRAFT_COMPLETED) {
+			title_s = "论文答辩未通过";
+			title_t = "您指导的学生" + s.getStudentName() + "的论文答辩未通过";
+			content_s = "你的论文答辩未通过，请重新提交论文";
+			content_t = "您指导的学生" + s.getStudentName() + "的论文答辩未通过，"
+					+ "需要重新提交论文";
+		} else {
+			return;
+		}
+		
+		sendSuggestion(s.getStudentNumber(), secretTeacherNumber, "答辩秘书-" + secretary.getTeacherName(),
+				title_s, content_s, paper.getPaperId(), file);
+		sendSuggestion(tutor.getTeacherNumber(), secretTeacherNumber, "答辩秘书-" + secretary.getTeacherName(),
+				title_t, content_t, paper.getPaperId(), file);
+	}
+	
+	public void sendReprieveDecisionSuggestion(boolean result, Integer paperId, 
+			String currentTeacherNumber, File file) {
+		Paper paper = paperService.getPaperByPaperId(paperId);
+		Student s = studentService.getStudentById(paper.getStudentId());
+		Teacher defenseTeacher = teacherService.getTeacherByTeacherNumber(currentTeacherNumber);
+		Teacher tutor = teacherService.getTeacherById(s.getTeacherId());
+		
+		String title_s = "";
+		String title_t = "";
+		String content_s = "";
+		String content_t = "";
+		
+		if(result) {
+			title_s = "论文暂缓答辩在教师" + tutor.getTeacherName() + "处通过";
+			content_s = "你的论文暂缓答辩在教师" + tutor.getTeacherName() + "处通过" + 
+					", 请等待其他教师的结果";
+			title_t = "您指导的学生" + s.getStudentName() + "的论文暂缓答辩在教师"
+					+ tutor.getTeacherName() + "处通过";
+			content_t = "您指导的学生" + s.getStudentName() + "的论文暂缓答辩在教师"
+					+ tutor.getTeacherName() + "处通过，正在等待其他老师的结果";
+		} else {
+			title_s = "论文暂缓答辩在教师" + tutor.getTeacherName() + "处未通过";
+			content_s = "你的论文暂缓答辩在教师" + tutor.getTeacherName() + "处未通过" + 
+					", 请重新提交论文";
+			title_t = "您指导的学生" + s.getStudentName() + "的论文暂缓答辩在教师"
+					+ tutor.getTeacherName() + "处未通过";
+			content_t = "您指导的学生" + s.getStudentName() + "的论文暂缓答辩在教师"
+					+ tutor.getTeacherName() + "处通过，需要重新提交论文";
+		}
+		
+		sendSuggestion(s.getStudentNumber(), currentTeacherNumber, "答辩老师-" + defenseTeacher.getTeacherName(),
+				title_s, content_s, paperId, file);
+		sendSuggestion(tutor.getTeacherNumber(), currentTeacherNumber, "答辩老师-" + defenseTeacher.getTeacherName(),
+				title_t, content_t, paperId, file);
+		
+	}
+	
+	private void sendSuggestion(String receiverNumber, String senderNumber, String senderName, String title, 
+			String content, Integer paperId, File reviewFile) {
+		Integer senderId = accountService.getAccountByAccountname(senderNumber).getAccountId();
+		Integer receiverId = accountService.getAccountByAccountname(receiverNumber).getAccountId();
+		Suggestion suggestion = suggestionService.createSuggestion(title, content, senderId, senderName, receiverId, paperId);
+		try {
+			suggestionService.sendSuggestion(suggestion, reviewFile);
+		} catch (Exception e) {
+			logger.error("发送会话失败！", e);
+		}
+	}
+}

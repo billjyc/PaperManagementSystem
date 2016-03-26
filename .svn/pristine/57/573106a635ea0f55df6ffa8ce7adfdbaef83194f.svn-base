@@ -1,0 +1,62 @@
+package nju.software.service.impl;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import nju.software.dao.InterimReportDAO;
+import nju.software.dao.PaperDAO;
+import nju.software.dao.ProposalDAO;
+import nju.software.dao.StudentDAO;
+import nju.software.dao.SuggestionDAO;
+import nju.software.dao.TeacherDAO;
+import nju.software.entity.enums.PaperState;
+import nju.software.service.MessageService;
+import nju.software.util.Constants;
+import nju.software.web.vo.Msg;
+
+@Service("messageServiceImpl")
+public class MessageServiceImpl implements MessageService {
+	@Autowired
+	private TeacherDAO teacherDAO;
+	@Autowired
+	private StudentDAO studentDAO;
+	@Autowired
+	private PaperDAO paperDAO;
+	@Autowired
+	private ProposalDAO proposalDAO;
+	@Autowired
+	private InterimReportDAO interimReportDao;
+	@Autowired
+	private SuggestionDAO suggestionDAO;
+	
+	private static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
+
+
+	public Msg getMsg(int teacherId, int accountId) {
+		Msg tm = new Msg();
+		tm.setStudentInfo(studentDAO.count("teacherId", teacherId));
+		tm.setAllThesis(paperDAO.countByTeacher(teacherId));
+		tm.setUncheckedProposal(proposalDAO.countByTeacherAndStatus(teacherId, Constants.PROPOSAL_UNCHECKED));
+		tm.setPassedProposal(proposalDAO.countByTeacherAndStatus(teacherId, Constants.PROPOSAL_PASSED));
+		tm.setFirstCheck(paperDAO.countByTeacherAndStatus(teacherId, PaperState.FIRST_DRAFT_COMPLETED));
+		tm.setUncheckedInterim(interimReportDao.countByTeacherAndStatus(teacherId, Constants.INTERIM_REPORT_UNCHECKED));
+		tm.setpassedInterim(interimReportDao.countByTeacherAndStatus(teacherId,Constants.INTERIM_REPORT_PASSED));
+		tm.setBeforeDefense(paperDAO.countByTeacherAndStatus(teacherId, PaperState.JUDGE_PASSED));
+		tm.setDefenseFinalized(paperDAO.countByTeacherAndStatus(teacherId, PaperState.DEFENSE_PASSED));
+		tm.setReprieveList(paperDAO.countByTeacherAndStatus(teacherId, PaperState.DEFENSE_REPRIEVED));
+		tm.setInbox(suggestionDAO.countByUser(accountId));
+		tm.setSendList(suggestionDAO.count("userId", accountId));
+		tm.setNeedReply(suggestionDAO.countNeedReply(accountId));
+		return tm;
+	}
+
+	public int getStudentInfoC(int teacherId) {
+		return studentDAO.count("teacherId", teacherId);
+	}
+
+	public int getAllThesisC(int teacherId) {
+		return paperDAO.countByTeacher(teacherId);
+	}
+}

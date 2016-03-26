@@ -1,0 +1,87 @@
+package nju.software.manager.teacher;
+
+import java.io.File;
+import java.util.List;
+
+import nju.software.entity.Judge;
+import nju.software.entity.Suggestion;
+import nju.software.entity.Teacher;
+import nju.software.service.AccountService;
+import nju.software.service.JudgeService;
+import nju.software.service.StudentService;
+import nju.software.service.SuggestionService;
+import nju.software.service.TeacherService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TeacherReviewManager {
+	@Autowired
+	private TeacherService teacherService;
+	@Autowired
+	private StudentService studentService;
+	@Autowired
+	private AccountService accountService;
+	@Autowired
+	private SuggestionService suggestionService;
+	@Autowired
+	private JudgeService judgeService;
+	
+	private static Logger logger = LoggerFactory.getLogger(TeacherReviewManager.class);
+
+	/**
+	 * 
+	 * @param paperId
+	 * @param currentTeacherNumber
+	 * @param studentNumber
+	 * @param reviewFile
+	 * @param toStudent 给学生的附言
+	 * @param toTeacher 给另外一位评审老师的附言
+	 */
+	public void submitReviewSuggestion(Integer paperId, String currentTeacherNumber, 
+			String studentNumber, File reviewFile, String toStudent, String toTeacher) {
+		List<Judge> judgeList = judgeService.findJudgeByPaperId(paperId);
+
+		Teacher judge1 = teacherService.getTeacherById(judgeList.get(0).getTeacherId());
+		Teacher judge2 = teacherService.getTeacherById(judgeList.get(1).getTeacherId());
+		Teacher currentTeacher = teacherService.getTeacherByTeacherNumber(currentTeacherNumber);
+
+		if(currentTeacher.getTeacherId() == judge1.getTeacherId()) {
+			//do nothing
+		} else if (currentTeacher.getTeacherId() == judge2.getTeacherId()) {
+			//由于要给judge2发消息，需要保证judge1为当前老师
+			judge2 = judge1;
+			judge1 = currentTeacher;
+		}
+
+		logger.debug("judge1: {}", judge1.getTeacherName());
+		logger.debug("judge2: {}", judge2.getTeacherName());
+		
+		String title = "评审老师" + judge1.getTeacherName() + "提交评审结果";
+		String content_s = toStudent;
+		String content_t = "给学生的附言" + toStudent + 
+				"\n" + "给老师的附言" + toTeacher + "\n";
+		
+		//给学生发送会话
+		sendSuggestion(studentNumber, currentTeacherNumber, "评审老师-" + judge1.getTeacherName(), 
+				title, content_s, paperId, reviewFile);
+		//给另外一个评审老师发送会话
+		sendSuggestion(judge2.getTeacherNumber(), currentTeacherNumber, "评审老师-" + judge1.getTeacherName(), 
+				title, content_t, paperId, reviewFile);
+	}
+
+	private void sendSuggestion(String receiverNumber, String senderNumber, String senderName, String title, 
+			String content, Integer paperId, File reviewFile) {
+		Integer senderId = accountService.getAccountByAccountname(senderNumber).getAccountId();
+		Integer receiverId = accountService.getAccountByAccountname(receiverNumber).getAccountId();
+		Suggestion suggestion = suggestionService.createSuggestion(title, content, senderId, senderName, receiverId, paperId);
+		try {
+			suggestionService.sendSuggestion(suggestion, reviewFile);
+		} catch (Exception e) {
+			logger.error("发送会话失败！", e);
+		}
+	}
+}
